@@ -29,16 +29,14 @@ export default function AdminLoginPage() {
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/admin',
       })
 
       if (result?.error) {
         setServerError('البريد الإلكتروني أو كلمة المرور غير صحيحة')
         return
       }
-
-      router.push('/admin')
-      router.refresh()
     } catch {
       setServerError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.')
     }
