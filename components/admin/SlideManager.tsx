@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/Modal'
-import ImageUploader, { type ImageFile } from '@/components/admin/ImageUploader'
+import ImageUploader, { type UploadedImage } from '@/components/admin/ImageUploader'
 import type { HeroSlide } from '@/types'
 
 // ----- Schema -----
@@ -38,23 +38,25 @@ interface SlideFormProps {
 function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
   const isEdit = !!initialData
 
-  const [desktopImages, setDesktopImages] = useState<ImageFile[]>(
+  const [desktopImages, setDesktopImages] = useState<UploadedImage[]>(
     initialData?.desktop_image_url
       ? [{ 
           id: 'desktop',
           url: initialData.desktop_image_url, 
           public_id: initialData.desktop_image_public_id,
-          isLocal: false 
+          isLocal: false,
+          is_main: true
         }]
       : []
   )
-  const [mobileImages, setMobileImages] = useState<ImageFile[]>(
+  const [mobileImages, setMobileImages] = useState<UploadedImage[]>(
     initialData?.mobile_image_url && initialData?.mobile_image_public_id
       ? [{ 
           id: 'mobile',
           url: initialData.mobile_image_url, 
           public_id: initialData.mobile_image_public_id,
-          isLocal: false 
+          isLocal: false,
+          is_main: true
         }]
       : []
   )
@@ -97,14 +99,6 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
 
     setSaveError(null)
     setSaving(true)
-
-    const body = {
-      ...data,
-      desktop_image_url: desktopImages[0].url,
-      desktop_image_public_id: desktopImages[0].public_id,
-      mobile_image_url: mobileImages[0]?.url ?? null,
-      mobile_image_public_id: mobileImages[0]?.public_id ?? null,
-    }
 
     try {
       // 1. Upload Desktop Image
@@ -251,7 +245,8 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
               file,
               url: URL.createObjectURL(file),
               public_id: '',
-              isLocal: true
+              isLocal: true,
+              is_main: true
             }])
           }}
           onRemoveImage={() => {
@@ -261,6 +256,7 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
             if (desktopImages[0]?.isLocal) URL.revokeObjectURL(desktopImages[0].url)
             setDesktopImages([])
           }}
+          onSetMain={() => {}}
         />
         {desktopImages.length === 0 && saveError?.includes('سطح المكتب') && (
           <p className={errorBase}>{saveError}</p>
@@ -285,7 +281,8 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
               file,
               url: URL.createObjectURL(file),
               public_id: '',
-              isLocal: true
+              isLocal: true,
+              is_main: true
             }])
           }}
           onRemoveImage={() => {
@@ -295,6 +292,7 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
             if (mobileImages[0]?.isLocal) URL.revokeObjectURL(mobileImages[0].url)
             setMobileImages([])
           }}
+          onSetMain={() => {}}
         />
       </div>
 
