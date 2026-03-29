@@ -18,23 +18,39 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.email || !credentials?.password) {
+          console.log('[AUTH] Missing credentials')
+          return null
+        }
 
-        const { data: admin, error } = await supabaseAdmin
-          .from('admins')
-          .select('id, email, name, password_hash')
-          .eq('email', credentials.email.toLowerCase().trim())
-          .single()
+        try {
+          const { data: admin, error } = await supabaseAdmin
+            .from('admins')
+            .select('id, email, name, password_hash')
+            .eq('email', credentials.email.toLowerCase().trim())
+            .single()
 
-        if (error || !admin) return null
+          if (error || !admin) {
+            console.log('[AUTH] User not found or Supabase error:', error?.message)
+            return null
+          }
 
-        const passwordMatch = await bcrypt.compare(credentials.password, admin.password_hash)
-        if (!passwordMatch) return null
+          const passwordMatch = await bcrypt.compare(credentials.password, admin.password_hash)
+          
+          if (!passwordMatch) {
+            console.log('[AUTH] Password does not match for:', admin.email)
+            return null
+          }
 
-        return {
-          id:    admin.id,
-          email: admin.email,
-          name:  admin.name,
+          console.log('[AUTH] Success for:', admin.email)
+          return {
+            id:    admin.id,
+            email: admin.email,
+            name:  admin.name,
+          }
+        } catch (err: any) {
+          console.error('[AUTH] Catch-all error:', err.message)
+          return null
         }
       },
     }),
