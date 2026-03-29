@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import SlideManager from './SlideManager'
-import ImageUploader, { type ImageFile } from '@/components/admin/ImageUploader'
+import ImageUploader, { type UploadedImage } from '@/components/admin/ImageUploader'
 import { Loader2, Save, LayoutDashboard, Image as ImageIcon, ShieldCheck, Truck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
@@ -70,7 +70,7 @@ export default function HomepagePage() {
   const [loading, setLoading]     = useState(true)
   const [saving, setSaving]       = useState(false)
   const [dirty, setDirty]         = useState(false)
-  const [bannerImages, setBannerImages] = useState<ImageFile[]>([])
+  const [bannerImages, setBannerImages] = useState<UploadedImage[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
 
   const fetchSettings = useCallback(async () => {
@@ -86,7 +86,8 @@ export default function HomepagePage() {
           id: 'promo',
           url: s.promo_banner_url,
           public_id: s.promo_banner_public_id!,
-          isLocal: false
+          isLocal: false,
+          is_main: true
         }])
       }
     } catch {
@@ -262,7 +263,7 @@ export default function HomepagePage() {
                       className={cn(
                         'relative h-6 w-11 rounded-full transition-colors',
                         settings[key] ? 'bg-primary' : 'bg-surface-container-high'
-                      )}
+                       )}
                     >
                       <span className={cn(
                         'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
@@ -309,10 +310,11 @@ export default function HomepagePage() {
                       images={bannerImages}
                       onAddFiles={(files) => {
                         const file = files[0]; if (!file) return;
-                        setBannerImages([{ id: 'new', file, url: URL.createObjectURL(file), public_id: '', isLocal: true }]);
+                        setBannerImages([{ id: 'new', file, url: URL.createObjectURL(file), public_id: '', isLocal: true, is_main: true }]);
                         setDirty(true);
                       }}
                       onRemoveImage={() => { setBannerImages([]); setDirty(true); }}
+                      onSetMain={() => {}}
                       maxFiles={1}
                     />
                   </div>
