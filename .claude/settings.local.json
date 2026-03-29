@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/c/Users/moham/Desktop/Kzora/app/admin/products/[id]/edit\")",
+      "Bash(mkdir -p \"/c/Users/moham/Desktop/Kzora/app/admin/orders/[id]\")",
+      "Bash(grep -n \"from ''@/components/admin/ImageUploader''\" /c/Users/moham/Desktop/Kzora/components/admin/ImageUploader.tsx)",
+      "Bash(grep:*)",
+      "Bash(head -5 grep -n \"export default\\\\|export function\\\\|export const\\\\|^export {\" C:/Users/moham/Desktop/Kzora/components/layout/Footer.tsx)",
+      "Bash(head -5 grep -n \"export default\\\\|export function\\\\|export const\\\\|^export {\" C:/Users/moham/Desktop/Kzora/components/layout/WhatsAppFAB.tsx)",
+      "Bash(head -5 grep -n \"export default\\\\|export function\\\\|export const\\\\|^export {\" C:/Users/moham/Desktop/Kzora/components/cart/CartDrawer.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/products)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/product/classic-luxury-shoe)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/category/mens-shoes)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:3000/api/categories)",
+      "Bash(curl:*)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npx next:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":300\")",
+      "Bash(xargs -I{} taskkill /F /PID {})",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 3000,3001,3002,3003,3004,3005,3006,3007,3008,3009 -State Listen | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_-Force -ErrorAction SilentlyContinue }\")",
+      "Bash(cd:*)",
+      "Bash(npx vercel:*)",
+      "Bash(rm:*)",
+      "Bash(xargs sed:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

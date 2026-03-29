@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>كزورا | إتمام الطلب</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@100..900&amp;family=Tajawal:wght@400;700&amp;family=Inter:wght@400;500;600;700&amp;family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#637c50",
+                        "on-secondary-container": "#69635e",
+                        "primary-fixed": "#ffdea6",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f2f0ed",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#eae1da",
+                        "surface-container-high": "#eae8e5",
+                        "outline": "#817563",
+                        "primary-fixed-dim": "#f7bd48",
+                        "surface": "#fbf9f6",
+                        "tertiary-fixed-dim": "#b4cf9c",
+                        "on-secondary-fixed": "#1f1b17",
+                        "primary": "#785600",
+                        "surface-container-highest": "#e4e2df",
+                        "on-primary-container": "#fffbff",
+                        "secondary-container": "#eae1da",
+                        "on-background": "#1b1c1a",
+                        "tertiary-fixed": "#d0ebb6",
+                        "on-primary-fixed": "#271900",
+                        "surface-bright": "#fbf9f6",
+                        "surface-variant": "#e4e2df",
+                        "on-tertiary-fixed": "#0c2001",
+                        "tertiary": "#4b6339",
+                        "on-tertiary": "#ffffff",
+                        "background": "#fbf9f6",
+                        "inverse-surface": "#30312f",
+                        "on-tertiary-container": "#f9ffec",
+                        "outline-variant": "#d3c4af",
+                        "on-primary-fixed-variant": "#5d4200",
+                        "on-surface-variant": "#4f4535",
+                        "secondary": "#635d58",
+                        "surface-container-low": "#f5f3f0",
+                        "on-surface": "#1b1c1a",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#374d26",
+                        "inverse-primary": "#f7bd48",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#cdc5bf",
+                        "on-secondary-fixed-variant": "#4b4641",
+                        "surface-tint": "#7b5800",
+                        "surface-dim": "#dbdad7",
+                        "primary-container": "#986d00",
+                        "surface-container": "#efeeeb"
+                    },
+                    fontFamily: {
+                        "headline": ["Noto Serif", "serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"],
+                        "arabic": ["Noto Sans Arabic", "sans-serif"],
+                        "brand": ["Tajawal", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Noto Sans Arabic', sans-serif;
+            background-color: #FAF8F5;
+            color: #1A1A1A;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-bottom-color: #B8860B !important;
+        }
+        .custom-radio:checked + label {
+            border-color: #B8860B;
+            background-color: #FAF8F5;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Top Navigation Bar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 bg-[#FAF8F5]/90 dark:bg-[#1A1A1A]/90 backdrop-blur-xl shadow-[0_4px_20px_rgba(27,28,26,0.08)]">
+<div class="flex flex-row-reverse justify-between items-center px-8 py-4 w-full max-w-none">
+<div class="font-['Tajawal'] text-2xl font-bold text-[#1A1A1A] dark:text-[#FAF8F5]">
+                كزورا
+            </div>
+<nav class="hidden md:flex flex-row-reverse items-center gap-8 font-['Noto_Sans_Arabic'] text-base font-medium">
+<a class="text-[#6B6560] hover:text-[#B8860B] transition-colors duration-300" href="#">الأقسام</a>
+<a class="text-[#6B6560] hover:text-[#B8860B] transition-colors duration-300" href="#">بحث</a>
+<a class="text-[#6B6560] hover:text-[#B8860B] transition-colors duration-300 font-body" href="#">SYP/USD</a>
+<a class="text-[#B8860B] border-b-2 border-[#B8860B] pb-1" href="#">سلة (0)</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#6B6560] scale-95 active:scale-90 transition-transform">menu</button>
+<button class="material-symbols-outlined text-[#6B6560] scale-95 active:scale-90 transition-transform">language</button>
+<button class="material-symbols-outlined text-[#6B6560] scale-95 active:scale-90 transition-transform">search</button>
+<button class="material-symbols-outlined text-[#6B6560] scale-95 active:scale-90 transition-transform" data-weight="fill" style="font-variation-settings: 'FILL' 1;">shopping_cart</button>
+</div>
+</div>
+</header>
+<main class="pt-28 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
+<!-- Page Title -->
+<div class="mb-12">
+<h1 class="text-4xl font-bold font-brand text-on-surface mb-2">إتمام الطلب</h1>
+<p class="text-secondary text-lg">يرجى تزويدنا بتفاصيل الشحن لإتمام عملية الشراء</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left Column: Sticky Order Summary -->
+<aside class="lg:col-span-4 order-2 lg:order-1">
+<div class="sticky top-32 bg-surface-container-low rounded-xl p-8 space-y-6">
+<h2 class="text-xl font-bold font-brand mb-6 border-b border-outline-variant/20 pb-4">ملخص الطلب</h2>
+<!-- Order Items -->
+<div class="space-y-6">
+<div class="flex gap-4 items-start">
+<div class="w-20 h-24 bg-surface-container-highest rounded-lg overflow-hidden flex-shrink-0">
+<img alt="" class="w-full h-full object-cover" data-alt="luxurious camel hair wool coat displayed on a minimal background with soft gallery lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5fo_2JEHUs40_R9Thf05-44RmthIuOMF_6zXcDckQoX963_gEqWZaYtMVtMZzWoR6rMVNhys6bpTiyuQoI1GouPDsgmyXRWQ7XGkp3MhGVH2xP2T2n3mb-9ZGobJHC64OppyaMUo5zihKvkUWsV9aOuxU60OhnuiPODGs65RboRIVAaUd2Gc7hOBqB3uWOknWvOgztrYC7YjWBMqU1KOdfpVb1xnCfgWEsLZ9L8kdZ61FKTfhMofaaAotLxhmAB9w-FSh1fp3rw"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-bold text-on-surface text-sm">معطف صوف كلاسيكي</h3>
+<p class="text-secondary text-xs mt-1">اللون: جملي | المقاس: M</p>
+<div class="flex justify-between items-center mt-2">
+<span class="font-body font-semibold text-primary">850,000 SYP</span>
+<span class="text-xs text-secondary font-body">x1</span>
+</div>
+</div>
+</div>
+<div class="flex gap-4 items-start">
+<div class="w-20 h-24 bg-surface-container-highest rounded-lg overflow-hidden flex-shrink-0">
+<img alt="" class="w-full h-full object-cover" data-alt="minimalist designer leather heels in ivory white on a clean stone surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbzcw0d1hv6Baj9ncu2n0Q-JI3FgnfZQds4D1dv4XDfVRXPHYYGubhiklQeuj9M0D3d11k2rtCB_nT0cWdS--oZ6Ygg3V6cM63mHiSYBqLakDtmYc_0GRy5QRKqtpCVMUl9aTZ2eC-Fe_UrpzjUp0aqWSMqtxbi_GVmMUK8ZVvaCUDONZPpiSi0TIBkAiiJqTfxgJQ82HY-CmZPpvZil19nPvo6nK4IQK7SnZa68E_sp_GmwEc_utkq-UWc5M1E1vwPSd9hqVZgA"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-bold text-on-surface text-sm">حذاء جلدي ناعم</h3>
+<p class="text-secondary text-xs mt-1">اللون: عاجي | المقاس: 38</p>
+<div class="flex justify-between items-center mt-2">
+<span class="font-body font-semibold text-primary">420,000 SYP</span>
+<span class="text-xs text-secondary font-body">x1</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Pricing Breakdown -->
+<div class="pt-6 border-t border-outline-variant/30 space-y-3">
+<div class="flex justify-between text-secondary">
+<span>المجموع الفرعي</span>
+<span class="font-body">1,270,000 SYP</span>
+</div>
+<div class="flex justify-between text-secondary">
+<span>خصم (كود: KZORA10)</span>
+<span class="font-body text-error">-127,000 SYP</span>
+</div>
+<div class="flex justify-between text-on-surface font-bold text-lg pt-2">
+<span>الإجمالي</span>
+<span class="font-body text-primary">1,143,000 SYP</span>
+</div>
+</div>
+<button class="w-full py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+<span>✅ تأكيد الطلب</span>
+</button>
+<p class="text-center text-xs text-secondary leading-relaxed">بضغطك على تأكيد الطلب، أنت توافق على شروط الخدمة وسياسة الخصوصية الخاصة بكزورا.</p>
+</div>
+</aside>
+<!-- Right Column: Form -->
+<div class="lg:col-span-8 order-1 lg:order-2 space-y-10">
+<!-- Shipping Method Section -->
+<section>
+<h2 class="text-xl font-bold font-brand mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+                        شركة الشحن
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="relative">
+<input checked="" class="hidden custom-radio" id="karam" name="shipping" type="radio"/>
+<label class="block p-5 bg-surface-container-low border-2 border-transparent rounded-xl cursor-pointer hover:bg-surface-container transition-all group" for="karam">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">كرم (Karam)</span>
+<span class="bg-primary/10 text-primary text-[10px] px-2 py-1 rounded font-bold">الأفضل</span>
+</div>
+<p class="text-xs text-secondary leading-tight">توصيل سريع خلال 24-48 ساعة لكافة المحافظات.</p>
+</label>
+</div>
+<div class="relative">
+<input class="hidden custom-radio" id="qadmous" name="shipping" type="radio"/>
+<label class="block p-5 bg-surface-container-low border-2 border-transparent rounded-xl cursor-pointer hover:bg-surface-container transition-all" for="qadmous">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">قدموس (Qadmous)</span>
+</div>
+<p class="text-xs text-secondary leading-tight">توصيل اقتصادي إلى مراكز المحافظات.</p>
+</label>
+</div>
+<div class="relative">
+<input class="hidden custom-radio" id="masarat" name="shipping" type="radio"/>
+<label class="block p-5 bg-surface-container-low border-2 border-transparent rounded-xl cursor-pointer hover:bg-surface-container transition-all" for="masarat">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">مسارات (Masarat)</span>
+</div>
+<p class="text-xs text-secondary leading-tight">توصيل مباشر للمنازل في مناطق محددة.</p>
+</label>
+</div>
+</div>
+</section>
+<!-- Personal Info Section -->
+<section class="space-y-8">
+<h2 class="text-xl font-bold font-brand mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">person_pin_circle</span>
+                        معلومات الشحن
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Governorate -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-secondary px-1">المحافظة</label>
+<select class="bg-surface-container-low border-0 border-b-2 border-outline-variant/30 py-3 px-4 rounded-t-lg text-on-surface appearance-none focus:ring-0 transition-colors">
+<option disabled="" selected="" value="">اختر المحافظة...</option>
+<option>دمشق</option>
+<option>ريف دمشق</option>
+<option>حلب</option>
+<option>حمص</option>
+<option>حماة</option>
+<option>اللاذقية</option>
+<option>طرطوس</option>
+<option>السويداء</option>
+<option>درعا</option>
+</select>
+</div>
+<!-- Full Name -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-secondary px-1">الاسم الكامل</label>
+<input class="bg-surface-container-low border-0 border-b-2 border-outline-variant/30 py-3 px-4 rounded-t-lg text-on-surface focus:ring-0 transition-colors" placeholder="أدخل اسمك الثلاثي..." type="text"/>
+</div>
+</div>
+<!-- Phone Number -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-secondary px-1">رقم الهاتف</label>
+<div class="relative" dir="ltr">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+<img alt="Syria Flag" class="rounded-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBozEmtUj48ikjX6NQdnknopkJ9T98KF-RA2GUl5ZKfumICbnLTy4bLQv3Xl___wUrQPfgLWS_ot1f49Y8GP7PU-pehM8wYkQgGVTpcsdkYTSNZHXpnuA5k_YoL1UumORtZNiCHwlbDUdT0_kP1UmOvUz266JIBaD411bi_A4d6AR9k-aLVOPB79SIbCReI-hj9_39W2bjU1JikhtMCq1GB0WZERtvNPK-cYPjqOffUHuuS9q2LSVNEIMSo1hbMI9jYqnYPdcQ9DQ" width="20"/>
+<span class="text-on-surface font-body font-medium border-r border-outline-variant/30 pr-3">+963</span>
+</div>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant/30 py-3 pl-24 pr-4 rounded-t-lg text-on-surface font-body focus:ring-0 transition-colors" placeholder="9xx xxx xxx" type="tel"/>
+</div>
+<p class="text-[11px] text-primary flex items-center gap-1 mt-1 px-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                            يجب أن يكون الرقم مفعّل على واتساب
+                        </p>
+</div>
+<!-- Address Detail -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-secondary px-1">العنوان التفصيلي</label>
+<textarea class="bg-surface-container-low border-0 border-b-2 border-outline-variant/30 py-3 px-4 rounded-t-lg text-on-surface focus:ring-0 transition-colors resize-none" placeholder="المنطقة، الشارع، أقرب علامة فارقة..." rows="3"></textarea>
+</div>
+</section>
+<!-- Payment Method Section -->
+<section>
+<h2 class="text-xl font-bold font-brand mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">payments</span>
+                        طريقة الدفع
+                    </h2>
+<div class="p-6 bg-surface-container-low border-2 border-primary rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="text-2xl">💵</span>
+<span class="font-bold text-on-surface text-lg">الدفع عند الاستلام</span>
+</div>
+<span class="material-symbols-outlined text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</section>
+<!-- Warning Banner -->
+<div class="p-4 bg-[#FFF5F5] border border-[#FFDADA] rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-[#A03B3B]">warning</span>
+<p class="text-[#A03B3B] text-sm font-bold leading-relaxed">تنبيه: لا يمكن للعميل فحص المنتج قبل الدفع. نضمن لكم حق الاسترجاع والتبديل في حال وجود أي عيب مصنعي خلال 3 أيام من الاستلام.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full rounded-t-lg bg-[#F2EDE8] dark:bg-[#1A1A1A] mt-20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-16 px-12 py-20 text-right direction-rtl">
+<div class="md:col-span-1">
+<div class="text-xl font-bold text-[#1A1A1A] dark:text-[#FAF8F5] mb-4">كزورا</div>
+<p class="text-[#6B6560] dark:text-[#E4E2DF] font-['Noto_Sans_Arabic'] text-sm leading-relaxed">
+                    وجهتك الأولى للأناقة والفخامة. نقدم لكم تشكيلة مختارة بعناية من أرقى تصاميم الموضة العالمية والمحلية بلمسة عربية أصيلة.
+                </p>
+</div>
+<div>
+<h4 class="font-bold text-[#1A1A1A] dark:text-[#FAF8F5] mb-6">روابط سريعة</h4>
+<ul class="space-y-4 font-['Noto_Sans_Arabic'] text-sm">
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] hover:translate-x-[-4px] hover:text-[#B8860B] transition-all" href="#">من نحن</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] hover:translate-x-[-4px] hover:text-[#B8860B] transition-all" href="#">تتبع الطلب</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] hover:translate-x-[-4px] hover:text-[#B8860B] transition-all" href="#">الأسئلة الشائعة</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] hover:translate-x-[-4px] hover:text-[#B8860B] transition-all" href="#">اتصل بنا</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[#1A1A1A] dark:text-[#FAF8F5] mb-6">قانوني</h4>
+<ul class="space-y-4 font-['Noto_Sans_Arabic'] text-sm">
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] hover:translate-x-[-4px] hover:text-[#B8860B] transition-all" href="#">سياسة الخصوصية</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] hover:translate-x-[-4px] hover:text-[#B8860B] transition-all" href="#">الشروط والأحكام</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[#1A1A1A] dark:text-[#FAF8F5] mb-6">النشرة البريدية</h4>
+<p class="text-[#6B6560] dark:text-[#E4E2DF] text-xs mb-4">اشترك ليصلك جديد مجموعاتنا الحصرية</p>
+<div class="flex">
+<input class="flex-grow bg-[#FAF8F5] border-0 py-2 px-4 rounded-r-md text-sm" placeholder="بريدك الإلكتروني" type="email"/>
+<button class="bg-[#B8860B] text-white px-4 rounded-l-md hover:bg-[#986d00] transition-colors">اشترك</button>
+</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/10 py-6 text-center text-[#6B6560] text-xs font-['Noto_Sans_Arabic']">
+            © 2024 كزورا. جميع الحقوق محفوظة.
+        </div>
+</footer>
+</body></html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>كزورا — إدارة المنتجات</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@100..900&amp;family=Tajawal:wght@400;700&amp;family=Inter:wght@400;500;600;700&amp;family=Noto+Serif:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-container": "#ffdad6",
+              "tertiary-container": "#637c50",
+              "on-secondary-container": "#69635e",
+              "primary-fixed": "#ffdea6",
+              "on-error": "#ffffff",
+              "inverse-on-surface": "#f2f0ed",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#eae1da",
+              "surface-container-high": "#eae8e5",
+              "outline": "#817563",
+              "primary-fixed-dim": "#f7bd48",
+              "surface": "#fbf9f6",
+              "tertiary-fixed-dim": "#b4cf9c",
+              "on-secondary-fixed": "#1f1b17",
+              "primary": "#785600",
+              "surface-container-highest": "#e4e2df",
+              "on-primary-container": "#fffbff",
+              "secondary-container": "#eae1da",
+              "on-background": "#1b1c1a",
+              "tertiary-fixed": "#d0ebb6",
+              "on-primary-fixed": "#271900",
+              "surface-bright": "#fbf9f6",
+              "surface-variant": "#e4e2df",
+              "on-tertiary-fixed": "#0c2001",
+              "tertiary": "#4b6339",
+              "on-tertiary": "#ffffff",
+              "background": "#fbf9f6",
+              "inverse-surface": "#30312f",
+              "on-tertiary-container": "#f9ffec",
+              "outline-variant": "#d3c4af",
+              "on-primary-fixed-variant": "#5d4200",
+              "on-surface-variant": "#4f4535",
+              "secondary": "#635d58",
+              "surface-container-low": "#f5f3f0",
+              "on-surface": "#1b1c1a",
+              "error": "#ba1a1a",
+              "on-error-container": "#93000a",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed-variant": "#374d26",
+              "inverse-primary": "#f7bd48",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#cdc5bf",
+              "on-secondary-fixed-variant": "#4b4641",
+              "surface-tint": "#7b5800",
+              "surface-dim": "#dbdad7",
+              "primary-container": "#986d00",
+              "surface-container": "#efeeeb"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "arabic": ["Noto Sans Arabic"],
+              "brand": ["Tajawal"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+      }
+      body {
+        font-family: 'Noto Sans Arabic', 'Inter', sans-serif;
+        background-color: #fbf9f6;
+      }
+    </style>
+</head>
+<body class="text-on-surface antialiased overflow-x-hidden">
+<!-- Admin Shell Wrapper -->
+<div class="flex min-h-screen">
+<!-- Sidebar Navigation -->
+<aside class="w-72 bg-surface-container-low border-l border-outline-variant/30 flex flex-col fixed inset-y-0 right-0 z-50">
+<div class="px-8 py-10">
+<h1 class="font-brand text-2xl font-bold text-primary tracking-tight">كزورا</h1>
+<p class="text-xs text-secondary mt-1 font-label">لوحة الإدارة — ADMIN</p>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="font-medium">الرئيسية</span>
+</a>
+<!-- Active Tab: المنتجات -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-on-primary shadow-lg shadow-primary/20 transition-all" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-bold">المنتجات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-xl">category</span>
+<span class="font-medium">الأقسام</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-xl">list_alt</span>
+<span class="font-medium">الطلبات</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-xl">home_app_logo</span>
+<span class="font-medium">الرئيسية</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-xl">description</span>
+<span class="font-medium">الصفحات</span>
+</a>
+</nav>
+<div class="p-4 border-t border-outline-variant/20">
+<button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-error hover:bg-error-container/20 transition-all">
+<span class="material-symbols-outlined text-xl">logout</span>
+<span class="font-medium">تسجيل الخروج</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 mr-72 bg-surface min-h-screen transition-all duration-300">
+<!-- Header Section -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-md px-10 py-6 border-b border-outline-variant/10 flex justify-between items-center">
+<div>
+<h2 class="text-2xl font-bold text-on-surface font-arabic">إدارة المنتجات</h2>
+<nav class="flex items-center gap-2 text-xs text-secondary mt-1">
+<span>لوحة التحكم</span>
+<span class="material-symbols-outlined text-[10px]">chevron_left</span>
+<span class="text-primary font-medium">قائمة المنتجات</span>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary text-lg">search</span>
+<input class="bg-surface-container-low border-none rounded-xl pr-10 pl-4 py-2 w-64 focus:ring-1 focus:ring-primary/30 text-sm placeholder:text-secondary/60" placeholder="بحث سريع عن منتج..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 shadow-sm hover:bg-primary-container transition-all active:scale-95">
+<span class="material-symbols-outlined text-lg">add</span>
+<span>إضافة منتج</span>
+</button>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="px-10 py-8 space-y-6">
+<!-- Filter Bar -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex flex-wrap gap-4 items-center justify-between">
+<div class="flex gap-4">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-lg text-secondary">filter_list</span>
+<span class="text-sm font-medium">تصفية</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-lg text-secondary">sort</span>
+<span class="text-sm font-medium">ترتيب حسب</span>
+</div>
+</div>
+<div class="text-xs text-secondary bg-surface-container-low px-3 py-1 rounded-full">
+                        عرض <span class="text-on-surface font-bold">24</span> من أصل <span class="text-on-surface font-bold">1,240</span> منتج
+                    </div>
+</div>
+<!-- Product Table Card -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/10 overflow-hidden">
+<table class="w-full text-right border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50 text-secondary text-xs font-bold border-b border-outline-variant/10">
+<th class="px-6 py-4 font-bold">المنتج</th>
+<th class="px-6 py-4 font-bold">القسم</th>
+<th class="px-6 py-4 font-bold">السعر (SYP)</th>
+<th class="px-6 py-4 font-bold">السعر (USD)</th>
+<th class="px-6 py-4 font-bold">المخزون</th>
+<th class="px-6 py-4 font-bold">الوسوم</th>
+<th class="px-6 py-4 font-bold text-center">الإجراءات</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Premium minimal grey wool sweater flat lay on beige background with studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPvPdTY4lZDb6QlHmipuhLdUKCgJpwRw_By2geAIM4bqLIVuHEbxWr-PXBae07BI4qCSZteRLvEhwhq60zwnrL_P2XgxQnRmzIX4OAXC1sVhRxLkRgjEAxljGf2fr081gsQaECLRanwJymE__tbG0lYuhD70cIey7yymOTg-Bhl4_yajg9U8M3avEy0yW5k15sRhIkVcidilHIIBPC1yPAyxfYnNWu_7YWH1T4VurHS5Wlf-XCfB0Mj6HFltF5Rc0lexhPx9yMmw"/>
+</div>
+<div>
+<div class="font-bold text-on-surface text-sm">كنزة صوفية فاخرة</div>
+<div class="text-[10px] text-secondary font-label mt-0.5 uppercase">SKU: KZ-1002</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-secondary">ملابس شتوية</td>
+<td class="px-6 py-4 font-label text-sm font-semibold">450,000</td>
+<td class="px-6 py-4 font-label text-sm text-primary font-bold">$125.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-tertiary-container/20 text-tertiary">
+                                        متوفر (12)
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 bg-surface-container text-[10px] rounded text-secondary">جديد</span>
+<span class="px-2 py-0.5 bg-surface-container text-[10px] rounded text-secondary">صوف</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="p-2 rounded-lg text-secondary hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-2 rounded-lg text-secondary hover:bg-error-container hover:text-error transition-all">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Luxury wrist watch on white podium with clean minimalist studio lighting and long shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6n0L3Rmk50QF2tepY6ysIROuRTeyrJJGhZmNw31_UD27mNXHRFhvxEm4gZGTV7eWaZd0fKVeStitYrH9XFvgWXRANCgtbpMGrhmjRl0TNKwv_xVTRqJUc13evHrar8ogDvJtNrwWK-aHAoxwZmdqYvnPxSkDI3gt4xLIrITpNL2ECOCQQp8U4ws-OW8v7Cu3OZcpldg2WsDZ33Lj9juYYqiqs0sKHC0FaK-lU7MNVg3hoY4TXnqe8QCoO9aGtdoL_mTy7Xfxkaw"/>
+</div>
+<div>
+<div class="font-bold text-on-surface text-sm">ساعة يد كلاسيكية</div>
+<div class="text-[10px] text-secondary font-label mt-0.5 uppercase">SKU: KZ-1045</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-secondary">إكسسوارات</td>
+<td class="px-6 py-4 font-label text-sm font-semibold">1,200,000</td>
+<td class="px-6 py-4 font-label text-sm text-primary font-bold">$340.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-error-container/20 text-error">
+                                        منخفض (2)
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 bg-surface-container text-[10px] rounded text-secondary">فاخر</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="p-2 rounded-lg text-secondary hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-2 rounded-lg text-secondary hover:bg-error-container hover:text-error transition-all">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Sleek black wireless headphones on a wooden desk next to a notebook with soft afternoon sun" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE9lZHBpvetsSw9pNtcRKxXRj7hEnp8e9Wk0ECfQEuE2ks8iPP22vkIOLr0X3V5jRKvR03qfhxWCk0cj0yd75rEoJIoOv9pXfyViA5GIdIKUVnfDpfkOb3j1a9gX35qmvQDbmw0R317kNSa5qZhoHWcTu9-CyTYYXpgiDhIooKvUPbFVFcWgaln9KcJzNNd-YzWWpz3Ba081PMkHTZ2R3q1Np59T_pTASYwHPgdgVK7WvIJSLcbPsGqU9H1XJDxKm_MHc4OPA4Cw"/>
+</div>
+<div>
+<div class="font-bold text-on-surface text-sm">سماعات رأس لاسلكية</div>
+<div class="text-[10px] text-secondary font-label mt-0.5 uppercase">SKU: KZ-0988</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-secondary">إلكترونيات</td>
+<td class="px-6 py-4 font-label text-sm font-semibold">750,000</td>
+<td class="px-6 py-4 font-label text-sm text-primary font-bold">$210.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-surface-container-highest text-secondary">
+                                        نفذ (0)
+                                    </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 bg-surface-container text-[10px] rounded text-secondary">أحدث صيحة</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="p-2 rounded-lg text-secondary hover:bg-primary-fixed hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-2 rounded-lg text-secondary hover:bg-error-container hover:text-error transition-all">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low/30 flex items-center justify-between border-t border-outline-variant/10">
+<div class="text-xs text-secondary">إظهار 10 من أصل 1,240 منتج</div>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold text-xs">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-xs font-bold text-secondary transition-colors">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-xs font-bold text-secondary transition-colors">3</button>
+<span class="text-secondary mx-1 text-xs">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-xs font-bold text-secondary transition-colors">124</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-lg">chevron_left</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bento Quick Stats (Secondary Info) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider">الأكثر مبيعاً</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+<div class="text-2xl font-bold font-brand">حقيبة جلدية يدوية</div>
+<div class="text-xs text-tertiary mt-1 font-medium">+14% عن الشهر الماضي</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider">مخزون حرج</span>
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="text-2xl font-bold font-brand">12 منتجاً</div>
+<div class="text-xs text-secondary mt-1 font-medium">يتطلب إعادة طلب فورية</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-secondary uppercase tracking-wider">متوسط السعر</span>
+<span class="material-symbols-outlined text-secondary">payments</span>
+</div>
+<div class="text-2xl font-bold font-label tracking-tight">$245.50</div>
+<div class="text-xs text-secondary mt-1 font-medium">بناءً على التشكيلة الحالية</div>
+</div>
+</div>
+</div>
+<!-- Simple Footer -->
+<footer class="px-10 py-6 border-t border-outline-variant/10 text-center">
+<p class="text-[10px] text-secondary/60 uppercase tracking-widest font-label">
+                    © 2024 كزورا KZORA. جميع الحقوق محفوظة. نظام إدارة التجارة الإلكترونية.
+                </p>
+</footer>
+</main>
+</div>
+</body></html>

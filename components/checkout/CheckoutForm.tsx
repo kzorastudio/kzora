@@ -1,0 +1,230 @@
+'use client'
+
+import { useEffect, useState, useMemo } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { cn } from '@/lib/utils'
+import { checkoutSchema, type CheckoutFormData } from '@/lib/validators'
+import { ShippingCompanySelector } from '@/components/checkout/ShippingCompanySelector'
+import { GovernorateDropdown } from '@/components/checkout/GovernorateDropdown'
+import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle } from 'lucide-react'
+
+interface Props {
+  onSubmit: (data: CheckoutFormData) => Promise<void>
+  isSubmitting: boolean
+}
+
+const fieldBase =
+  'w-full bg-[#F5F1EB] rounded-xl px-4 py-3 text-sm font-arabic text-[#1A1A1A] ' +
+  'border border-[#E8E3DB] focus:border-[#785600] focus:outline-none focus:ring-1 focus:ring-[#785600]/20 transition-all duration-150 ' +
+  'placeholder:text-[#9E9890]'
+
+const labelBase = 'block text-sm font-arabic font-medium text-[#1A1A1A] mb-1.5'
+const errorBase = 'mt-1.5 text-xs font-arabic text-[#BA1A1A]'
+
+function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#785600]/10 to-[#B8860B]/5 flex items-center justify-center">
+        <Icon size={18} className="text-[#785600]" />
+      </div>
+      <h2 className="font-arabic text-lg font-bold text-[#1A1A1A]">{title}</h2>
+    </div>
+  )
+}
+
+export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
+  const [shippingMethods, setShippingMethods] = useState<any[]>([])
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    trigger,
+    formState: { errors },
+  } = useForm<CheckoutFormData>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      shipping_company: undefined,
+      governorate: '',
+      full_name: '',
+      phone: '',
+      address: '',
+      notes: '',
+      coupon_code: '',
+    },
+  })
+
+  const shippingCompany = watch('shipping_company')
+  const governorate = watch('governorate')
+
+  // Fetch shipping methods from DB
+  useEffect(() => {
+    fetch('/api/shipping')
+      .then(r => r.json())
+      .then(d => setShippingMethods(d.methods || []))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    setValue('governorate', '')
+  }, [shippingCompany, setValue])
+
+  // Get governorates for selected company
+  const selectedCompanyGovernorates = useMemo(() => {
+    if (!shippingCompany) return []
+    const company = shippingMethods.find(m => m.slug === shippingCompany)
+    return company?.governorates?.map((g: any) => g.name) || []
+  }, [shippingCompany, shippingMethods])
+
+  const handleFormSubmit = handleSubmit(async (data) => {
+    await onSubmit(data)
+  })
+
+  return (
+    <form
+      id="checkout-form"
+      dir="rtl"
+      onSubmit={handleFormSubmit}
+      noValidate
+      className="space-y-0"
+    >
+      {/* ═══ Section 1: Shipping Company ═══════════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
+        <SectionHeading icon={Truck} title="شركة الشحن" />
+        <ShippingCompanySelector
+          companies={shippingMethods}
+          selected={shippingCompany ?? ''}
+          onChange={(id) => {
+            setValue('shipping_company', id, { shouldValidate: true })
+          }}
+          error={errors.shipping_company?.message}
+        />
+      </div>
+
+      {/* ═══ Section 2: Shipping Info ══════════════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+        <SectionHeading icon={MapPin} title="معلومات الشحن" />
+
+        <div className="space-y-5">
+          {/* Governorate + Full Name — side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Governorate */}
+            <div>
+              <GovernorateDropdown
+                governorates={selectedCompanyGovernorates}
+                shippingCompanySelected={!!shippingCompany}
+                value={governorate ?? ''}
+                onChange={(gov) => {
+                  setValue('governorate', gov, { shouldValidate: true })
+                }}
+                error={errors.governorate?.message}
+              />
+            </div>
+
+            {/* Full Name */}
+            <div>
+              <label htmlFor="full_name" className={labelBase}>
+                الاسم الكامل <span className="text-[#BA1A1A]">*</span>
+              </label>
+              <input
+                id="full_name"
+                type="text"
+                autoComplete="name"
+                placeholder="أدخل اسمك الثلاثي..."
+                className={cn(fieldBase, errors.full_name && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                {...register('full_name')}
+              />
+              {errors.full_name && <p className={errorBase}>{errors.full_name.message}</p>}
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label htmlFor="phone" className={labelBase}>
+              رقم الهاتف <span className="text-[#BA1A1A]">*</span>
+            </label>
+            <div
+              className={cn(
+                'flex flex-row-reverse items-stretch bg-[#F5F1EB] rounded-xl border transition-all duration-150',
+                errors.phone ? 'border-[#BA1A1A]' : 'border-[#E8E3DB] focus-within:border-[#785600] focus-within:ring-1 focus-within:ring-[#785600]/20'
+              )}
+            >
+              {/* Flag + code — left side */}
+              <span
+                dir="ltr"
+                className="flex items-center gap-1.5 px-3 text-sm font-body font-medium text-[#6B6560] border-r border-[#E8E3DB] select-none shrink-0"
+              >
+                <span className="text-base">🇸🇾</span>
+                +963
+              </span>
+              {/* Input — right side, RTL */}
+              <input
+                id="phone"
+                type="tel"
+                dir="ltr"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="9xx xxx xxx"
+                className="flex-1 min-w-0 bg-transparent px-3 py-3 text-sm font-body text-[#1A1A1A] text-right focus:outline-none placeholder:text-[#9E9890]"
+                {...register('phone')}
+                onBlur={() => trigger('phone')}
+              />
+            </div>
+            <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E8F5E9]/60 border border-[#4CAF50]/20 rounded-lg w-fit">
+              <svg 
+                viewBox="0 0 24 24" 
+                className="w-3.5 h-3.5 fill-[#2E7D32]"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .012 5.403.01 12.039c0 2.12.553 4.189 1.602 6.039L0 24l6.135-1.61a11.81 11.81 0 005.912 1.586h.005c6.635 0 12.036-5.402 12.039-12.037a11.85 11.85 0 00-3.539-8.514z"/>
+              </svg>
+              <p className="text-[11px] font-arabic font-bold text-[#2E7D32]">يجب أن يكون الرقم مفعّل على واتساب</p>
+            </div>
+            {errors.phone && <p className={errorBase}>{errors.phone.message}</p>}
+          </div>
+
+          {/* Address */}
+          <div>
+            <label htmlFor="address" className={labelBase}>
+              العنوان التفصيلي <span className="text-[#BA1A1A]">*</span>
+            </label>
+            <textarea
+              id="address"
+              rows={2}
+              placeholder="المنطقة، الشارع، أقرب علامة فارقة..."
+              className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+              {...register('address')}
+            />
+            {errors.address && <p className={errorBase}>{errors.address.message}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ Section 3: Payment Method ═════════════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+        <SectionHeading icon={CreditCard} title="طريقة الدفع" />
+        <div className="flex items-center gap-4 bg-[#F0F7ED] border-2 border-[#4B6339]/30 rounded-xl p-4">
+          <div className="w-10 h-10 rounded-full bg-[#4B6339]/10 flex items-center justify-center shrink-0">
+            <CheckCircle2 size={22} className="text-[#4B6339]" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💵</span>
+              <p className="font-arabic font-bold text-sm text-[#1A1A1A]">الدفع عند الاستلام</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ Warning Banner ════════════════════════════════════════════════ */}
+      <div className="flex items-start gap-3 bg-[#FFF3E0] border border-[#FFB74D]/40 rounded-xl p-4 mt-5">
+        <AlertTriangle size={18} className="text-[#E65100] shrink-0 mt-0.5" />
+        <p className="font-arabic text-xs text-[#5D4037] leading-relaxed">
+          <strong>تنبيه:</strong> لا يمكن للعميل فحص المنتج قبل الدفع. نضمن لكم حق الاسترجاع والتبديل في حال وجود أي عيب مصنعي خلال 3 أيام من الاستلام.
+        </p>
+      </div>
+    </form>
+  )
+}

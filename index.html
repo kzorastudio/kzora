@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>كزورا | Kzora — الأناقة تبدأ من خطوتك الأولى</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@300;400;500;700;800&amp;family=Tajawal:wght@500;700;800&amp;family=Noto+Serif:ital,wght@0,400;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-container": "#ffdad6",
+              "tertiary-container": "#637c50",
+              "on-secondary-container": "#69635e",
+              "primary-fixed": "#ffdea6",
+              "on-error": "#ffffff",
+              "inverse-on-surface": "#f2f0ed",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#eae1da",
+              "surface-container-high": "#eae8e5",
+              "outline": "#817563",
+              "primary-fixed-dim": "#f7bd48",
+              "surface": "#fbf9f6",
+              "tertiary-fixed-dim": "#b4cf9c",
+              "on-secondary-fixed": "#1f1b17",
+              "primary": "#785600",
+              "surface-container-highest": "#e4e2df",
+              "on-primary-container": "#fffbff",
+              "secondary-container": "#eae1da",
+              "on-background": "#1b1c1a",
+              "tertiary-fixed": "#d0ebb6",
+              "on-primary-fixed": "#271900",
+              "surface-bright": "#fbf9f6",
+              "surface-variant": "#e4e2df",
+              "on-tertiary-fixed": "#0c2001",
+              "tertiary": "#4b6339",
+              "on-tertiary": "#ffffff",
+              "background": "#fbf9f6",
+              "inverse-surface": "#30312f",
+              "on-tertiary-container": "#f9ffec",
+              "outline-variant": "#d3c4af",
+              "on-primary-fixed-variant": "#5d4200",
+              "on-surface-variant": "#4f4535",
+              "secondary": "#635d58",
+              "surface-container-low": "#f5f3f0",
+              "on-surface": "#1b1c1a",
+              "error": "#ba1a1a",
+              "on-error-container": "#93000a",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed-variant": "#374d26",
+              "inverse-primary": "#f7bd48",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#cdc5bf",
+              "on-secondary-fixed-variant": "#4b4641",
+              "surface-tint": "#7b5800",
+              "surface-dim": "#dbdad7",
+              "primary-container": "#986d00",
+              "surface-container": "#efeeeb"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "arabic": ["Noto Sans Arabic"],
+              "brand": ["Tajawal"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #FAF8F5;
+            color: #1A1A1A;
+            font-family: 'Noto Sans Arabic', sans-serif;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(120, 86, 0, 0.9) 0%, rgba(152, 109, 0, 0.7) 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #B8860B;
+        }
+    </style>
+</head>
+<body class="bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#FAF8F5]/90 dark:bg-[#1A1A1A]/90 backdrop-blur-xl shadow-[0_4px_20px_rgba(27,28,26,0.08)]">
+<nav class="flex flex-row-reverse justify-between items-center px-8 py-4 w-full max-w-none">
+<div class="flex items-center gap-8">
+<a class="font-['Tajawal'] text-2xl font-bold text-[#1A1A1A] dark:text-[#FAF8F5]" href="#">كزورا</a>
+<div class="hidden md:flex gap-6 font-['Noto_Sans_Arabic'] text-base font-medium">
+<a class="text-[#B8860B] border-b-2 border-[#B8860B] pb-1 hover:text-[#B8860B] transition-colors duration-300" href="#">الرئيسية</a>
+<a class="text-[#6B6560] dark:text-[#E4E2DF] hover:text-[#B8860B] transition-colors duration-300" href="#">الأقسام</a>
+<a class="text-[#6B6560] dark:text-[#E4E2DF] hover:text-[#B8860B] transition-colors duration-300" href="#">بحث</a>
+<a class="text-[#6B6560] dark:text-[#E4E2DF] font-body" href="#">SYP/USD</a>
+<a class="text-[#6B6560] dark:text-[#E4E2DF] hover:text-[#B8860B] transition-colors duration-300" href="#">سلة (0)</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#6B6560] hover:text-[#B8860B] transition-transform scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="p-2 text-[#6B6560] hover:text-[#B8860B] transition-transform scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</button>
+<button class="p-2 text-[#6B6560] hover:text-[#B8860B] transition-transform scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="shopping_cart" style="font-variation-settings: 'FILL' 0;">shopping_cart</span>
+</button>
+<button class="p-2 md:hidden text-[#6B6560]">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="pt-20">
+<!-- Hero Slider (Conceptualized as single active slide for UI) -->
+<section class="relative h-[870px] w-full overflow-hidden bg-surface-container-low">
+<div class="absolute inset-0">
+<img class="w-full h-full object-cover" data-alt="minimalist luxury interior with sunlight casting soft shadows on a beige linen surface and high-end leather accessories" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4hE19UxdZpSQXvLkqz7O8Zyk7y7cijXyYedrl30LbLcvUkTrt0bs6rVrbImY3XQAc51h8gn8_8pZRR2__qtLquOJAqyabotbCPvIeq3YJcT3oMdnBDObo9eJkzHlByWksiqQZXA_mteLLV6TvVz2c8Q79c5MdHY6zFSNJJPc46qjW9ShCLlsaHXMxAieg0u7F3KHKbmYceuZENajoPX2qD53vtf8QEByo6CKC8tvko0yvi1wdGCxxKBcpCvAMVaRkyAPaL780ZA"/>
+<div class="absolute inset-0 bg-black/20"></div>
+</div>
+<div class="relative h-full container mx-auto px-8 flex flex-col justify-center items-start text-right">
+<span class="text-primary font-body tracking-[0.2em] text-sm font-semibold mb-4 opacity-90">NEW COLLECTION 2024</span>
+<h1 class="font-arabic text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.1] mb-8 max-w-2xl">
+                    كزورا — أناقة تبدأ من خطوتك الأولى
+                </h1>
+<p class="font-arabic text-xl text-secondary max-w-lg mb-10 leading-relaxed">
+                    اكتشف مجموعتنا المختارة من الأحذية والحقائب التي تجمع بين الحرفية التقليدية والتصميم العصري.
+                </p>
+<div class="flex gap-4">
+<a class="px-10 py-4 bg-gradient-to-br from-[#785600] to-[#986D00] text-white rounded-lg font-bold shadow-xl hover:scale-105 transition-transform" href="#">
+                        تسوق الآن
+                    </a>
+</div>
+</div>
+<!-- Slider Dots -->
+<div class="absolute bottom-10 right-1/2 translate-x-1/2 flex gap-3">
+<span class="w-12 h-1 bg-primary"></span>
+<span class="w-12 h-1 bg-white/30"></span>
+<span class="w-12 h-1 bg-white/30"></span>
+<span class="w-12 h-1 bg-white/30"></span>
+</div>
+</section>
+<!-- Category Bento-inspired Grid -->
+<section class="py-24 px-8 container mx-auto">
+<div class="flex justify-between items-end mb-16">
+<div>
+<h2 class="text-3xl font-arabic font-bold text-on-surface mb-2">تسوق حسب الفئة</h2>
+<div class="w-12 h-1 bg-primary"></div>
+</div>
+<a class="text-primary font-arabic font-medium hover:underline" href="#">مشاهدة الكل</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="relative group cursor-pointer overflow-hidden aspect-square rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="close-up of luxury leather handbags in tan and cream tones on a stone pedestal" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDNuBl1FtE_xMkcfAXtGe3n2ff_o2rQIupjh6x6BmTVzcY39FnVvDmR2My5Vm_-F4yGcbS2KgzvgbantcqSh5hHQXXgsDKOGEv2jjLHsjMVvL-d0NC67MASfwoEoGpkzCMBqsdqsiSLi-nsC4jBvUAjP_cp0OitzNKWEA3l9BC7rk8iAv8MqYqwi58kfE_8qFIKpK6LQCbWaixwy7X-pdpqzvewIk19qwh4O9-IWHlLjoDEjcT-MY3urzX3hJYKHdAic1GoUlT4w"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-6 right-6">
+<h3 class="text-white text-2xl font-bold font-arabic">حقائب اليد</h3>
+<p class="text-white/70 text-sm font-arabic">اكتشف المجموعة</p>
+</div>
+</div>
+<div class="relative group cursor-pointer overflow-hidden aspect-square rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="high-end men's leather shoes arranged neatly in a bright minimal studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbbKhwt5WQ0H4GHYqwzjD2ItJ2VFxYA1BLkTwlUm7IBxRxAKFzSlKD5VolSc2eFbQOL38fLmpmQYLbITw9VHaLix9TwbctTjnbKWrM0rVPX_7nuAh5TxpuYPmB03akEewriPlH07Stn5nlD2w97vMY24kzw3Td9Jb70RsHgi5XNzS9FwRo19vB1CjSQ4ZKcx-7tkBY2cZAwtK7AEkju5pdI1JytQaWyePmrA1-sdyICY2frKDkry-fXh8s2GtAWSlcxyU_EMBHkA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-6 right-6">
+<h3 class="text-white text-2xl font-bold font-arabic">أحذية رجالية</h3>
+<p class="text-white/70 text-sm font-arabic">اكتشف المجموعة</p>
+</div>
+</div>
+<div class="relative group cursor-pointer overflow-hidden aspect-square rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="elegant women's heels in soft pastel colors displayed on a marble surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDO_iN6HJCDwKUzBRIGXWLV4XTvrj9wDmjQ2TwYH8JTuiGQ_xAKsKEJC8QdBdjylSzm-yFyhImjIKaElUGIowwSY6j_3QtJ_ByX3hXAwsDSkWr2tYoKYfiCfTiSAsxo4gCSvIIL9-QOOIVdr0hpel3r_0Paamvz2elVzCqnJX5I1JYyO98HLAPoeC78m74edM8pjfhu6sraJCl39PZMPwTVRzUlHoXugFl_TLK-PtrM7zFJDs2HHrovfF9HcC0lLhMg2wONQBcU1g"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-6 right-6">
+<h3 class="text-white text-2xl font-bold font-arabic">أحذية نسائية</h3>
+<p class="text-white/70 text-sm font-arabic">اكتشف المجموعة</p>
+</div>
+</div>
+<div class="relative group cursor-pointer overflow-hidden aspect-square rounded-lg">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="collection of premium accessories like belts and wallets on a warm wood texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVsIxudKZ0OyR9bnMIJdKpTd3zWETyDPIRr46ZBSsD06WfLyl3B1PeOz1Si0D2Kwj_xaTeYwtOmHyup5CLNPEBrBsj0jxxlDDMD7AHNyQm3ohxDt2yHlJrEvHzWTPj83dKQwKrQ2vFx6e_0So0d7KyKAlRD1BW4jkptXg6FA6Mavjd178INyUKK9TGCDOUtg2WgmA443_g5RePmmkDqZCe5fO8glHS2zc4EH7Ch1sGxd_9Dh2_Kuyc0iGYR-MIB4cxfGmUzxJZBw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-6 right-6">
+<h3 class="text-white text-2xl font-bold font-arabic">إكسسوارات</h3>
+<p class="text-white/70 text-sm font-arabic">اكتشف المجموعة</p>
+</div>
+</div>
+</div>
+</section>
+<!-- New Arrivals: Horizontal Scroll -->
+<section class="py-24 bg-surface-container-low overflow-hidden">
+<div class="container mx-auto px-8 mb-12 flex justify-between items-center">
+<h2 class="text-3xl font-arabic font-bold text-on-surface">وصل حديثاً</h2>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+</div>
+</div>
+<div class="flex gap-8 overflow-x-auto px-8 pb-12 custom-scrollbar snap-x no-scrollbar">
+<!-- Product Card 1 -->
+<div class="min-w-[300px] snap-start group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-4 overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="professional portrait of a brown leather oxford shoe on a textured off-white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-JT526T520gE8FuSX73NbMyl0CTCe4P3hE3FpAmnvq9h_CWQltSB51iLNZu4Y7lQxiGsWDwBNY88JHb-S1TDLQaCvE4Re-DdMGVkuoQtDmuQ73GwXFNL034qoG6Bl7JjFr3iUie0m3KJ1WXjwybJUf-5fMmn9_t0i58dHTfXKKaA8Ui_tKDU7vb47IEL2vy45In2OabolbZj3RIiSRrcq4PtIiqMRpUU9hd0cIqbTozGesmjQWYfMgtz2Xamybsl3yNSbGi_9rw"/>
+<button class="absolute top-4 left-4 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+</button>
+</div>
+<h3 class="font-arabic font-bold text-lg text-on-surface">حذاء كلاسيكي بني</h3>
+<div class="flex gap-1.5 my-2">
+<span class="w-3 h-3 rounded-full bg-[#5D4037]"></span>
+<span class="w-3 h-3 rounded-full bg-black"></span>
+<span class="w-3 h-3 rounded-full bg-[#8D6E63]"></span>
+</div>
+<p class="font-body font-bold text-primary">245,000 SYP</p>
+</div>
+<!-- Product Card 2 -->
+<div class="min-w-[300px] snap-start group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-4 overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="minimalist cream colored women's tote bag with gold hardware" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhQan1Ka-GBsBEnV2NANB7944qCfb0ktllBQsTn9nu1-pXYD3ftbd1UDtA35L_eo374QhKIhAdoRtHQ_72gQmfoqlPVoKuSELZ3RuiFcU7yTIWuYgnAZLUw0KCLXJGGW4MDfbFQod1atD5ysXQH9dk2EJXigHylkQMgUl7rBNQ6A2DcaXYrgoU986_QSwzGKES0J7na_zA2KE67uy0jt50UpQ4ZQr6JSscED8RfFaZ5-STG-EVjuYcAygLJSpQwugAL1t2MgaoJw"/>
+<button class="absolute top-4 left-4 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+</button>
+</div>
+<h3 class="font-arabic font-bold text-lg text-on-surface">حقيبة تسوق عصرية</h3>
+<div class="flex gap-1.5 my-2">
+<span class="w-3 h-3 rounded-full bg-[#F5F5DC]"></span>
+<span class="w-3 h-3 rounded-full bg-[#D2B48C]"></span>
+</div>
+<p class="font-body font-bold text-primary">180,000 SYP</p>
+</div>
+<!-- Product Card 3 -->
+<div class="min-w-[300px] snap-start group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-4 overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="sleek black minimalist loafers for men on a clean stone surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6eqL8ynuMxgY0kwYgGiSlUSOxJj6QRVGRAuRzgQILQXYgmPs7k9O7mGd_Ll4ySEAOxa4klPPcu1tXMUAK0eYHPqb916TYcwRZO_UGRP5FGgZgoqNd4NsSYtcxyQyFe-LP2NDmmctyMMaAsdU0v3lRD9y9SVs0O5uXDNFXQ_2V83SNEQXa8ho_62w3vlKtYvKC6DYRK73xhc7bIJuOdtkdPSDle_b-QQR18usrwimzZwW-WhoY8wCn48F1cMKstU-SgWTeLbSDFA"/>
+<button class="absolute top-4 left-4 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+</button>
+</div>
+<h3 class="font-arabic font-bold text-lg text-on-surface">حذاء لوفر رسمي</h3>
+<div class="flex gap-1.5 my-2">
+<span class="w-3 h-3 rounded-full bg-black"></span>
+<span class="w-3 h-3 rounded-full bg-[#1A1A1A]"></span>
+</div>
+<p class="font-body font-bold text-primary">210,000 SYP</p>
+</div>
+<!-- Product Card 4 -->
+<div class="min-w-[300px] snap-start group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-4 overflow-hidden relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="luxury designer belt with high quality bronze buckle and dark leather" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp6gdRJWUscFz1SbMv_rKLFHyIh98GWNdtoV0UPDyPJiXMVjt-fszWt57C4nKDjvT99UsP54YfpAd_nfH0HQnIcSDTQoNpGbnYutJfGHadz7yTNZNi96lgNARrj5SYydqtLPNOfGYyoKzR_Kxnadb7n5h7pXgpYg5ISnSaQJtfu9ryqF_8P4tVkdvHYCTkv7UjshQEIIGu-MWm4K605pnlP3aLZYRFkeAWy37TKa5zUE_sr88Fd-qmt1wxNGZgyKL4xWyZoczYlg"/>
+<button class="absolute top-4 left-4 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+</button>
+</div>
+<h3 class="font-arabic font-bold text-lg text-on-surface">حزام جلد طبيعي</h3>
+<div class="flex gap-1.5 my-2">
+<span class="w-3 h-3 rounded-full bg-black"></span>
+<span class="w-3 h-3 rounded-full bg-[#5D4037]"></span>
+</div>
+<p class="font-body font-bold text-primary">95,000 SYP</p>
+</div>
+</div>
+</section>
+<!-- Best Sellers -->
+<section class="py-24 container mx-auto px-8">
+<h2 class="text-3xl font-arabic font-bold text-on-surface mb-16 text-center">الأكثر مبيعاً</h2>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<!-- Repeated product cards with badge -->
+<div class="group">
+<div class="aspect-[3/4] bg-surface-container-low rounded-lg mb-4 relative overflow-hidden">
+<span class="absolute top-4 right-4 bg-primary text-white text-[10px] px-3 py-1 rounded-full z-10 font-arabic">الأكثر مبيعاً</span>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="top view of high quality white leather sneakers on a minimal cream background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj9k8gj8o6umowAolVGIGWri7OoYc9zbMS-eNie-RVvb9W5Ds-31_tmU2KkbJWiGRJB9iC48lgL56sJmk1AnFBhuQ1Zt4xKeYNyW_ubqe0DvJRnlQrcgA524lq-Syh63nZhbUEZylQpGmBNl7YNxe6c-aOagvGOfgv2k7MPGyHzlNk4fDu6HGkNebbxJqAaUd8D_bkpNecelOOSlOmWegtGdKUV-OzLckuW_5dYXs1BDDrsv92OOitHES3IK9TER68pHpc3hsBZA"/>
+</div>
+<h3 class="font-arabic font-bold text-lg">حذاء رياضي أبيض</h3>
+<p class="font-body font-bold text-primary">165,000 SYP</p>
+</div>
+<div class="group">
+<div class="aspect-[3/4] bg-surface-container-low rounded-lg mb-4 relative overflow-hidden">
+<span class="absolute top-4 right-4 bg-primary text-white text-[10px] px-3 py-1 rounded-full z-10 font-arabic">الأكثر مبيعاً</span>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="fashionable women's ankle boots in suede material dark grey" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcLp2Ws7TkHs5V3nQlqr8I0GkhcsgR46I8FSRG1o1xyKLlcCMJQ99OKepqGNqrpJ63glnhHic9Pbym3hO4ZTgAGZXXyK25uRSizsTRmgIIKo0v5TkDjoIJ4KNVrkqVbX9wWifCa2KItzYmbMkA6vR96QpjtYyVKMJnvLWo_Qxe_bQhwd6ZHt4fWwOWkrDzr-fkdaefE0UWfpWw_FtbKBYlHe1f6UCw-leAR8ZXAzrIRA04plaV5kfL2MujzbbdWqyI5C5zMTkxqQ"/>
+</div>
+<h3 class="font-arabic font-bold text-lg">بوت نسائي شامواه</h3>
+<p class="font-body font-bold text-primary">280,000 SYP</p>
+</div>
+<div class="group">
+<div class="aspect-[3/4] bg-surface-container-low rounded-lg mb-4 relative overflow-hidden">
+<span class="absolute top-4 right-4 bg-primary text-white text-[10px] px-3 py-1 rounded-full z-10 font-arabic">الأكثر مبيعاً</span>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="close-up detail of a handmade leather wallet with fine stitching" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8HcL9s9j9r4cueHjFB9XK-PPmsaiTWOTFsKd3Ej1smmINYG3_fuCHF2c27IzCvo92YdGatdO-8osvlGKooeNn9m7XuYDquW7PybD0BAI_EPWgXyQc3qd1T5xDtPQmvjFmxd0VM-so_TBdnIXQhDBM4IZcjbh_RaA-4ORU_S3n8QaL54YIm4ry9ccrq1yrnAROsbbIaKEodOG4s3EV0OUErfDWL20DyF_MPR-vmHIrkeb-EzHULenm7ypJiYsuG4-m5Ts4U3TpSg"/>
+</div>
+<h3 class="font-arabic font-bold text-lg">محفظة جيب كلاسيك</h3>
+<p class="font-body font-bold text-primary">75,000 SYP</p>
+</div>
+<div class="group">
+<div class="aspect-[3/4] bg-surface-container-low rounded-lg mb-4 relative overflow-hidden">
+<span class="absolute top-4 right-4 bg-primary text-white text-[10px] px-3 py-1 rounded-full z-10 font-arabic">الأكثر مبيعاً</span>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="minimalist backpack in charcoal grey for daily urban use" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANxfzmDz08GVslvVYehz9pQv4QCjHGLJdKsvVtFwlc-w6h1PVMA3V1vw41Lz5vvIbZEqXc6VkggTbv_b5zr4WVkYeZpjZqsfR-RGyBGbz13hWzrbA9QBsDVdpNEj3zY94q3GgTyLcBPE1atNZYmsrqAYiou4BfHByaZWaX-zyaIhSz4F64x8tE8CgDmgpXcRvgdRsAQT3dyRAnIr5XZ1Bi_D-OaGJOVzAmapVLoMORZipecAPh6HVouhV8ewLwShQvN4Ixijxifg"/>
+</div>
+<h3 class="font-arabic font-bold text-lg">حقيبة ظهر مودرن</h3>
+<p class="font-body font-bold text-primary">195,000 SYP</p>
+</div>
+</div>
+</section>
+<!-- Promotional Banner -->
+<section class="relative h-[614px] w-full flex items-center justify-center overflow-hidden">
+<img class="absolute inset-0 w-full h-full object-cover" data-alt="lifestyle photography of a stylish person walking in an urban syrian city setting with golden afternoon light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxZ6ceFU0CElsRpGIx-ni7tDd9Cu6_cd2HCVjaXqOEz3Q1p3MUhe0Xup_etU3488hvOrZ-z0URtyGGQRz6-h_-rySSi81HX3koZEWA4RAkiw1ZdcWcZ9vQCA9K9NwNpuB86He9PdiOIWXnH1k22jg3JmowsINxRQfucsSgRj6y3Aysap93nwKrqxNWGpV1tX1fwMNSmWVmqmIGnfPqT-Cg43g1OvDknpcqQiLziZ0pecjHcxlk_myFU2di9nyxTJglKffCnVnSqw"/>
+<div class="absolute inset-0 bg-black/40"></div>
+<div class="relative text-center px-8">
+<h2 class="text-4xl md:text-6xl font-arabic font-extrabold text-white mb-6">توصيل لكل سوريا</h2>
+<p class="text-white/90 text-xl font-arabic mb-10 max-w-2xl mx-auto">أينما كنت، نصل إليك. خدمة التوصيل السريع لجميع المحافظات السورية.</p>
+<a class="inline-block px-12 py-4 border-2 border-white text-white font-bold rounded-lg hover:bg-white hover:text-primary transition-all" href="#">اطلب الآن</a>
+</div>
+</section>
+<!-- Offers Section -->
+<section class="py-24 bg-surface">
+<div class="container mx-auto px-8">
+<div class="flex justify-between items-center mb-16">
+<h2 class="text-3xl font-arabic font-bold text-on-surface">عروض حصرية</h2>
+<span class="text-error font-arabic font-bold animate-pulse">ينتهي العرض قريباً</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-6 relative overflow-hidden shadow-sm">
+<div class="absolute top-4 right-4 bg-error text-white text-xs font-bold px-3 py-1.5 rounded-lg z-10">خصم 25%</div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="elegant dark blue dress shoes on a light gray concrete surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzfAMg-Zo5Fp39YWNzE_EM4zK9MfUaasz62HvezZWAfKJ3LFVFQQQhy9QGYkZhteqGR4GmQAPRSMRbp7KARYc17RgzuweBA_T9PVZ3L6ThKgcnhlWCMDSSnc5hBj6KYlDTnw4psY9lI4zTt2FvJ1bKJZ4aytvSItvOxtEEmXyxtAu5dO6x_kfsYNhBAa94yrwPMLcBWg-YuK4EPcsJCn5P_y8vt9SufYNcZc4eMzTeGBFq16__W3cPcH4zhDWPNvEM61MyKXhCWQ"/>
+</div>
+<h3 class="font-arabic font-bold text-xl mb-2">حذاء كلاسيك كحلي</h3>
+<div class="flex items-center gap-4">
+<span class="font-body font-bold text-error text-xl">185,000 SYP</span>
+<span class="font-body text-secondary line-through">246,000 SYP</span>
+</div>
+</div>
+<div class="group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-6 relative overflow-hidden shadow-sm">
+<div class="absolute top-4 right-4 bg-error text-white text-xs font-bold px-3 py-1.5 rounded-lg z-10">خصم 40%</div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="stylish red leather shoulder bag for women with silver buckle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjLbqpJREO1VAPTQZ8D0MdYS7xV9uEp38m7vXCyVTVrdhpCavAXXYvGbJdoap6XxqewJwsQS4yFQH0MFVta81qo0CcPwyt_0TDf9FEa8arjiTFdC1HZyt3U8ogOHX_XiEjqGwQqAxo4utH64TDZxuxb7YmGLHKPWB5qtEN4eG966a2UY2rgG_nzYzn0bwbOM0diyvk5bpGHX9bGY6KiHMereCOu-d1Ew5jF_a0pQeu8WuEDbfX890G5iSk5xEpFASHHDzZMty7Og"/>
+</div>
+<h3 class="font-arabic font-bold text-xl mb-2">حقيبة كتف حمراء</h3>
+<div class="flex items-center gap-4">
+<span class="font-body font-bold text-error text-xl">120,000 SYP</span>
+<span class="font-body text-secondary line-through">200,000 SYP</span>
+</div>
+</div>
+<div class="group">
+<div class="aspect-[3/4] bg-white rounded-lg mb-6 relative overflow-hidden shadow-sm">
+<div class="absolute top-4 right-4 bg-error text-white text-xs font-bold px-3 py-1.5 rounded-lg z-10">خصم 15%</div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="casual summer loafers in beige fabric on a beach themed background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKHGmj4UGxXPzY4iScm6edlHDhsPNJx-2-_JjYvhpu9PfiYCABY641YXvfkrdisYmOG0XW2TUGujA545dpLPIJ_AxelwWi93Xj7hbKpHnJvYcGsVmpVL9k9ZyA6QrNrB7xjFjIpSB0Yym52GVWHhaNv96GagruS_D6o2NYrFmCMOyoSsg0QQgemOJCykQaGc3p3j67NRB_yzhe8XTaV7RiRplx4vL7n7zVPPzmaeBrPj1hUxZY3-GSdpNIv9Nu581mjwoYeARFLw"/>
+</div>
+<h3 class="font-arabic font-bold text-xl mb-2">حذاء صيفي قماش</h3>
+<div class="flex items-center gap-4">
+<span class="font-body font-bold text-error text-xl">145,000 SYP</span>
+<span class="font-body text-secondary line-through">170,000 SYP</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- WhatsApp Floating Action -->
+<a class="fixed bottom-8 left-8 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-2xl z-50 hover:scale-110 transition-transform" href="https://wa.me/yournumber">
+<svg fill="currentColor" height="28" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path></svg>
+</a>
+<!-- Footer -->
+<footer class="bg-[#F2EDE8] dark:bg-[#1A1A1A] w-full rounded-t-lg">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-16 px-12 py-20 text-right direction-rtl">
+<div>
+<h4 class="text-xl font-bold text-[#1A1A1A] dark:text-[#FAF8F5] mb-4 font-brand">كزورا</h4>
+<p class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic leading-relaxed">
+                    متجركم الأول في سوريا لكل ما هو عصري ومميز في عالم الحقائب والأحذية. جودة استثنائية وتصاميم تحاكي ذوقكم الرفيع.
+                </p>
+<div class="flex gap-4 mt-8 justify-end">
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="facebook">social_leaderboard</span>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="instagram">camera</span>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="twitter">alternate_email</span>
+</div>
+</div>
+<div>
+<h4 class="text-primary font-bold mb-6 font-arabic">روابط سريعة</h4>
+<ul class="space-y-4">
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">من نحن</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">اتصل بنا</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">الأسئلة الشائعة</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">تتبع الطلب</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-primary font-bold mb-6 font-arabic">سياسات المتجر</h4>
+<ul class="space-y-4">
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">سياسة الخصوصية</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">الشروط والأحكام</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">سياسة الإرجاع</a></li>
+<li><a class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic hover:translate-x-[-4px] hover:text-[#B8860B] transition-all block" href="#">الشحن والتوصيل</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-primary font-bold mb-6 font-arabic">النشرة البريدية</h4>
+<p class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic mb-6">اشترك ليصلك جديد عروضنا وأحدث التشكيلات.</p>
+<div class="relative">
+<input class="w-full bg-white dark:bg-[#2A2A2A] border-none focus:ring-1 focus:ring-primary p-4 rounded-lg font-arabic text-sm" placeholder="البريد الإلكتروني" type="email"/>
+<button class="absolute left-2 top-1/2 -translate-y-1/2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-arabic">اشترك</button>
+</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/10 px-12 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-[#6B6560] dark:text-[#E4E2DF] font-arabic text-sm">© 2024 كزورا. جميع الحقوق محفوظة.</p>
+<div class="flex gap-4 items-center grayscale opacity-60">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,78 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --font-tajawal: 'Tajawal', sans-serif;
+  --font-noto-arabic: 'Noto Sans Arabic', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  background-color: #FAF8F5;
+  color: #1A1A1A;
+  font-family: 'Noto Sans Arabic', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DDD8D0; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #B8860B; }
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Bronze gradient button */
+.btn-bronze {
+  background: linear-gradient(135deg, #785600 0%, #986D00 100%);
+  color: white;
+  transition: filter 0.2s, transform 0.15s;
+}
+.btn-bronze:hover { filter: brightness(1.08); }
+.btn-bronze:active { transform: scale(0.97); }
+
+/* Shimmer skeleton */
+.shimmer {
+  background: linear-gradient(90deg, #F5F3F0 25%, #ECEAE6 50%, #F5F3F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Fade-in for dropdowns */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out forwards;
+}
+
+/* RTL flip for directional icons */
+[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+
+/* Focus ring */
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none;
+  border-color: #785600;
+}
+

@@ -1,0 +1,8 @@
+app/api/orders/route.ts(94,28): error TS2802: Type 'Set<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+components/admin/OrderTable.tsx(5,32): error TS2305: Module '"@/lib/constants"' has no exported member 'SHIPPING_LABELS'.
+lib/auth.ts(49,9): error TS18048: 'session.user' is possibly 'undefined'.
+lib/auth.ts(49,22): error TS2339: Property 'id' does not exist on type '{ name?: string | null | undefined; email?: string | null | undefined; image?: string | null | undefined; }'.
+lib/auth.ts(50,9): error TS18048: 'session.user' is possibly 'undefined'.
+lib/auth.ts(51,9): error TS18048: 'session.user' is possibly 'undefined'.
+scripts/seed-admin.ts(11,25): error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.
+scripts/seed-demo-data.ts(7,25): error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.
