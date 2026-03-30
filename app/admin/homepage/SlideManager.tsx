@@ -390,6 +390,21 @@ export default function SlideManager() {
                     }));
                   }}
                   onRemoveImage={() => {
+                    if (form.desktop_image && !form.desktop_image.isLocal && form.desktop_image.public_id) {
+                      fetch('/api/images/delete', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ public_id: form.desktop_image.public_id })
+                      }).catch(err => console.error(err))
+                    }
+                    if (form.mobile_image && !form.mobile_image.isLocal && form.mobile_image.public_id) {
+                      fetch('/api/images/delete', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ public_id: form.mobile_image.public_id })
+                      }).catch(err => console.error(err))
+                    }
+
                     if (form.desktop_image?.isLocal && form.desktop_image.url) {
                       URL.revokeObjectURL(form.desktop_image.url);
                     }

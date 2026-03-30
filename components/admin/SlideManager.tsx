@@ -229,8 +229,18 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
           maxFiles={1}
           onAddFiles={handleDesktopAdd}
           onRemoveImage={() => {
-            if (desktopImage && !desktopImage.isLocal) setImagesToDelete(p => [...p, desktopImage.public_id])
-            if (desktopImage?.isLocal) URL.revokeObjectURL(desktopImage.url)
+            try {
+              if (desktopImage && !desktopImage.isLocal && desktopImage.public_id) {
+                fetch('/api/images/delete', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ public_id: desktopImage.public_id })
+                }).catch(err => console.error(err))
+              }
+              if (desktopImage?.isLocal && desktopImage.url) {
+                URL.revokeObjectURL(desktopImage.url)
+              }
+            } catch (e) {}
             setDesktopImage(null)
           }}
           onSetMain={() => {}}
@@ -244,8 +254,18 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
           maxFiles={1}
           onAddFiles={handleMobileAdd}
           onRemoveImage={() => {
-            if (mobileImage && !mobileImage.isLocal) setImagesToDelete(p => [...p, mobileImage.public_id])
-            if (mobileImage?.isLocal) URL.revokeObjectURL(mobileImage.url)
+            try {
+              if (mobileImage && !mobileImage.isLocal && mobileImage.public_id) {
+                fetch('/api/images/delete', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ public_id: mobileImage.public_id })
+                }).catch(err => console.error(err))
+              }
+              if (mobileImage?.isLocal && mobileImage.url) {
+                URL.revokeObjectURL(mobileImage.url)
+              }
+            } catch (e) {}
             setMobileImage(null)
           }}
           onSetMain={() => {}}

@@ -125,10 +125,15 @@ export default function ProductForm({
   const handleImageRemove = useCallback((id: string) => {
     setImages(prev => {
       const imgToRemove = prev.find(img => img.id === id)
-      if (imgToRemove && !imgToRemove.isLocal) {
-        setImagesToDelete(d => [...d, imgToRemove.public_id])
+      if (imgToRemove && !imgToRemove.isLocal && imgToRemove.public_id) {
+        // Delete immediately from Cloudinary
+        fetch('/api/images/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ public_id: imgToRemove.public_id })
+        }).catch(err => console.error('Failed to delete image', err))
       }
-      if (imgToRemove?.isLocal) URL.revokeObjectURL(imgToRemove.url)
+      if (imgToRemove?.isLocal && imgToRemove.url) URL.revokeObjectURL(imgToRemove.url)
       
       const filtered = prev.filter(img => img.id !== id)
       if (imgToRemove?.is_main && filtered.length > 0) {
@@ -173,11 +178,7 @@ export default function ProductForm({
         })
       )
 
-      if (imagesToDelete.length > 0) {
-        await Promise.all(imagesToDelete.map(pid => 
-          fetch('/api/images/delete', { method: 'DELETE', body: JSON.stringify({ public_id: pid }) })
-        ))
-      }
+
 
       const payload = {
         ...data,

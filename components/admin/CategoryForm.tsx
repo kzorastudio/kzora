@@ -86,14 +86,7 @@ export default function CategoryForm({ initialData, onSuccess }: CategoryFormPro
         }
       }
 
-      // 2. Delete old image if changed
-      if (imageToDelete) {
-        await fetch('/api/images/delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ public_id: imageToDelete })
-        })
-      }
+
 
       const payload = {
         ...data,
@@ -143,10 +136,15 @@ export default function CategoryForm({ initialData, onSuccess }: CategoryFormPro
   }
 
   function handleImageRemove(_id: string) {
-    if (image && !image.isLocal) {
-      setImageToDelete(image.public_id)
+    if (image && !image.isLocal && image.public_id) {
+      // Delete immediately from Cloudinary
+      fetch('/api/images/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_id: image.public_id })
+      }).catch(err => console.error('Failed to delete image', err))
     }
-    if (image?.isLocal) {
+    if (image?.isLocal && image.url) {
       URL.revokeObjectURL(image.url)
     }
     setImage(null)
