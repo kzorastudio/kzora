@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ProductFull } from '@/types'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, cn } from '@/lib/utils'
 
 interface Props {
   categorySlug: string
@@ -24,6 +24,7 @@ async function fetchRelated(categorySlug: string, excludeId: string): Promise<Pr
     .eq('is_published', true)
     .eq('category_id', cat.id)
     .neq('id', excludeId)
+    .order('stock_status', { ascending: true })
     .order('created_at', { ascending: false })
     .limit(4)
 
@@ -56,7 +57,12 @@ export default async function RelatedProducts({ categorySlug, excludeId }: Props
           <Link
             key={product.id}
             href={`/product/${product.slug}`}
-            className="min-w-[240px] sm:min-w-[280px] snap-start shrink-0 bg-white rounded-2xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow duration-300"
+            className={cn(
+              "min-w-[240px] sm:min-w-[280px] snap-start shrink-0 rounded-2xl overflow-hidden group transition-all duration-300",
+              product.stock_status === 'out_of_stock'
+                ? 'bg-[#F9F9F9] opacity-80 hover:opacity-100 grayscale-[0.2] border border-transparent hover:border-[#E8E3DB]' 
+                : 'bg-white shadow-sm hover:shadow-md'
+            )}
           >
             <div className="aspect-[3/4] overflow-hidden relative bg-[#F5F1EB]">
               {imageUrl && (
@@ -65,8 +71,28 @@ export default async function RelatedProducts({ categorySlug, excludeId }: Props
                   alt={product.name}
                   fill
                   sizes="280px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className={cn(
+                    "object-cover transition-transform duration-500",
+                    product.stock_status !== 'out_of_stock' && "group-hover:scale-105",
+                    product.stock_status === 'out_of_stock' && "opacity-90"
+                  )}
                 />
+              )}
+              {/* Out of Stock subtle badge */}
+              {product.stock_status === 'out_of_stock' && (
+                <div className="absolute top-3 right-3 z-0">
+                  <span className="text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full bg-[#E8E4DE] text-[#6B6560] shadow-sm">
+                    نفدت الكمية
+                  </span>
+                </div>
+              )}
+              {/* Low Stock Badge */}
+              {product.stock_status === 'low_stock' && (
+                <div className="absolute top-3 right-3 z-0">
+                   <span className="text-[10px] font-arabic font-bold px-2 py-1 rounded-full bg-[#BA1A1A]/10 text-[#BA1A1A] border border-[#BA1A1A]/20 shadow-sm">
+                     كمية محدودة
+                   </span>
+                </div>
               )}
             </div>
             <div className="p-4">
@@ -74,7 +100,10 @@ export default async function RelatedProducts({ categorySlug, excludeId }: Props
                 {product.name}
               </h3>
               <div className="flex items-center justify-between">
-                <span className="font-arabic font-bold text-[#785600] tabular-nums">
+                <span className={cn(
+                  "font-arabic font-bold tabular-nums",
+                  product.stock_status === 'out_of_stock' ? 'text-[#9E9890]' : 'text-[#785600]'
+                )}>
                   {formatPrice(price, 'USD')}
                 </span>
               </div>

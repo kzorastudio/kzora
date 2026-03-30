@@ -41,7 +41,8 @@ async function getCategoryProducts(categoryId: string): Promise<ProductFull[]> {
     `)
     .eq('is_published', true)
     .eq('category_id', categoryId)
-    .order('sort_order')
+    .order('stock_status', { ascending: true })
+    .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error || !data) return []

@@ -71,11 +71,26 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
           {/* Details */}
           <div className="md:col-span-4 flex flex-col gap-6">
             <div>
-              <h1 className="font-arabic text-3xl sm:text-4xl font-bold text-[#1A1A1A] leading-tight mb-2">
-                {product.name}
-              </h1>
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h1 className="font-arabic text-3xl sm:text-4xl font-bold text-[#1A1A1A] leading-tight flex-1">
+                  {product.name}
+                </h1>
+                
+                {product.stock_status === 'out_of_stock' && (
+                  <span className="shrink-0 bg-[#1A1A1A] text-white px-3 py-1.5 rounded-full font-arabic font-bold text-sm shadow-sm whitespace-nowrap">
+                    نفدت الكمية
+                  </span>
+                )}
+                
+                {product.stock_status === 'low_stock' && (
+                  <span className="shrink-0 bg-[#BA1A1A]/10 text-[#BA1A1A] border border-[#BA1A1A]/20 px-3 py-1.5 rounded-full font-arabic font-bold text-sm shadow-sm whitespace-nowrap">
+                    كمية محدودة
+                  </span>
+                )}
+              </div>
+
               {product.category && (
-                <Link href={`/category/${product.category.slug}`} className="text-sm font-arabic text-[#9E9890] hover:text-[#785600]">
+                <Link href={`/category/${product.category.slug}`} className="text-sm font-arabic text-[#9E9890] hover:text-[#785600] inline-block mt-2">
                   {product.category.name_ar}
                 </Link>
               )}

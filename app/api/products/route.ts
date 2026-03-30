@@ -101,6 +101,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort
+    // We strictly order by stock_status first ('in_stock' < 'low_stock' < 'out_of_stock')
+    query = query.order('stock_status', { ascending: true })
     switch (sort) {
       case 'price_asc':
         query = query.order('price_syp', { ascending: true })

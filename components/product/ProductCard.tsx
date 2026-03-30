@@ -115,7 +115,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
       dir="rtl"
       className={cn(
         'group relative cursor-pointer flex flex-col h-full',
-        'bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300',
+        'rounded-2xl transition-all duration-300',
+        product.stock_status === 'out_of_stock' 
+          ? 'bg-[#F9F9F9] opacity-80 hover:opacity-100 grayscale-[0.2] shadow-none border border-transparent hover:border-[#E8E3DB]' 
+          : 'bg-white shadow-sm hover:shadow-md',
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -135,20 +138,21 @@ export function ProductCard({ product, className }: ProductCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={cn(
               'object-cover transition-transform duration-700 ease-out',
-              isHovered ? 'scale-[1.04]' : 'scale-100'
+              isHovered && product.stock_status !== 'out_of_stock' ? 'scale-[1.04]' : 'scale-100',
+              product.stock_status === 'out_of_stock' && 'opacity-90'
             )}
             priority={false}
           />
         ) : (
           <div className="flex flex-col items-center gap-3 opacity-20 group-hover:opacity-30 transition-opacity">
-             <ShoppingBag size={48} strokeWidth={1} className="text-[#785600]" />
-             <span className="text-[10px] font-arabic font-bold uppercase tracking-widest text-[#785600]">K Z O R A</span>
+            <ShoppingBag size={48} strokeWidth={1} className="text-[#785600]" />
+            <span className="text-[10px] font-arabic font-bold uppercase tracking-widest text-[#785600]">K Z O R A</span>
           </div>
         )}
 
         {/* Tag badge */}
-        {priorityTag && (
-          <div className="absolute top-3 right-3">
+        {priorityTag && product.stock_status !== 'out_of_stock' && (
+          <div className="absolute top-3 right-3 z-0">
             <span
               className={cn(
                 'text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full',
@@ -156,7 +160,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                   ? 'bg-[#1A1A1A] text-white'
                   : priorityTag === 'on_sale'
                   ? 'bg-[#BA1A1A] text-white'
-                  : 'bg-white text-[#785600]'
+                  : 'bg-white text-[#785600] shadow-sm'
               )}
             >
               {TAG_LABELS[priorityTag]}
@@ -164,20 +168,38 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
         )}
 
+        {/* Out of Stock subtle badge */}
+        {product.stock_status === 'out_of_stock' && (
+          <div className="absolute top-3 right-3 z-0">
+            <span className="text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full bg-[#E8E4DE] text-[#6B6560] shadow-sm">
+              نفدت الكمية
+            </span>
+          </div>
+        )}
+
+        {/* Low Stock Badge (Secondary tag slot) */}
+        {product.stock_status === 'low_stock' && (
+          <div className={cn("absolute z-0", priorityTag ? "top-10 right-3" : "top-3 right-3")}>
+             <span className="text-[10px] font-arabic font-bold px-2 py-1.5 rounded-full bg-[#BA1A1A]/10 text-[#BA1A1A] border border-[#BA1A1A]/20 shadow-sm">
+               كمية محدودة
+             </span>
+          </div>
+        )}
+
         {/* Discount % badge */}
-        {hasDiscount && discountPct > 0 && (
-          <div className="absolute top-3 left-3">
-            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#BA1A1A] text-white">
+        {hasDiscount && discountPct > 0 && product.stock_status !== 'out_of_stock' && (
+          <div className="absolute top-3 left-3 z-0">
+            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#BA1A1A] text-white shadow-sm">
               -{discountPct}%
             </span>
           </div>
         )}
 
-        {/* Quick add — appears on hover */}
-        {!showSizeBar && (
+        {/* Quick add — appears on hover (only if in stock) */}
+        {!showSizeBar && product.stock_status !== 'out_of_stock' && (
           <div
             className={cn(
-              'absolute bottom-0 left-0 right-0 px-3 pb-3',
+              'absolute bottom-0 left-0 right-0 px-3 pb-3 z-20',
               'transition-all duration-300',
               isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
             )}
@@ -279,7 +301,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
         {/* Price */}
         <div className="mt-auto flex items-center gap-2 pt-1" dir="ltr">
-          <span className="font-arabic font-semibold text-sm text-[#1A1A1A] tabular-nums">
+          <span className={cn(
+            "font-arabic font-semibold text-sm tabular-nums",
+            product.stock_status === 'out_of_stock' ? 'text-[#9E9890]' : 'text-[#1A1A1A]'
+          )}>
             {formatPrice(displayPrice, currency)}
           </span>
           {hasDiscount && (
