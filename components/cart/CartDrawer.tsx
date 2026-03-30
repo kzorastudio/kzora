@@ -74,7 +74,7 @@ export function CartDrawer({ className }: CartDrawerProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40"
+            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40 md:hidden"
             onClick={closeCart}
             aria-hidden
           />
@@ -94,7 +94,7 @@ export function CartDrawer({ className }: CartDrawerProps) {
               'fixed top-0 right-0 bottom-0 z-50',
               'w-full max-w-[400px]',
               'bg-surface flex flex-col',
-              'shadow-ambient-xl',
+              'shadow-ambient-xl md:hidden',
               className
             )}
           >

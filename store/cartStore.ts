@@ -56,7 +56,6 @@ export const useCartStore = create<CartStore>()(
         } else {
           set({ items: [...items, newItem] })
         }
-        set({ isOpen: true })
       },
 
       removeItem: (productId, color, size) => {

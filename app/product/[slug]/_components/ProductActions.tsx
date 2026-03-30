@@ -9,14 +9,17 @@ import { useCartStore } from '@/store/cartStore'
 import type { ProductFull, ProductColor, CartItem } from '@/types'
 import toast from 'react-hot-toast'
 
+import { useRouter } from 'next/navigation'
+
 interface Props {
   product: ProductFull
   onColorChange?: (color: ProductColor | null) => void
 }
 
 export default function ProductActions({ product, onColorChange }: Props) {
+  const router = useRouter()
   const { currency, setCurrency } = useCurrencyStore()
-  const { addItem } = useCartStore()
+  const { addItem, openCart } = useCartStore()
 
   const [selectedColorId, setSelectedColorId] = useState<string | null>(
     product.colors.length === 1 ? product.colors[0].id : null
@@ -68,9 +71,17 @@ export default function ProductActions({ product, onColorChange }: Props) {
       discount_price_usd: product.discount_price_usd ?? null,
     }
     addItem(item)
-    toast.success(`تمت إضافة ${quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى السلة`)
-    setQuantity(1)
-  }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem])
+    
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+
+    if (isDesktop) {
+      router.push('/checkout')
+    } else {
+      openCart()
+      toast.success(`تمت إضافة ${quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى السلة`)
+      setQuantity(1)
+    }
+  }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, openCart, router])
 
   return (
     <div dir="rtl" className="space-y-6">
