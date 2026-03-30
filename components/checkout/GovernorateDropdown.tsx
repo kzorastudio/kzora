@@ -54,11 +54,7 @@ export function GovernorateDropdown({
             'cursor-pointer disabled:cursor-not-allowed'
           )}
         >
-          <option value="">
-            {isDisabled
-              ? 'اختر شركة الشحن أولاً'
-              : 'اختر المحافظة'}
-          </option>
+          <option value="">اختر المحافظة</option>
           {governorates.map((gov) => (
             <option key={gov} value={gov}>
               {gov}
@@ -74,12 +70,6 @@ export function GovernorateDropdown({
           )}
         />
       </div>
-
-      {!shippingCompanySelected && !error && (
-        <p className="text-xs font-arabic text-[#9E9890]">
-          يرجى اختيار شركة الشحن أولاً لمعرفة المحافظات المتاحة
-        </p>
-      )}
 
       {error && (
         <p className="text-xs font-arabic text-[#BA1A1A]">{error}</p>

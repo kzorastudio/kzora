@@ -67,25 +67,55 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
       .catch(() => {})
   }, [])
 
+  // Watchers for compatibility checks
   useEffect(() => {
-    setValue('governorate', '')
-    setValue('address', '')
-  }, [shippingCompany, setValue])
-
-  useEffect(() => {
+    // When governorate changes, clear address to ensure it's re-entered/selected
     setValue('address', '')
   }, [governorate, setValue])
 
-  // Get governorates for selected company
+  useEffect(() => {
+    // When company changes, check if current governorate is still supported
+    if (shippingCompany && governorate) {
+       const company = shippingMethods.find(m => m.slug === shippingCompany)
+       const supported = company?.governorates?.some((g: any) => g.name === governorate)
+       if (!supported) {
+          setValue('governorate', '')
+          setValue('address', '')
+       } else {
+         // Even if governorate is supported, address might not be
+         setValue('address', '')
+       }
+    }
+  }, [shippingCompany, setValue, shippingMethods])
+
+  // Get governorates (all if none selected, or specific to company)
   const selectedCompanyGovernorates = useMemo(() => {
-    if (!shippingCompany) return []
+    if (!shippingCompany) {
+      // Return ALL governorates that are active in at least one shipping method
+      const all = new Set<string>()
+      shippingMethods.forEach(m => m.governorates?.forEach((g: any) => all.add(g.name)))
+      return Array.from(all).sort()
+    }
     const company = shippingMethods.find(m => m.slug === shippingCompany)
     return company?.governorates?.map((g: any) => g.name) || []
   }, [shippingCompany, shippingMethods])
 
-  // Get branch addresses for selected company and governorate
+  // Get branch addresses (aggregated if none selected, or specific to company + gov)
   const selectedCompanyGovernorateBranches = useMemo(() => {
-    if (!shippingCompany || !governorate) return []
+    if (!governorate) return []
+    
+    if (!shippingCompany) {
+      // Aggregated branches from all companies for this governorate
+      const all = new Set<string>()
+      shippingMethods.forEach(m => {
+        const gov = m.governorates?.find((g: any) => g.name === governorate)
+        if (gov?.branch_addresses) {
+          gov.branch_addresses.split('\n').forEach((s: string) => all.add(s.trim()))
+        }
+      })
+      return Array.from(all).filter(Boolean).sort()
+    }
+
     const company = shippingMethods.find(m => m.slug === shippingCompany)
     const gov = company?.governorates?.find((g: any) => g.name === governorate)
     if (!gov?.branch_addresses) return []
