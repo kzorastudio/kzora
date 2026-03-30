@@ -55,13 +55,14 @@ export async function POST(request: NextRequest) {
                 width:        1200,
                 height:       1500,
                 crop:         'limit',
-                quality:      'auto:best',
+                quality:      'auto',
                 fetch_format: 'auto',
               },
             ],
           },
           (error, result) => {
             if (error || !result) {
+              console.error('Cloudinary upload error:', error)
               reject(error || new Error('Upload failed'))
             } else {
               resolve(result)
@@ -77,8 +78,8 @@ export async function POST(request: NextRequest) {
       { url: result.secure_url, public_id: result.public_id },
       { status: 201 }
     )
-  } catch (err) {
+  } catch (err: any) {
     console.error('Image upload unexpected error:', err)
-    return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
+    return NextResponse.json({ error: err.message || 'Failed to upload image' }, { status: 500 })
   }
 }
