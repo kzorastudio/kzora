@@ -3,6 +3,7 @@ import { Tajawal, Noto_Sans_Arabic, Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import Providers from '@/components/Providers'
+import ScrollToTop from '@/components/layout/ScrollToTop'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl" className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
       <body>
         <Providers>
+          <ScrollToTop />
           {children}
           <Toaster
             position="bottom-center"
