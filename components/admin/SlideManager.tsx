@@ -108,8 +108,13 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
         fd.append('file', desktop.file)
         fd.append('folder', 'hero-slides')
         const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
-        const data = await res.json()
-        desktop = { ...desktop, url: data.url, public_id: data.public_id, isLocal: false }
+        const resData = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setSaveError(resData.error || 'فشل رفع صورة سطح المكتب')
+          setSaving(false)
+          return
+        }
+        desktop = { ...desktop, url: resData.url, public_id: resData.public_id, isLocal: false }
       }
 
       // 2. Upload Mobile Image
@@ -119,8 +124,13 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
         fd.append('file', mobile.file)
         fd.append('folder', 'hero-slides/mobile')
         const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
-        const data = await res.json()
-        mobile = { ...mobile, url: data.url, public_id: data.public_id, isLocal: false }
+        const resData = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setSaveError(resData.error || 'فشل رفع صورة الهاتف')
+          setSaving(false)
+          return
+        }
+        mobile = { ...mobile, url: resData.url, public_id: resData.public_id, isLocal: false }
       }
 
       // 3. Delete queued images
