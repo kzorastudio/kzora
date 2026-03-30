@@ -88,8 +88,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Category not found or update failed' }, { status: 404 })
     }
 
-    // 3. Delete old image from Cloudinary if changed
-    if (oldPublicId && body.image_public_id && oldPublicId !== body.image_public_id) {
+    // 3. Delete old image from Cloudinary if changed or removed
+    if (oldPublicId && oldPublicId !== (body.image_public_id ?? null)) {
        try {
          await deleteImage(oldPublicId)
        } catch (err) {

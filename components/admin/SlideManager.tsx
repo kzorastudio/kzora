@@ -63,8 +63,6 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
       : null
   )
   
-  const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
-
   const {
     register,
     handleSubmit,
@@ -129,18 +127,7 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
         finalMobile = { ...mobileImage, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
       }
 
-      // 3. Delete old images
-      if (imagesToDelete.length > 0) {
-        await Promise.all(imagesToDelete.map(pid => 
-          fetch('/api/images/delete', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ public_id: pid })
-          })
-        ))
-      }
-
-      // 4. Save Slide
+      // 3. Save Slide
       const body = {
         ...data,
         desktop_image_url: finalDesktop.url,

@@ -35,8 +35,6 @@ export default function CategoryForm({ initialData, onSuccess }: CategoryFormPro
       : null
   )
 
-  const [imageToDelete, setImageToDelete] = useState<string | null>(null)
-
   const {
     register,
     control,

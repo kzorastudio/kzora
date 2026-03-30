@@ -66,11 +66,11 @@ export async function PUT(
     // 3. Delete old images from Cloudinary if changed
     const deletePromises: Promise<void>[] = []
 
-    if (oldDesktopPublicId && body.desktop_image_public_id && oldDesktopPublicId !== body.desktop_image_public_id) {
+    if (oldDesktopPublicId && oldDesktopPublicId !== (body.desktop_image_public_id ?? null)) {
        deletePromises.push(deleteImage(oldDesktopPublicId).catch(e => console.error('Desktop image delete error:', e)))
     }
-    
-    if (oldMobilePublicId && body.mobile_image_public_id && oldMobilePublicId !== body.mobile_image_public_id) {
+
+    if (oldMobilePublicId && oldMobilePublicId !== (body.mobile_image_public_id ?? null)) {
        deletePromises.push(deleteImage(oldMobilePublicId).catch(e => console.error('Mobile image delete error:', e)))
     }
 
