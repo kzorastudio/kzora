@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import AdminHeader from '@/components/admin/AdminHeader'
 
 const ALL_GOVERNORATES = [
-  'دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس',
+  'دمشق', 'ريف دمشق', 'حلب', 'ريف حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس',
   'إدلب', 'الحسكة', 'دير الزور', 'الرقة', 'السويداء', 'درعا', 'القنيطرة',
 ]
 
