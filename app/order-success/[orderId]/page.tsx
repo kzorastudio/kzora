@@ -60,7 +60,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     return (
       <>
         <Header />
-        <main dir="rtl" className="min-h-screen bg-surface py-12 px-4">
+        <main dir="rtl" className="min-h-screen bg-surface pt-28 pb-12 px-4">
           <div className="max-w-2xl mx-auto">
             <div className="bg-surface-container-lowest rounded-2xl shadow-ambient-lg overflow-hidden">
               <div className="bg-gradient-to-l from-[#785600] to-[#986D00] px-8 py-10 text-center text-white">
@@ -135,7 +135,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     <>
       <Header />
 
-      <main dir="rtl" className="min-h-screen bg-surface py-12 px-4">
+      <main dir="rtl" className="min-h-screen bg-surface pt-28 pb-12 px-4">
         <div className="max-w-2xl mx-auto">
           {/* Success card */}
           <div className="bg-surface-container-lowest rounded-2xl shadow-ambient-lg overflow-hidden">

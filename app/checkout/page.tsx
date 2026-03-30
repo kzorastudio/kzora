@@ -201,7 +201,7 @@ export default function CheckoutPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Form column — 8 cols (right side in RTL) */}
-            <div className="lg:col-span-8 order-last lg:order-first">
+            <div className="lg:col-span-8">
               <CheckoutForm
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
@@ -209,7 +209,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Summary column — 4 cols (left side in RTL) */}
-            <div className="lg:col-span-4 order-first lg:order-last">
+            <div className="lg:col-span-4">
               <div className="sticky top-28 space-y-4">
                 {/* Order summary panel */}
                 <OrderSummaryPanel
