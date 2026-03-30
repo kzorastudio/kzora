@@ -247,23 +247,41 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
           images={desktopImages}
           maxFiles={1}
           onAddFiles={(files) => {
-            const file = files[0]
-            if (!file) return
-            if (desktopImages[0]?.isLocal) URL.revokeObjectURL(desktopImages[0].url)
-            setDesktopImages([{
-              id: 'new-desktop',
-              file,
-              url: URL.createObjectURL(file),
-              public_id: '',
-              isLocal: true,
-              is_main: true
-            }])
+            try {
+              const file = files[0]
+              if (!file) return
+              
+              // Clear previous local URL to prevent memory leaks
+              if (desktopImages[0]?.isLocal && desktopImages[0].url) {
+                URL.revokeObjectURL(desktopImages[0].url)
+              }
+
+              const newUrl = URL.createObjectURL(file)
+              setDesktopImages([{
+                id: `desktop-${Date.now()}`,
+                file,
+                url: newUrl,
+                public_id: '',
+                isLocal: true,
+                is_main: true
+              }])
+              
+              // Clear error if selection was successful
+              if (saveError?.includes('سطح المكتب')) setSaveError(null)
+            } catch (err) {
+              console.error('Error selecting desktop image:', err)
+              setSaveError('حدث خطأ أثناء معالجة الصورة')
+            }
           }}
           onRemoveImage={() => {
-            if (desktopImages[0] && !desktopImages[0].isLocal) {
-              setToDelete(prev => [...prev, desktopImages[0].public_id])
-            }
-            if (desktopImages[0]?.isLocal) URL.revokeObjectURL(desktopImages[0].url)
+            try {
+              if (desktopImages[0] && !desktopImages[0].isLocal) {
+                setToDelete(prev => [...prev, desktopImages[0].public_id])
+              }
+              if (desktopImages[0]?.isLocal && desktopImages[0].url) {
+                URL.revokeObjectURL(desktopImages[0].url)
+              }
+            } catch (e) {}
             setDesktopImages([])
           }}
           onSetMain={() => {}}
@@ -283,23 +301,39 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
           images={mobileImages}
           maxFiles={1}
           onAddFiles={(files) => {
-            const file = files[0]
-            if (!file) return
-            if (mobileImages[0]?.isLocal) URL.revokeObjectURL(mobileImages[0].url)
-            setMobileImages([{
-              id: 'new-mobile',
-              file,
-              url: URL.createObjectURL(file),
-              public_id: '',
-              isLocal: true,
-              is_main: true
-            }])
+            try {
+              const file = files[0]
+              if (!file) return
+              
+              if (mobileImages[0]?.isLocal && mobileImages[0].url) {
+                URL.revokeObjectURL(mobileImages[0].url)
+              }
+
+              const newUrl = URL.createObjectURL(file)
+              setMobileImages([{
+                id: `mobile-${Date.now()}`,
+                file,
+                url: newUrl,
+                public_id: '',
+                isLocal: true,
+                is_main: true
+              }])
+              
+              if (saveError?.includes('الهاتف')) setSaveError(null)
+            } catch (err) {
+              console.error('Error selecting mobile image:', err)
+              setSaveError('حدث خطأ أثناء معالجة صورة الهاتف')
+            }
           }}
           onRemoveImage={() => {
-            if (mobileImages[0] && !mobileImages[0].isLocal) {
-              setToDelete(prev => [...prev, mobileImages[0].public_id])
-            }
-            if (mobileImages[0]?.isLocal) URL.revokeObjectURL(mobileImages[0].url)
+            try {
+              if (mobileImages[0] && !mobileImages[0].isLocal) {
+                setToDelete(prev => [...prev, mobileImages[0].public_id])
+              }
+              if (mobileImages[0]?.isLocal && mobileImages[0].url) {
+                URL.revokeObjectURL(mobileImages[0].url)
+              }
+            } catch (e) {}
             setMobileImages([])
           }}
           onSetMain={() => {}}
