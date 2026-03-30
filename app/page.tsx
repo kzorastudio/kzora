@@ -127,7 +127,11 @@ export default async function HomePage() {
 
       <main className="min-h-screen bg-[#FAF8F5] pt-24">
         {/* 1. Hero Slider */}
-        <HeroSlider slides={slides} />
+        <HeroSlider 
+          slides={slides} 
+          badgeText={settings?.hero_badge_text} 
+          badgeColor={settings?.hero_badge_color} 
+        />
 
         {/* 1.5 Success Stats (Social Proof) */}
         {settings?.section_stats && (

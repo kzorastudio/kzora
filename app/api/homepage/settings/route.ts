@@ -42,6 +42,8 @@ export async function GET(_request: NextRequest) {
           stat_exchanges_count:   '١٠٠ عملية تبديل',
           shipping_policy:        'نوفر خدمة التوصيل إلى جميع المحافظات السورية.',
           return_policy:          'إرجاع خلال 7 أيام من الاستلام.',
+          hero_badge_text:        'تشكيلة كزورا الفاخرة ٢٠٢٦',
+          hero_badge_color:       '#785600',
         },
       })
     }
@@ -84,6 +86,8 @@ export async function PUT(request: NextRequest) {
       'stat_exchanges_count',
       'shipping_policy',
       'return_policy',
+      'hero_badge_text',
+      'hero_badge_color',
     ]
 
     const updateFields: Record<string, unknown> = {}

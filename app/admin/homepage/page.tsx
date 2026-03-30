@@ -63,6 +63,8 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   stat_exchanges_count:   '١٠٠ عملية تبديل',
   shipping_policy:        'نوفر خدمة التوصيل إلى جميع المحافظات السورية.',
   return_policy:          'إرجاع خلال 7 أيام من الاستلام.',
+  hero_badge_text:        'تشكيلة كزورا الفاخرة ٢٠٢٦',
+  hero_badge_color:       '#785600',
 }
 
 export default function HomepagePage() {
@@ -186,6 +188,43 @@ export default function HomepagePage() {
                 شرائح الهيرو (Hero Slides)
               </h2>
               <SlideManager />
+            </section>
+
+            {/* إعدادات الهيرو الإضافية */}
+            <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
+              <h2 className="text-base font-arabic font-bold text-on-surface mb-6 flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-primary rounded-full" />
+                إعدادات الهيرو الإضافية
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-arabic font-bold text-secondary">نص الشارة (Badge Text)</label>
+                  <input
+                    type="text"
+                    value={settings.hero_badge_text || ''}
+                    onChange={(e) => { setSettings({ ...settings, hero_badge_text: e.target.value }); setDirty(true); }}
+                    className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-arabic focus:border-primary outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-secondary/60">هذا النص يظهر فوق العنوان الرئيسي في كل الشرائح</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-arabic font-bold text-secondary">لون الشارة (Badge Color)</label>
+                  <div className="flex gap-3">
+                    <input
+                      type="color"
+                      value={settings.hero_badge_color || '#785600'}
+                      onChange={(e) => { setSettings({ ...settings, hero_badge_color: e.target.value }); setDirty(true); }}
+                      className="h-11 w-20 rounded-xl bg-surface-container border border-outline-variant/40 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={settings.hero_badge_color || '#785600'}
+                      onChange={(e) => { setSettings({ ...settings, hero_badge_color: e.target.value }); setDirty(true); }}
+                      className="flex-1 px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-arabic focus:border-primary outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
             </section>
 
             {/* سياسات المتجر */}

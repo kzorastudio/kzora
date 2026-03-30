@@ -16,9 +16,11 @@ import 'swiper/css/navigation'
 
 interface Props {
   slides: HeroSlide[]
+  badgeText?: string
+  badgeColor?: string
 }
 
-export default function HeroSlider({ slides }: Props) {
+export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
   const swiperRef = useRef<SwiperType | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [contentVisible, setContentVisible] = useState(true)
@@ -96,9 +98,12 @@ export default function HeroSlider({ slides }: Props) {
                         transition={{ duration: 0.5, delay: 0.2 }}
                         className="mb-3 md:mb-6 flex items-center gap-3"
                       >
-                        <div className="h-px w-8 bg-[#785600]" />
-                        <span className="font-arabic text-xs md:text-sm font-black text-[#785600] tracking-[0.2em] uppercase">
-                          تشكيلة كزورا الفاخرة ٢٠٢٦
+                        <div className="h-px w-8" style={{ backgroundColor: badgeColor || '#785600' }} />
+                        <span 
+                          className="font-arabic text-xs md:text-sm font-black tracking-[0.2em] uppercase"
+                          style={{ color: badgeColor || '#785600' }}
+                        >
+                          {badgeText || 'تشكيلة كزورا الفاخرة ٢٠٢٦'}
                         </span>
                       </motion.div>
 

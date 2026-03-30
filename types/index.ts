@@ -189,6 +189,8 @@ export interface HomepageSettings {
   stat_exchanges_count: string | null
   shipping_policy: string | null
   return_policy: string | null
+  hero_badge_text: string | null
+  hero_badge_color: string | null
 }
 
 export interface StaticPage {
