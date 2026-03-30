@@ -119,11 +119,44 @@ export default function SlideManager() {
 
     setSaving(true)
     try {
+      let finalDesktop = form.desktop_image
+      let finalMobile = form.mobile_image
+
+      // 1. Upload Desktop if local
+      if (finalDesktop.isLocal && finalDesktop.file) {
+        const fd = new FormData()
+        fd.append('file', finalDesktop.file)
+        fd.append('folder', 'hero_slides')
+        const uploadRes = await fetch('/api/images/upload', { method: 'POST', body: fd })
+        
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}))
+          throw new Error(errData.details || errData.error || 'فشل رفع صورة سطح المكتب')
+        }
+        const uploadData = await uploadRes.json()
+        finalDesktop = { ...finalDesktop, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
+      }
+
+      // 2. Upload Mobile if local
+      if (finalMobile?.isLocal && finalMobile.file) {
+        const fd = new FormData()
+        fd.append('file', finalMobile.file)
+        fd.append('folder', 'hero_slides')
+        const uploadRes = await fetch('/api/images/upload', { method: 'POST', body: fd })
+        
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}))
+          throw new Error(errData.details || errData.error || 'فشل رفع صورة الهاتف')
+        }
+        const uploadData = await uploadRes.json()
+        finalMobile = { ...finalMobile, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
+      }
+
       const payload = {
-        desktop_image_url:       form.desktop_image.url,
-        desktop_image_public_id: form.desktop_image.public_id,
-        mobile_image_url:        form.mobile_image?.url        ?? null,
-        mobile_image_public_id:  form.mobile_image?.public_id  ?? null,
+        desktop_image_url:       finalDesktop.url,
+        desktop_image_public_id: finalDesktop.public_id,
+        mobile_image_url:        finalMobile?.url        ?? null,
+        mobile_image_public_id:  finalMobile?.public_id  ?? null,
         heading:    form.heading,
         sub_text:   form.sub_text,
         cta_text:   form.cta_text,
@@ -150,12 +183,16 @@ export default function SlideManager() {
         })
       }
 
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'حدث خطأ أثناء الحفظ')
+      }
+
       toast.success(editTarget ? 'تم تحديث الشريحة بنجاح' : 'تم إضافة الشريحة بنجاح')
       closeModal()
       fetchData()
-    } catch {
-      toast.error('حدث خطأ أثناء الحفظ')
+    } catch (err: any) {
+      toast.error(err.message || 'حدث خطأ أثناء الحفظ')
     } finally {
       setSaving(false)
     }
@@ -329,29 +366,35 @@ export default function SlideManager() {
                     public_id: form.desktop_image.public_id,
                     is_main: true 
                   } as UploadedImage] : []}
-                  onAddFiles={async (files) => {
+                  onAddFiles={(files) => {
                     const file = files[0];
                     if (!file) return;
-                    // Note: Here I am simulating a fast-upload for better UX since SlideManager used to have it
-                    // But to keep it simple and consistent with the new uploader:
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('folder', 'slides');
-                    try {
-                      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                      const data = await res.json();
-                      if (data.url) {
-                        setForm(f => ({ 
-                          ...f, 
-                          desktop_image: { id: 'd-' + Date.now(), url: data.url, public_id: data.public_id, is_main: true },
-                          mobile_image: { id: 'm-' + Date.now(), url: data.url, public_id: data.public_id, is_main: false }
-                        }));
-                      }
-                    } catch (err) {
-                      toast.error('فشل رفع الصورة');
+                    
+                    // Revoke old local URL if it exists
+                    if (form.desktop_image?.isLocal && form.desktop_image.url) {
+                      URL.revokeObjectURL(form.desktop_image.url);
                     }
+
+                    const newUrl = URL.createObjectURL(file);
+                    setForm(f => ({
+                      ...f,
+                      desktop_image: {
+                        id: `desk-${Date.now()}`,
+                        file,
+                        url: newUrl,
+                        public_id: '',
+                        is_main: true,
+                        isLocal: true
+                      },
+                      // Also update mobile if we want them synced by default or just leave as is
+                    }));
                   }}
-                  onRemoveImage={() => setForm((f) => ({ ...f, desktop_image: null, mobile_image: null }))}
+                  onRemoveImage={() => {
+                    if (form.desktop_image?.isLocal && form.desktop_image.url) {
+                      URL.revokeObjectURL(form.desktop_image.url);
+                    }
+                    setForm(f => ({ ...f, desktop_image: null, mobile_image: null }));
+                  }}
                   onSetMain={() => {}}
                   maxFiles={1}
                 />
