@@ -186,6 +186,7 @@ export default function ProductForm({
 
       const payload = {
         ...data,
+        category_id: data.category_id === '' ? null : data.category_id,
         images: updatedImages.map((img: UploadedImage, idx: number) => ({
           url: img.url,
           public_id: img.public_id,

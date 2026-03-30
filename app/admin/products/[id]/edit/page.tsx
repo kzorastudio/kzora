@@ -6,6 +6,9 @@ import AdminHeader from '@/components/admin/AdminHeader'
 import type { ProductFull, Category } from '@/types'
 import EditProductClient from './EditProductClient'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface EditProductPageProps {
   params: { id: string }
 }

@@ -15,6 +15,7 @@ export default function EditProductClient({ product, categories }: EditProductCl
 
   function handleSuccess() {
     toast.success('تم تحديث المنتج بنجاح')
+    router.refresh()
     router.push('/admin/products')
   }
 
