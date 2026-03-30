@@ -312,14 +312,102 @@ export default function ProductForm({
 
       <section className={SECTION_CLASS}>
         <h2 className="text-base font-arabic font-semibold">صور المنتج</h2>
-        <ImageUploader 
-          images={images} 
-          onAddFiles={handleImageAdd} 
-          onRemoveImage={handleImageRemove} 
+        <ImageUploader
+          images={images}
+          onAddFiles={handleImageAdd}
+          onRemoveImage={handleImageRemove}
           onColorChange={handleImageColorChange}
           onSetMain={handleImageSetMain}
           colorOptions={colorOptions}
         />
+      </section>
+
+      <section className={SECTION_CLASS}>
+        <h2 className="text-base font-arabic font-semibold">إعدادات العرض</h2>
+
+        {/* Tags — homepage sections */}
+        <div>
+          <p className={LABEL_CLASS}>الأقسام التي يظهر فيها في الصفحة الرئيسية</p>
+          <Controller
+            control={control}
+            name="tags"
+            render={({ field }) => (
+              <div className="flex flex-wrap gap-3">
+                {([
+                  { value: 'new',         label: 'وصل حديثاً',    color: 'bg-blue-50 border-blue-300 text-blue-700 data-[on=true]:bg-blue-500 data-[on=true]:text-white data-[on=true]:border-blue-500' },
+                  { value: 'best_seller', label: 'الأكثر مبيعاً', color: 'bg-amber-50 border-amber-300 text-amber-700 data-[on=true]:bg-amber-500 data-[on=true]:text-white data-[on=true]:border-amber-500' },
+                  { value: 'on_sale',     label: 'عروض حصرية',    color: 'bg-red-50 border-red-300 text-red-700 data-[on=true]:bg-red-500 data-[on=true]:text-white data-[on=true]:border-red-500' },
+                ] as const).map(tag => {
+                  const active = field.value?.includes(tag.value)
+                  return (
+                    <button
+                      key={tag.value}
+                      type="button"
+                      data-on={active}
+                      onClick={() => {
+                        if (active) {
+                          field.onChange(field.value.filter((t: string) => t !== tag.value))
+                        } else {
+                          field.onChange([...(field.value ?? []), tag.value])
+                        }
+                      }}
+                      className={cn('px-4 py-2 rounded-xl text-sm font-arabic font-medium border-2 transition-all', tag.color)}
+                    >
+                      {tag.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          />
+          <p className="text-xs font-arabic text-secondary mt-2">اختر قسماً أو أكثر لإظهار المنتج في الصفحة الرئيسية. يمكن تفعيل أكثر من قسم في نفس الوقت.</p>
+        </div>
+
+        {/* is_featured + is_published */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+          <Controller
+            control={control}
+            name="is_featured"
+            render={({ field }) => (
+              <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container cursor-pointer border border-transparent hover:border-outline-variant/30 transition-colors">
+                <div>
+                  <p className="text-sm font-arabic font-bold text-on-surface">منتج مميز</p>
+                  <p className="text-xs font-arabic text-secondary mt-0.5">يظهر في أبرز مواقع العرض</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={field.value}
+                  onClick={() => field.onChange(!field.value)}
+                  className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-primary' : 'bg-surface-container-high')}
+                >
+                  <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-5' : 'translate-x-0.5')} />
+                </button>
+              </label>
+            )}
+          />
+          <Controller
+            control={control}
+            name="is_published"
+            render={({ field }) => (
+              <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container cursor-pointer border border-transparent hover:border-outline-variant/30 transition-colors">
+                <div>
+                  <p className="text-sm font-arabic font-bold text-on-surface">منشور</p>
+                  <p className="text-xs font-arabic text-secondary mt-0.5">مرئي للزبائن في المتجر</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={field.value}
+                  onClick={() => field.onChange(!field.value)}
+                  className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-primary' : 'bg-surface-container-high')}
+                >
+                  <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-5' : 'translate-x-0.5')} />
+                </button>
+              </label>
+            )}
+          />
+        </div>
       </section>
 
       <div className="flex justify-end gap-3">
