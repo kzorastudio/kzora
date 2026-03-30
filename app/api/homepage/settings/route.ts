@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
+import { getToken } from 'next-auth/jwt'
 import { supabaseAdmin } from '@/lib/supabase'
 import { deleteImage } from '@/lib/cloudinary'
 
@@ -59,7 +59,7 @@ export async function GET(_request: NextRequest) {
 // Admin only. Upserts the homepage settings row.
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -147,6 +147,8 @@ export async function PUT(request: NextRequest) {
          console.error('Cloudinary promo banner delete error:', err)
        }
     }
+
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ settings })
   } catch (err) {

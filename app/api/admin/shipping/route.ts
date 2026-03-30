@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin as supabase } from '@/lib/supabase'
+import { getToken } from 'next-auth/jwt'
 
 // GET all methods with governorates (admin)
 export async function GET() {
@@ -17,6 +18,9 @@ export async function GET() {
 
 // POST — create a new method
 export async function POST(req: NextRequest) {
+  const session = await getToken({ req: req, secret: process.env.NEXTAUTH_SECRET })
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json()
   const { slug, name, description, badge, governorates } = body
 
@@ -41,6 +45,9 @@ export async function POST(req: NextRequest) {
 
 // PUT — update a method
 export async function PUT(req: NextRequest) {
+  const session = await getToken({ req: req, secret: process.env.NEXTAUTH_SECRET })
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json()
   const { id, slug, name, description, badge, is_active, governorates } = body
 
@@ -68,6 +75,9 @@ export async function PUT(req: NextRequest) {
 
 // DELETE — remove a method
 export async function DELETE(req: NextRequest) {
+  const session = await getToken({ req: req, secret: process.env.NEXTAUTH_SECRET })
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id } = await req.json()
   const { error } = await supabase.from('shipping_methods').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { deleteImage } from '@/lib/cloudinary'
 
 // ─── DELETE /api/images/delete ────────────────────────────────────────────────
@@ -8,7 +7,7 @@ import { deleteImage } from '@/lib/cloudinary'
 // Body: { public_id: string }
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

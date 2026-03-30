@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { cloudinary } from '@/lib/cloudinary'
 
 // ─── POST /api/images/upload ──────────────────────────────────────────────────
@@ -9,7 +8,7 @@ import { cloudinary } from '@/lib/cloudinary'
 // Optional form fields: folder (string), transformation (stringified JSON)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

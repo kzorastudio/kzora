@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // ─── GET /api/pages/[slug] ────────────────────────────────────────────────────
@@ -37,7 +36,7 @@ export async function PUT(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

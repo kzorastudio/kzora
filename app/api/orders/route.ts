@@ -1,7 +1,6 @@
 ﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 
@@ -27,7 +26,7 @@ async function generateOrderNumber(): Promise<string> {
 // Admin only. Returns paginated orders list.
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
