@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingBag, X } from 'lucide-react'
+import { ShoppingBag, X, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatPrice, getDiscountPercent } from '@/lib/utils'
 import { useCurrencyStore } from '@/store/currencyStore'
@@ -295,8 +295,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
         )}
 
         {/* Name */}
-        <h3 className="text-sm font-arabic font-medium text-[#1A1A1A] leading-snug line-clamp-2">
-          {product.name}
+        <h3 className="text-sm font-arabic font-medium text-[#1A1A1A] leading-snug line-clamp-2 flex items-start gap-1">
+          {product.is_featured && (
+            <Star size={14} className="fill-[#C59B27] text-[#C59B27] shrink-0 mt-0.5" />
+          )}
+          <span>{product.name}</span>
         </h3>
 
         {/* Price */}

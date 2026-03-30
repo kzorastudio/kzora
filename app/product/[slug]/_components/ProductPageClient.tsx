@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { ProductGallery } from '@/components/product/ProductGallery'
+import { Star } from 'lucide-react'
 import { truncate, getDiscountPercent } from '@/lib/utils'
 import type { ProductFull, ProductColor, HomepageSettings } from '@/types'
 import ProductActions from './ProductActions'
@@ -72,8 +73,14 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
           <div className="md:col-span-4 flex flex-col gap-6">
             <div>
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="font-arabic text-3xl sm:text-4xl font-bold text-[#1A1A1A] leading-tight flex-1">
+                <h1 className="font-arabic text-3xl sm:text-4xl font-bold text-[#1A1A1A] leading-tight flex-1 flex items-center gap-3">
                   {product.name}
+                  {product.is_featured && (
+                    <span className="shrink-0 bg-[#FFFBEA] border border-[#FBE39A] text-[#C59B27] px-3 py-1.5 rounded-full font-arabic font-bold text-sm shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                      <Star size={14} className="fill-[#C59B27] mt-0.5" />
+                      منتج مميز
+                    </span>
+                  )}
                 </h1>
                 
                 {product.stock_status === 'out_of_stock' && (

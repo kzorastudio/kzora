@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { ProductFull } from '@/types'
 import { formatPrice, cn } from '@/lib/utils'
+import { Star } from 'lucide-react'
 
 interface Props {
   categorySlug: string
@@ -96,8 +97,11 @@ export default async function RelatedProducts({ categorySlug, excludeId }: Props
               )}
             </div>
             <div className="p-4">
-              <h3 className="font-arabic font-bold text-base text-[#1A1A1A] mb-2 line-clamp-2">
-                {product.name}
+              <h3 className="font-arabic font-bold text-base text-[#1A1A1A] mb-2 line-clamp-2 flex items-start gap-1">
+                {product.is_featured && (
+                  <Star size={14} className="fill-[#C59B27] text-[#C59B27] shrink-0 mt-0.5" />
+                )}
+                <span>{product.name}</span>
               </h3>
               <div className="flex items-center justify-between">
                 <span className={cn(
