@@ -23,6 +23,8 @@ const LABEL_CLASS = 'block text-sm font-arabic font-medium text-on-surface-varia
 
 const SECTION_CLASS = 'bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-4'
 
+const AVAILABLE_SIZES = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46]
+
 export default function ProductForm({
   initialData,
   categories,
@@ -265,6 +267,45 @@ export default function ProductForm({
             <button type="button" onClick={() => removeColor(index)} className="text-error mt-2"><Trash2 size={18} /></button>
           </div>
         ))}
+      </section>
+
+      <section className={SECTION_CLASS}>
+        <h2 className="text-base font-arabic font-semibold">المقاسات المتاحة *</h2>
+        <Controller
+          control={control}
+          name="sizes"
+          render={({ field }) => (
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_SIZES.map(size => {
+                const selected = field.value?.includes(size)
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => {
+                      if (selected) {
+                        field.onChange(field.value.filter((s: number) => s !== size))
+                      } else {
+                        field.onChange([...(field.value ?? []), size])
+                      }
+                    }}
+                    className={cn(
+                      'min-w-[2.75rem] h-10 px-3 rounded-xl text-sm font-arabic font-medium transition-all border-2',
+                      selected
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-surface-container text-secondary border-outline-variant/40 hover:border-primary/40 hover:text-on-surface'
+                    )}
+                  >
+                    {size}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        />
+        {errors.sizes && (
+          <p className="text-xs font-arabic text-error">{errors.sizes.message as string}</p>
+        )}
       </section>
 
       <section className={SECTION_CLASS}>
