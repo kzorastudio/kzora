@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/Modal'
 import ImageUploader, { type UploadedImage } from '@/components/admin/ImageUploader'
+import toast from 'react-hot-toast'
 import type { HeroSlide } from '@/types'
 
 // ----- Schema -----
@@ -38,37 +39,36 @@ interface SlideFormProps {
 function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
   const isEdit = !!initialData
 
-  const [desktopImages, setDesktopImages] = useState<UploadedImage[]>(
-    initialData?.desktop_image_url
-      ? [{ 
-          id: 'desktop',
+  const [desktopImage, setDesktopImage] = useState<UploadedImage | null>(
+    initialData?.desktop_image_url && initialData?.desktop_image_public_id
+      ? { 
+          id: 'initial-desktop',
           url: initialData.desktop_image_url, 
           public_id: initialData.desktop_image_public_id,
-          isLocal: false,
-          is_main: true
-        }]
-      : []
+          is_main: true,
+          isLocal: false
+        }
+      : null
   )
-  const [mobileImages, setMobileImages] = useState<UploadedImage[]>(
+
+  const [mobileImage, setMobileImage] = useState<UploadedImage | null>(
     initialData?.mobile_image_url && initialData?.mobile_image_public_id
-      ? [{ 
-          id: 'mobile',
+      ? { 
+          id: 'initial-mobile',
           url: initialData.mobile_image_url, 
           public_id: initialData.mobile_image_public_id,
-          isLocal: false,
-          is_main: true
-        }]
-      : []
+          is_main: true,
+          isLocal: false
+        }
+      : null
   )
   
-  const [toDelete, setToDelete] = useState<string[]>([])
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     reset,
   } = useForm<SlideFormData>({
     resolver: zodResolver(slideSchema),
@@ -91,61 +91,47 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
     }
   }, [initialData, reset])
 
-  const onSubmit = handleSubmit(async (data) => {
-    if (desktopImages.length === 0) {
-      setSaveError('يرجى رفع صورة سطح المكتب')
-      return
-    }
-
-    setSaveError(null)
-    setSaving(true)
-
+  const onSubmit = async (data: SlideFormData) => {
     try {
-      // 1. Upload Desktop Image
-      let desktop = desktopImages[0]
-      if (desktop.isLocal && desktop.file) {
-        const formData = new FormData()
-        formData.append('file', desktop.file)
-        formData.append('folder', 'hero_desktop')
-        
-        const uploadRes = await fetch('/api/images/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!uploadRes.ok) {
-          const errorData = await uploadRes.json().catch(() => ({}))
-          throw new Error(errorData.details || errorData.error || 'فشل رفع صورة سطح المكتب')
-        }
-        
-        const uploadData = await uploadRes.json()
-        desktop = { ...desktop, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
+      if (!desktopImage) {
+        toast.error('يرجى اختيار صورة لسطح المكتب')
+        return
       }
 
-      // 2. Upload Mobile Image
-      let mobile = mobileImages[0] || null
-      if (mobile && mobile.isLocal && mobile.file) {
-        const formData = new FormData()
-        formData.append('file', mobile.file)
-        formData.append('folder', 'hero_mobile')
-        
-        const uploadRes = await fetch('/api/images/upload', {
-          method: 'POST',
-          body: formData,
-        })
+      let finalDesktop = desktopImage
+      let finalMobile = mobileImage
 
-        if (!uploadRes.ok) {
-          const errorData = await uploadRes.json().catch(() => ({}))
-          throw new Error(errorData.details || errorData.error || 'فشل رفع صورة الهاتف')
+      // 1. Upload Desktop if local
+      if (desktopImage.isLocal && desktopImage.file) {
+        const fd = new FormData()
+        fd.append('file', desktopImage.file)
+        fd.append('folder', 'hero_slides')
+        const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}))
+          throw new Error(errData.details || errData.error || 'فشل رفع صورة سطح المكتب')
         }
-        
-        const uploadData = await uploadRes.json()
-        mobile = { ...mobile, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
+        const uploadData = await res.json()
+        finalDesktop = { ...desktopImage, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
       }
 
-      // 3. Delete queued images
-      if (toDelete.length > 0) {
-        await Promise.all(toDelete.map(pid => 
+      // 2. Upload Mobile if local
+      if (mobileImage?.isLocal && mobileImage.file) {
+        const fd = new FormData()
+        fd.append('file', mobileImage.file)
+        fd.append('folder', 'hero_slides')
+        const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}))
+          throw new Error(errData.details || errData.error || 'فشل رفع صورة الهاتف')
+        }
+        const uploadData = await res.json()
+        finalMobile = { ...mobileImage, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
+      }
+
+      // 3. Delete old images
+      if (imagesToDelete.length > 0) {
+        await Promise.all(imagesToDelete.map(pid => 
           fetch('/api/images/delete', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
@@ -154,17 +140,16 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
         ))
       }
 
+      // 4. Save Slide
       const body = {
         ...data,
-        desktop_image_url: desktop.url,
-        desktop_image_public_id: desktop.public_id,
-        mobile_image_url: mobile?.url ?? null,
-        mobile_image_public_id: mobile?.public_id ?? null,
+        desktop_image_url: finalDesktop.url,
+        desktop_image_public_id: finalDesktop.public_id,
+        mobile_image_url: finalMobile?.url ?? null,
+        mobile_image_public_id: finalMobile?.public_id ?? null,
       }
 
-      const url = isEdit
-        ? `/api/homepage/slides/${initialData!.id}`
-        : '/api/homepage/slides'
+      const url = isEdit ? `/api/homepage/slides/${initialData!.id}` : '/api/homepage/slides'
       const method = isEdit ? 'PUT' : 'POST'
 
       const res = await fetch(url, {
@@ -175,217 +160,102 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.error || 'حدث خطأ أثناء الحفظ')
+        throw new Error(errData.error || 'حدث خطأ أثناء حفظ الشريحة')
       }
 
+      toast.success(isEdit ? 'تم تحديث الشريحة' : 'تم إضافة الشريحة بنجاح')
       onSaved()
     } catch (err: any) {
-      setSaveError(err.message)
-    } finally {
-      setSaving(false)
+      toast.error(err.message || 'حدث خطأ غير متوقع')
     }
-  })
+  }
+
+  function handleDesktopAdd(files: File[]) {
+    const file = files[0]
+    if (!file) return
+    if (desktopImage?.isLocal) URL.revokeObjectURL(desktopImage.url)
+    setDesktopImage({
+      id: Math.random().toString(36).substring(7),
+      file,
+      url: URL.createObjectURL(file),
+      public_id: '',
+      is_main: true,
+      isLocal: true
+    })
+  }
+
+  function handleMobileAdd(files: File[]) {
+    const file = files[0]
+    if (!file) return
+    if (mobileImage?.isLocal) URL.revokeObjectURL(mobileImage.url)
+    setMobileImage({
+      id: Math.random().toString(36).substring(7),
+      file,
+      url: URL.createObjectURL(file),
+      public_id: '',
+      is_main: true,
+      isLocal: true
+    })
+  }
 
   return (
-    <form dir="rtl" onSubmit={onSubmit} noValidate className="space-y-5">
-      {/* Heading */}
+    <form dir="rtl" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
-        <label className={labelBase}>
-          العنوان الرئيسي
-          <span className="text-[#BA1A1A] mr-0.5">*</span>
-        </label>
-        <input
-          type="text"
-          placeholder="أدخل عنوان الشريحة..."
-          className={cn(inputBase, errors.heading && 'border-[#BA1A1A]')}
-          {...register('heading')}
-        />
+        <label className={labelBase}>العنوان الرئيسي *</label>
+        <input type="text" {...register('heading')} className={cn(inputBase, errors.heading && 'border-error')} />
         {errors.heading && <p className={errorBase}>{errors.heading.message}</p>}
       </div>
 
-      {/* Sub text */}
       <div>
-        <label className={labelBase}>
-          النص الفرعي
-          <span className="text-[#6B6560] text-xs font-normal mr-1">(اختياري)</span>
-        </label>
-        <input
-          type="text"
-          placeholder="وصف مختصر للشريحة..."
-          className={cn(inputBase, errors.sub_text && 'border-[#BA1A1A]')}
-          {...register('sub_text')}
-        />
-        {errors.sub_text && <p className={errorBase}>{errors.sub_text.message}</p>}
+        <label className={labelBase}>النص الفرعي</label>
+        <input type="text" {...register('sub_text')} className={inputBase} />
       </div>
 
-      {/* CTA Text */}
-      <div>
-        <label className={labelBase}>
-          نص زر الإجراء (CTA)
-          <span className="text-[#6B6560] text-xs font-normal mr-1">(اختياري)</span>
-        </label>
-        <input
-          type="text"
-          placeholder="مثال: تسوق الآن"
-          className={cn(inputBase, errors.cta_text && 'border-[#BA1A1A]')}
-          {...register('cta_text')}
-        />
-        {errors.cta_text && <p className={errorBase}>{errors.cta_text.message}</p>}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={labelBase}>نص الزر</label>
+          <input type="text" {...register('cta_text')} className={inputBase} />
+        </div>
+        <div>
+          <label className={labelBase}>رابط الزر</label>
+          <input type="text" {...register('cta_link')} className={inputBase} />
+        </div>
       </div>
 
-      {/* CTA Link */}
       <div>
-        <label className={labelBase}>
-          رابط الزر
-          <span className="text-[#6B6560] text-xs font-normal mr-1">(اختياري)</span>
-        </label>
-        <input
-          type="text"
-          placeholder="مثال: /category/men"
-          className={cn(inputBase, errors.cta_link && 'border-[#BA1A1A]')}
-          {...register('cta_link')}
-        />
-        {errors.cta_link && <p className={errorBase}>{errors.cta_link.message}</p>}
-      </div>
-
-      {/* Desktop Image */}
-      <div>
-        <label className={labelBase}>
-          صورة سطح المكتب
-          <span className="text-[#BA1A1A] mr-0.5">*</span>
-        </label>
+        <label className={labelBase}>صورة سطح المكتب *</label>
         <ImageUploader
-          images={desktopImages}
+          images={desktopImage ? [desktopImage] : []}
           maxFiles={1}
-          onAddFiles={(files) => {
-            try {
-              const file = files[0]
-              if (!file) return
-              
-              // Clear previous local URL to prevent memory leaks
-              if (desktopImages[0]?.isLocal && desktopImages[0].url) {
-                URL.revokeObjectURL(desktopImages[0].url)
-              }
-
-              const newUrl = URL.createObjectURL(file)
-              setDesktopImages([{
-                id: `desktop-${Date.now()}`,
-                file,
-                url: newUrl,
-                public_id: '',
-                isLocal: true,
-                is_main: true
-              }])
-              
-              // Clear error if selection was successful
-              if (saveError?.includes('سطح المكتب')) setSaveError(null)
-            } catch (err) {
-              console.error('Error selecting desktop image:', err)
-              setSaveError('حدث خطأ أثناء معالجة الصورة')
-            }
-          }}
+          onAddFiles={handleDesktopAdd}
           onRemoveImage={() => {
-            try {
-              if (desktopImages[0] && !desktopImages[0].isLocal) {
-                setToDelete(prev => [...prev, desktopImages[0].public_id])
-              }
-              if (desktopImages[0]?.isLocal && desktopImages[0].url) {
-                URL.revokeObjectURL(desktopImages[0].url)
-              }
-            } catch (e) {}
-            setDesktopImages([])
-          }}
-          onSetMain={() => {}}
-        />
-        {desktopImages.length === 0 && saveError?.includes('سطح المكتب') && (
-          <p className={errorBase}>{saveError}</p>
-        )}
-      </div>
-
-      {/* Mobile Image */}
-      <div>
-        <label className={labelBase}>
-          صورة الهاتف المحمول
-          <span className="text-[#6B6560] text-xs font-normal mr-1">(اختياري)</span>
-        </label>
-        <ImageUploader
-          images={mobileImages}
-          maxFiles={1}
-          onAddFiles={(files) => {
-            try {
-              const file = files[0]
-              if (!file) return
-              
-              if (mobileImages[0]?.isLocal && mobileImages[0].url) {
-                URL.revokeObjectURL(mobileImages[0].url)
-              }
-
-              const newUrl = URL.createObjectURL(file)
-              setMobileImages([{
-                id: `mobile-${Date.now()}`,
-                file,
-                url: newUrl,
-                public_id: '',
-                isLocal: true,
-                is_main: true
-              }])
-              
-              if (saveError?.includes('الهاتف')) setSaveError(null)
-            } catch (err) {
-              console.error('Error selecting mobile image:', err)
-              setSaveError('حدث خطأ أثناء معالجة صورة الهاتف')
-            }
-          }}
-          onRemoveImage={() => {
-            try {
-              if (mobileImages[0] && !mobileImages[0].isLocal) {
-                setToDelete(prev => [...prev, mobileImages[0].public_id])
-              }
-              if (mobileImages[0]?.isLocal && mobileImages[0].url) {
-                URL.revokeObjectURL(mobileImages[0].url)
-              }
-            } catch (e) {}
-            setMobileImages([])
+            if (desktopImage && !desktopImage.isLocal) setImagesToDelete(p => [...p, desktopImage.public_id])
+            if (desktopImage?.isLocal) URL.revokeObjectURL(desktopImage.url)
+            setDesktopImage(null)
           }}
           onSetMain={() => {}}
         />
       </div>
 
-      {/* Save error */}
-      {saveError && !saveError.includes('سطح المكتب') && (
-        <p className={errorBase}>{saveError}</p>
-      )}
+      <div>
+        <label className={labelBase}>صورة الهاتف (اختياري)</label>
+        <ImageUploader
+          images={mobileImage ? [mobileImage] : []}
+          maxFiles={1}
+          onAddFiles={handleMobileAdd}
+          onRemoveImage={() => {
+            if (mobileImage && !mobileImage.isLocal) setImagesToDelete(p => [...p, mobileImage.public_id])
+            if (mobileImage?.isLocal) URL.revokeObjectURL(mobileImage.url)
+            setMobileImage(null)
+          }}
+          onSetMain={() => {}}
+        />
+      </div>
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-1">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 h-11 rounded-xl border-2 border-[#D3C4AF] font-arabic font-semibold text-sm text-[#6B6560] hover:bg-[#EDE5D8] transition-colors duration-150"
-        >
-          إلغاء
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className={cn(
-            'flex-1 h-11 rounded-xl font-arabic font-semibold text-white text-sm',
-            'bg-gradient-to-l from-[#785600] to-[#986D00]',
-            'hover:from-[#986D00] hover:to-[#B8860B]',
-            'transition-all duration-200',
-            'disabled:opacity-60 disabled:cursor-not-allowed'
-          )}
-        >
-          {saving ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 size={16} className="animate-spin" />
-              جارٍ الحفظ...
-            </span>
-          ) : isEdit ? (
-            'تحديث الشريحة'
-          ) : (
-            'إضافة الشريحة'
-          )}
+      <div className="flex gap-3">
+        <button type="button" onClick={onClose} className="flex-1 h-11 rounded-xl border-2 border-outline-variant font-arabic font-semibold text-secondary">إلغاء</button>
+        <button type="submit" disabled={isSubmitting} className="flex-1 h-11 rounded-xl bg-primary text-white font-arabic font-semibold disabled:opacity-60">
+          {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : (isEdit ? 'تحديث الشريحة' : 'إضافة الشريحة')}
         </button>
       </div>
     </form>
