@@ -75,7 +75,7 @@ export default function CategoryForm({ initialData, onSuccess }: CategoryFormPro
 
         if (!uploadRes.ok) {
           const errorData = await uploadRes.json().catch(() => ({}))
-          throw new Error(errorData.error || 'فشل رفع صورة القسم')
+          throw new Error(errorData.details || errorData.error || 'فشل رفع صورة القسم')
         }
         const uploadData = await uploadRes.json()
         finalImage = {

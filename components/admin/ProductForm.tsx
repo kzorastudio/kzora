@@ -166,7 +166,7 @@ export default function ProductForm({
           })
           if (!uploadRes.ok) {
             const errorData = await uploadRes.json().catch(() => ({}))
-            throw new Error(errorData.error || 'فشل رفع إحدى الصور')
+            throw new Error(errorData.details || errorData.error || 'فشل رفع إحدى الصور')
           }
           const uploadData = await uploadRes.json()
           return { ...img, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }

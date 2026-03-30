@@ -14,6 +14,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Debug: Check env vars
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error('Missing Cloudinary env vars')
+      return NextResponse.json({ 
+        error: 'إعدادات Cloudinary غير موجودة في السيرفر',
+        details: 'Missing Environment Variables'
+      }, { status: 500 })
+    }
+
     const formData = await request.formData()
     const file     = formData.get('file') as File | null
     const folder   = (formData.get('folder') as string | null) || 'kzora'
@@ -80,6 +89,21 @@ export async function POST(request: NextRequest) {
     )
   } catch (err: any) {
     console.error('Image upload unexpected error:', err)
-    return NextResponse.json({ error: err.message || 'Failed to upload image' }, { status: 500 })
+    // Detailed error logging for debugging (since I can't see the console)
+    const errorDetails = {
+      message: err.message || 'No message',
+      code: err.code || 'No code',
+      stack: err.stack || 'No stack',
+      all: err // The whole object
+    }
+    
+    return NextResponse.json(
+      { 
+        error: 'فشل رفع الصورة', 
+        details: err.message || 'Unknown error',
+        raw: JSON.stringify(errorDetails) 
+      }, 
+      { status: 500 }
+    )
   }
 }
