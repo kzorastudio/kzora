@@ -286,8 +286,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get category slug for revalidation
+    const { data: catData } = await supabaseAdmin.from('categories').select('slug').eq('id', productId).single()
+    const categorySlug = catData?.slug
+
     revalidatePath('/')
     revalidatePath('/products')
+    if (categorySlug) revalidatePath(`/category/${categorySlug}`)
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (err) {

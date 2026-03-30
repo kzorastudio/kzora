@@ -88,8 +88,14 @@ export async function PUT(
       tags,
     } = body
 
-    // 1. Fetch existing product to check for name/slug changes
-    const { data: existing } = await supabaseAdmin.from('products').select('name, slug').eq('id', id).single()
+    // 1. Fetch existing product with category slug to handle revalidation
+    const { data: existing } = await supabaseAdmin
+      .from('products')
+      .select('name, slug, category_id, categories(slug)')
+      .eq('id', id)
+      .single()
+
+    const oldCategorySlug = (existing?.categories as any)?.slug
 
     // Build the fields to update (only provided fields)
     const updateFields: Record<string, unknown> = { updated_at: new Date().toISOString() }
@@ -116,7 +122,7 @@ export async function PUT(
       .from('products')
       .update(updateFields)
       .eq('id', id)
-      .select()
+      .select('*, categories(slug)')
       .single()
 
     if (updateError || !product) {
@@ -124,9 +130,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Product not found or update failed' }, { status: 404 })
     }
 
+    const newCategorySlug = (product?.categories as any)?.slug
+
     // Clear caches
     revalidatePath('/')
     revalidatePath('/products')
+    if (oldCategorySlug) revalidatePath(`/category/${oldCategorySlug}`)
+    if (newCategorySlug && newCategorySlug !== oldCategorySlug) revalidatePath(`/category/${newCategorySlug}`)
     if (existing?.slug) revalidatePath(`/product/${existing.slug}`)
     revalidatePath(`/product/${product.slug}`)
 
