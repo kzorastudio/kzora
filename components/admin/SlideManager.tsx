@@ -106,11 +106,11 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
       if (desktop.isLocal && desktop.file) {
         const fd = new FormData()
         fd.append('file', desktop.file)
-        fd.append('folder', 'hero-slides')
+        fd.append('folder', 'homepage_hero_desktop')
         const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
         const resData = await res.json().catch(() => ({}))
         if (!res.ok) {
-          setSaveError(resData.error || 'فشل رفع صورة سطح المكتب')
+          setSaveError(resData.details || resData.error || 'فشل رفع صورة سطح المكتب')
           setSaving(false)
           return
         }
@@ -122,11 +122,11 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
       if (mobile && mobile.isLocal && mobile.file) {
         const fd = new FormData()
         fd.append('file', mobile.file)
-        fd.append('folder', 'hero-slides/mobile')
+        fd.append('folder', 'homepage_hero_mobile')
         const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
         const resData = await res.json().catch(() => ({}))
         if (!res.ok) {
-          setSaveError(resData.error || 'فشل رفع صورة الهاتف')
+          setSaveError(resData.details || resData.error || 'فشل رفع صورة الهاتف')
           setSaving(false)
           return
         }
