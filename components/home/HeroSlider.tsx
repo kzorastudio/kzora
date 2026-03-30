@@ -80,8 +80,8 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
               
               {/* Premium Gradient Overlays */}
               <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/40 to-transparent hidden md:block" />
-              {/* Mobile: strong white panel rising from bottom ~55% of hero */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5] from-40% via-[#FAF8F5]/80 via-60% to-transparent md:hidden" />
+              {/* Mobile: subtler white gradient from bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent md:hidden" />
               <div className="absolute inset-0 bg-black/[0.02]" />
             </div>
 
@@ -122,13 +122,13 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
                         ))}
                       </motion.h1>
 
-                      {/* Description — hidden on very small phones */}
+                      {/* Description — visible on all screens */}
                       {slide.sub_text && (
                         <motion.p
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.6, delay: 0.5 }}
-                          className="hidden sm:block font-arabic text-sm md:text-xl max-w-lg mb-6 md:mb-12 leading-relaxed font-medium"
+                          className="font-arabic text-sm sm:text-base md:text-xl max-w-lg mb-6 md:mb-12 leading-relaxed font-medium"
                           style={{ color: slide.subtext_color || '#4A4742' }}
                         >
                           {slide.sub_text}
