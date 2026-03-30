@@ -4,6 +4,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { deleteImages } from '@/lib/cloudinary'
 import type { ProductTag } from '@/types'
 
+import { revalidatePath } from 'next/cache'
+import { generateSlug } from '@/lib/utils'
+
 // ─── GET /api/products/[id] ───────────────────────────────────────────────────
 // Public. Returns single product with all relations.
 export async function GET(
@@ -85,9 +88,18 @@ export async function PUT(
       tags,
     } = body
 
+    // 1. Fetch existing product to check for name/slug changes
+    const { data: existing } = await supabaseAdmin.from('products').select('name, slug').eq('id', id).single()
+
     // Build the fields to update (only provided fields)
     const updateFields: Record<string, unknown> = { updated_at: new Date().toISOString() }
-    if (name              !== undefined) updateFields.name               = name
+    if (name              !== undefined) {
+      updateFields.name = name
+      // If name changed, update slug
+      if (existing && existing.name !== name) {
+        updateFields.slug = generateSlug(name)
+      }
+    }
     if (description       !== undefined) updateFields.description        = description
     if (category_id       !== undefined) updateFields.category_id        = category_id
     if (price_syp         !== undefined) updateFields.price_syp          = price_syp
@@ -111,6 +123,13 @@ export async function PUT(
       console.error('Product update error:', updateError)
       return NextResponse.json({ error: 'Product not found or update failed' }, { status: 404 })
     }
+
+    // Clear caches
+    revalidatePath('/')
+    revalidatePath('/products')
+    if (existing?.slug) revalidatePath(`/product/${existing.slug}`)
+    revalidatePath(`/product/${product.slug}`)
+
 
     // Replace relations if provided
     if (images !== undefined) {
@@ -265,6 +284,9 @@ export async function DELETE(
       console.error('Product delete DB error:', deleteError)
       return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 })
     }
+
+    revalidatePath('/')
+    revalidatePath('/products')
 
     return NextResponse.json({ success: true })
   } catch (err) {

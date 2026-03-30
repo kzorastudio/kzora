@@ -4,7 +4,10 @@ import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateProductPayload, ProductTag } from '@/types'
 
-// â”€â”€â”€ GET /api/products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+import { revalidatePath } from 'next/cache'
+import { generateSlug } from '@/lib/utils'
+
+// ─── GET /api/products ────────────────────────────────────────────────────────
 // Public. Supports filtering, sorting, pagination.
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +26,7 @@ export async function GET(request: NextRequest) {
     const limit     = Math.min(parseInt(searchParams.get('limit') || '24', 10), 100)
     const offset    = (page - 1) * limit
 
-    // Base query â€” only published products
+    // Base query — only published products
     let query = supabaseAdmin
       .from('products')
       .select(
@@ -52,7 +55,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Tag filter â€” join on product_tags
+    // Tag filter — join on product_tags
     if (tag) {
       const { data: taggedIds } = await supabaseAdmin
         .from('product_tags')
@@ -150,7 +153,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// â”€â”€â”€ POST /api/products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/products ────────────────────────────────────────────────────────
 // Admin only. Creates product with all relations.
 export async function POST(request: NextRequest) {
   try {
@@ -184,11 +187,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate clean slug
-    const baseSlug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
+    const baseSlug = generateSlug(name)
 
     // Check if slug exists to avoid collisions
     const { data: existing } = await supabaseAdmin
@@ -286,6 +285,9 @@ export async function POST(request: NextRequest) {
         console.error('Product tags insert error:', tagError)
       }
     }
+
+    revalidatePath('/')
+    revalidatePath('/products')
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (err) {
