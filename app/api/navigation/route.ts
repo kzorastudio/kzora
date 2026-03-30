@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 
 interface NavItem {
@@ -9,7 +9,7 @@ interface NavItem {
 // PUT /api/navigation — save header / footer / home links
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+    const session = await getAuthSession(request)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

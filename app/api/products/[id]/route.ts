@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 import { deleteImages } from '@/lib/cloudinary'
 import type { ProductTag } from '@/types'
@@ -59,7 +59,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+    const session = await getAuthSession(request)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
