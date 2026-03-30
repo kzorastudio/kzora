@@ -263,17 +263,25 @@ export function ProductGallery({
     const trimmedActive = activeColor?.trim()
 
     if (trimmedActive) {
-      // 1. Strict Mode: Only show images for this specific color
-      return allSorted.filter(img => img.color_variant?.trim() === trimmedActive)
+      // Try to find images explicitly assigned to this color
+      const colorImages = allSorted.filter(img => img.color_variant?.trim() === trimmedActive)
+      if (colorImages.length > 0) return colorImages
+
+      // Fallback: show images with no color assigned (shared/common images)
+      const commonImages = allSorted.filter(img => !img.color_variant)
+      if (commonImages.length > 0) return commonImages
+
+      // Last resort: show all images
+      return allSorted
     }
 
-    // 2. Default Mode: If no color is selected, show ONLY the 'is_main' image
+    // No color selected: show ONLY the main image
     const mainImg = allSorted.find(img => img.is_main)
     if (mainImg) {
       return [mainImg]
     }
 
-    // Fallback: If no image is marked as 'is_main', show common images or everything
+    // Fallback: show images without color_variant or everything
     const commonImages = allSorted.filter(img => !img.color_variant)
     return commonImages.length > 0 ? commonImages : allSorted
   }, [allSorted, activeColor])

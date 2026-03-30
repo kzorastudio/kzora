@@ -146,6 +146,7 @@ export default function ProductForm({
   }, [])
 
   const handleImageAdd = useCallback((files: File[]) => {
+    const autoColor = colorOptions.length === 1 ? colorOptions[0].value : undefined
     setImages(prev => {
       const newImgs: UploadedImage[] = files.map((file, i) => ({
         id: Math.random().toString(36).substring(7),
@@ -153,11 +154,12 @@ export default function ProductForm({
         url: URL.createObjectURL(file),
         public_id: '',
         is_main: prev.length === 0 && i === 0,
-        isLocal: true
+        isLocal: true,
+        color_variant: autoColor ?? null,
       }))
       return [...prev, ...newImgs]
     })
-  }, [])
+  }, [colorOptions])
 
   async function onSubmit(data: ProductFormData) {
     try {
