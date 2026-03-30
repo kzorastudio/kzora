@@ -285,6 +285,8 @@ export const MOCK_HOMEPAGE_SETTINGS: HomepageSettings = {
   stat_exchanges_count: '2%',
   shipping_policy: 'توصيل سريع لكافة المحافظات',
   return_policy: 'تبديل وإرجاع سهل خلال 14 يوماً',
+  hero_badge_text: 'تشكيلة كزورا الفاخرة ٢٠٢٦',
+  hero_badge_color: '#785600',
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
