@@ -104,33 +104,43 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
       // 1. Upload Desktop Image
       let desktop = desktopImages[0]
       if (desktop.isLocal && desktop.file) {
-        const fd = new FormData()
-        fd.append('file', desktop.file)
-        fd.append('folder', 'homepage_hero_desktop')
-        const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
-        const resData = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          setSaveError(resData.details || resData.error || 'فشل رفع صورة سطح المكتب')
-          setSaving(false)
-          return
+        const formData = new FormData()
+        formData.append('file', desktop.file)
+        formData.append('folder', 'hero_desktop')
+        
+        const uploadRes = await fetch('/api/images/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => ({}))
+          throw new Error(errorData.details || errorData.error || 'فشل رفع صورة سطح المكتب')
         }
-        desktop = { ...desktop, url: resData.url, public_id: resData.public_id, isLocal: false }
+        
+        const uploadData = await uploadRes.json()
+        desktop = { ...desktop, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
       }
 
       // 2. Upload Mobile Image
       let mobile = mobileImages[0] || null
       if (mobile && mobile.isLocal && mobile.file) {
-        const fd = new FormData()
-        fd.append('file', mobile.file)
-        fd.append('folder', 'homepage_hero_mobile')
-        const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
-        const resData = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          setSaveError(resData.details || resData.error || 'فشل رفع صورة الهاتف')
-          setSaving(false)
-          return
+        const formData = new FormData()
+        formData.append('file', mobile.file)
+        formData.append('folder', 'hero_mobile')
+        
+        const uploadRes = await fetch('/api/images/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => ({}))
+          throw new Error(errorData.details || errorData.error || 'فشل رفع صورة الهاتف')
         }
-        mobile = { ...mobile, url: resData.url, public_id: resData.public_id, isLocal: false }
+        
+        const uploadData = await uploadRes.json()
+        mobile = { ...mobile, url: uploadData.url, public_id: uploadData.public_id, isLocal: false }
       }
 
       // 3. Delete queued images
@@ -164,12 +174,13 @@ function SlideFormModal({ initialData, onSaved, onClose }: SlideFormProps) {
       })
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        setSaveError(err.error ?? 'حدث خطأ أثناء الحفظ')
-        return
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'حدث خطأ أثناء الحفظ')
       }
 
       onSaved()
+    } catch (err: any) {
+      setSaveError(err.message)
     } finally {
       setSaving(false)
     }
