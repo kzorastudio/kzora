@@ -89,7 +89,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getToken({ req: _request, secret: process.env.NEXTAUTH_SECRET })
+    const session = await getAuthSession(_request)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
