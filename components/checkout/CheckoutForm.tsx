@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { checkoutSchema, type CheckoutFormData } from '@/lib/validators'
 import { ShippingCompanySelector } from '@/components/checkout/ShippingCompanySelector'
 import { GovernorateDropdown } from '@/components/checkout/GovernorateDropdown'
-import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
 
 interface Props {
   onSubmit: (data: CheckoutFormData) => Promise<void>
@@ -69,7 +69,12 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
 
   useEffect(() => {
     setValue('governorate', '')
+    setValue('address', '')
   }, [shippingCompany, setValue])
+
+  useEffect(() => {
+    setValue('address', '')
+  }, [governorate, setValue])
 
   // Get governorates for selected company
   const selectedCompanyGovernorates = useMemo(() => {
@@ -77,6 +82,15 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
     const company = shippingMethods.find(m => m.slug === shippingCompany)
     return company?.governorates?.map((g: any) => g.name) || []
   }, [shippingCompany, shippingMethods])
+
+  // Get branch addresses for selected company and governorate
+  const selectedCompanyGovernorateBranches = useMemo(() => {
+    if (!shippingCompany || !governorate) return []
+    const company = shippingMethods.find(m => m.slug === shippingCompany)
+    const gov = company?.governorates?.find((g: any) => g.name === governorate)
+    if (!gov?.branch_addresses) return []
+    return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
+  }, [shippingCompany, governorate, shippingMethods])
 
   const handleFormSubmit = handleSubmit(async (data) => {
     await onSubmit(data)
@@ -190,13 +204,34 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
             <label htmlFor="address" className={labelBase}>
               العنوان التفصيلي <span className="text-[#BA1A1A]">*</span>
             </label>
-            <textarea
-              id="address"
-              rows={2}
-              placeholder="المنطقة، الشارع، أقرب علامة فارقة..."
-              className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
-              {...register('address')}
-            />
+            
+            {selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
+              <div className="relative">
+                <select
+                  id="address"
+                  className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                  {...register('address')}
+                >
+                  <option value="">اختر الفرع / مركز الاستلام...</option>
+                  {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
+                    <option key={idx} value={branch}>
+                      {branch}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
+                  <ChevronDown size={16} />
+                </div>
+              </div>
+            ) : (
+              <textarea
+                id="address"
+                rows={2}
+                placeholder="المنطقة، الشارع، أقرب علامة فارقة..."
+                className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                {...register('address')}
+              />
+            )}
             {errors.address && <p className={errorBase}>{errors.address.message}</p>}
           </div>
         </div>

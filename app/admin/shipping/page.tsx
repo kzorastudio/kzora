@@ -19,7 +19,7 @@ interface ShippingMethod {
   badge: string | null
   is_active: boolean
   sort_order: number
-  shipping_governorates: { governorate_name: string; is_active: boolean }[]
+  shipping_governorates: { governorate_name: string; is_active: boolean; branch_addresses?: string | null }[]
 }
 
 export default function AdminShippingPage() {
@@ -33,7 +33,7 @@ export default function AdminShippingPage() {
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newBadge, setNewBadge] = useState('')
-  const [newGovs, setNewGovs] = useState<string[]>([])
+  const [newGovs, setNewGovs] = useState<{ name: string; branches: string }[]>([])
 
   // Auto-generate slug from name
   function generateSlug(name: string): string {
@@ -66,9 +66,12 @@ export default function AdminShippingPage() {
   async function handleSave(method: ShippingMethod) {
     setSaving(method.id)
     try {
-      const govNames = method.shipping_governorates
+      const govs = method.shipping_governorates
         .filter(g => g.is_active)
-        .map(g => g.governorate_name)
+        .map(g => ({
+          name: g.governorate_name,
+          branch_addresses: g.branch_addresses
+        }))
 
       const res = await fetch('/api/admin/shipping', {
         method: 'PUT',
@@ -80,7 +83,7 @@ export default function AdminShippingPage() {
           description: method.description,
           badge: method.badge,
           is_active: method.is_active,
-          governorates: govNames,
+          governorates: govs,
         }),
       })
       if (!res.ok) throw new Error()
@@ -123,7 +126,7 @@ export default function AdminShippingPage() {
           name: newName.trim(),
           description: newDesc.trim(),
           badge: newBadge.trim() || null,
-          governorates: newGovs,
+          governorates: newGovs.map(g => ({ name: g.name, branch_addresses: g.branches })),
         }),
       })
       if (!res.ok) throw new Error()
@@ -152,7 +155,19 @@ export default function AdminShippingPage() {
       }
       return {
         ...m,
-        shipping_governorates: [...m.shipping_governorates, { governorate_name: gov, is_active: true }],
+        shipping_governorates: [...m.shipping_governorates, { governorate_name: gov, is_active: true, branch_addresses: null }],
+      }
+    }))
+  }
+
+  function updateGovBranches(methodId: string, govName: string, branches: string) {
+    setMethods(prev => prev.map(m => {
+      if (m.id !== methodId) return m
+      return {
+        ...m,
+        shipping_governorates: m.shipping_governorates.map(g => 
+          g.governorate_name === govName ? { ...g, branch_addresses: branches } : g
+        )
       }
     }))
   }
@@ -214,23 +229,36 @@ export default function AdminShippingPage() {
           </div>
 
           <div>
-            <label className="text-xs font-arabic text-secondary mb-2 block">المحافظات المتاحة</label>
-            <div className="flex flex-wrap gap-2">
-              {ALL_GOVERNORATES.map(gov => (
-                <button
-                  key={gov}
-                  type="button"
-                  onClick={() => setNewGovs(prev => prev.includes(gov) ? prev.filter(g => g !== gov) : [...prev, gov])}
-                  className={cn(
-                    'px-3 py-1.5 rounded-lg text-xs font-arabic border transition-all',
-                    newGovs.includes(gov)
-                      ? 'bg-primary/10 border-primary/40 text-primary font-bold'
-                      : 'bg-surface border-outline-variant/30 text-secondary hover:border-primary/30'
-                  )}
-                >
-                  {gov}
-                </button>
-              ))}
+            <label className="text-xs font-arabic text-secondary mb-2 block">المحافظات المتاحة وتفاصيل العناوين</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {ALL_GOVERNORATES.map(gov => {
+                const active = newGovs.find(g => g.name === gov)
+                return (
+                  <div key={gov} className="p-3 rounded-xl border border-outline-variant/30 bg-surface/50 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewGovs(prev => active ? prev.filter(g => g.name !== gov) : [...prev, { name: gov, branches: '' }])}
+                      className={cn(
+                        'w-full px-3 py-1.5 rounded-lg text-xs font-arabic border transition-all text-right flex justify-between items-center',
+                        active
+                          ? 'bg-primary/10 border-primary/40 text-primary font-bold'
+                          : 'bg-surface border-outline-variant/30 text-secondary hover:border-primary/30'
+                      )}
+                    >
+                      {gov}
+                      {active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                    </button>
+                    {active && (
+                      <textarea
+                        placeholder="عناوين الفروع (اختياري - كل عنوان في سطر)"
+                        value={active.branches}
+                        onChange={e => setNewGovs(prev => prev.map(g => g.name === gov ? { ...g, branches: e.target.value } : g))}
+                        className="w-full min-h-[60px] p-2 text-[11px] font-arabic bg-white border border-outline-variant/30 rounded-lg focus:outline-none focus:border-primary/40"
+                      />
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -319,24 +347,34 @@ export default function AdminShippingPage() {
 
                   {/* Governorates */}
                   <div>
-                    <label className="text-xs font-arabic text-secondary mb-2 block">المحافظات المتاحة</label>
-                    <div className="flex flex-wrap gap-2">
+                    <label className="text-xs font-arabic text-secondary mb-2 block">المحافظات المتاحة وتفاصيل العناوين</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {ALL_GOVERNORATES.map(gov => {
-                        const active = govNames.includes(gov)
+                        const active = method.shipping_governorates.find(g => g.governorate_name === gov)
                         return (
-                          <button
-                            key={gov}
-                            type="button"
-                            onClick={() => toggleGov(method.id, gov)}
-                            className={cn(
-                              'px-3 py-1.5 rounded-lg text-xs font-arabic border transition-all',
-                              active
-                                ? 'bg-primary/10 border-primary/40 text-primary font-bold'
-                                : 'bg-surface border-outline-variant/30 text-secondary hover:border-primary/30'
+                          <div key={gov} className="p-3 rounded-xl border border-outline-variant/30 bg-surface/50 space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleGov(method.id, gov)}
+                              className={cn(
+                                'w-full px-3 py-1.5 rounded-lg text-xs font-arabic border transition-all text-right flex justify-between items-center',
+                                active
+                                  ? 'bg-primary/10 border-primary/40 text-primary font-bold'
+                                  : 'bg-surface border-outline-variant/30 text-secondary hover:border-primary/30'
+                              )}
+                            >
+                              {gov}
+                              {active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                            </button>
+                            {active && (
+                              <textarea
+                                placeholder="عناوين الفروع (اختياري - كل عنوان في سطر)"
+                                value={active.branch_addresses || ''}
+                                onChange={e => updateGovBranches(method.id, gov, e.target.value)}
+                                className="w-full min-h-[60px] p-2 text-[11px] font-arabic bg-white border border-outline-variant/30 rounded-lg focus:outline-none focus:border-primary/40"
+                              />
                             )}
-                          >
-                            {gov}
-                          </button>
+                          </div>
                         )
                       })}
                     </div>

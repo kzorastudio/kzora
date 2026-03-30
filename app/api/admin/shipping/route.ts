@@ -8,7 +8,7 @@ export async function GET() {
     .from('shipping_methods')
     .select(`
       id, slug, name, description, badge, is_active, sort_order,
-      shipping_governorates ( id, governorate_name, is_active, fee_syp, fee_usd )
+      shipping_governorates ( id, governorate_name, is_active, fee_syp, fee_usd, branch_addresses )
     `)
     .order('sort_order', { ascending: true })
 
@@ -33,9 +33,10 @@ export async function POST(req: NextRequest) {
   if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 })
 
   if (governorates?.length) {
-    const rows = governorates.map((g: string) => ({
+    const rows = governorates.map((g: any) => ({
       method_id: method.id,
-      governorate_name: g,
+      governorate_name: typeof g === 'string' ? g : g.name,
+      branch_addresses: typeof g === 'string' ? null : (g.branch_addresses || null),
     }))
     await supabase.from('shipping_governorates').insert(rows)
   }
@@ -62,9 +63,10 @@ export async function PUT(req: NextRequest) {
   if (governorates) {
     await supabase.from('shipping_governorates').delete().eq('method_id', id)
     if (governorates.length > 0) {
-      const rows = governorates.map((g: string) => ({
+      const rows = governorates.map((g: any) => ({
         method_id: id,
-        governorate_name: g,
+        governorate_name: typeof g === 'string' ? g : g.name,
+        branch_addresses: typeof g === 'string' ? null : (g.branch_addresses || null),
       }))
       await supabase.from('shipping_governorates').insert(rows)
     }

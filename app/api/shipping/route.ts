@@ -16,7 +16,8 @@ export async function GET() {
           governorate_name,
           fee_syp,
           fee_usd,
-          is_active
+          is_active,
+          branch_addresses
         )
       `)
       .eq('is_active', true)
@@ -32,7 +33,8 @@ export async function GET() {
         .map((g: any) => ({
           name: g.governorate_name,
           fee_syp: g.fee_syp,
-          fee_usd: g.fee_usd
+          fee_usd: g.fee_usd,
+          branch_addresses: g.branch_addresses
         }))
     }))
 
