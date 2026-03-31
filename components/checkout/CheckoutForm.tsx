@@ -237,36 +237,34 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
           {/* Address */}
           <div>
             <label htmlFor="address" className={labelBase}>
-              العنوان التفصيلي <span className="text-[#9E9890] font-arabic text-[11px] font-normal mr-1.5">(اختياري)</span>
+              مركز الاستلام <span className="text-[#BA1A1A]">*</span>
             </label>
             
-            {selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
-              <div className="relative">
-                <select
-                  id="address"
-                  className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
-                  {...register('address')}
-                >
-                  <option value="">اختر الفرع / مركز الاستلام...</option>
-                  {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
-                    <option key={idx} value={branch}>
-                      {branch}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
-                  <ChevronDown size={16} />
-                </div>
-              </div>
-            ) : (
-              <textarea
+            <div className="relative">
+              <select
                 id="address"
-                rows={2}
-                placeholder="المنطقة، الشارع، أقرب علامة فارقة..."
-                className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
                 {...register('address')}
-              />
-            )}
+              >
+                {!governorate ? (
+                  <option value="">يرجى اختيار المحافظة أولاً...</option>
+                ) : selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
+                  <>
+                    <option value="">اختر مركز الاستلام / الفرع...</option>
+                    {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
+                      <option key={idx} value={branch}>
+                        {branch}
+                      </option>
+                    ))}
+                  </>
+                ) : (
+                  <option value="">لا تتوفر مراكز شحن حالياً في هذه المحافظة</option>
+                )}
+              </select>
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
+                <ChevronDown size={16} />
+              </div>
+            </div>
             {errors.address && <p className={errorBase}>{errors.address.message}</p>}
           </div>
         </div>

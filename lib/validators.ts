@@ -14,8 +14,7 @@ export const checkoutSchema = z.object({
     .min(1, 'يرجى اختيار المحافظة'),
   address: z
     .string()
-    .max(500, 'العنوان طويل جداً')
-    .default(''),
+    .min(1, 'يرجى اختيار مركز الاستلام أو العنوان'),
   shipping_company: z.string({ required_error: 'يرجى اختيار شركة الشحن' }).min(1, 'يرجى اختيار شركة الشحن'),
   coupon_code: z.string().optional(),
   payment_method: z.enum(['cod', 'sham_cash']).default('cod'),
