@@ -6,17 +6,18 @@ import { cn } from '@/lib/utils'
 import { formatPrice, getDiscountPercent } from '@/lib/utils'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { useCartStore } from '@/store/cartStore'
-import type { ProductFull, ProductColor, CartItem } from '@/types'
+import type { ProductFull, ProductColor, CartItem, HomepageSettings } from '@/types'
 import toast from 'react-hot-toast'
 
 import { useRouter } from 'next/navigation'
 
 interface Props {
   product: ProductFull
+  settings: HomepageSettings | null
   onColorChange?: (color: ProductColor | null) => void
 }
 
-export default function ProductActions({ product, onColorChange }: Props) {
+export default function ProductActions({ product, settings, onColorChange }: Props) {
   const router = useRouter()
   const { currency, setCurrency } = useCurrencyStore()
   const { addItem, openCart } = useCartStore()
@@ -49,6 +50,23 @@ export default function ProductActions({ product, onColorChange }: Props) {
   const currentPriceUsd = product.discount_price_usd ?? product.price_usd
   const displayPrice = currency === 'SYP' ? currentPriceSyp : currentPriceUsd
   const originalPrice = currency === 'SYP' ? product.price_syp : product.price_usd
+
+  // Multi-product discount calculation (Live)
+  const multiDiscSyp = useMemo(() => {
+    if (!settings?.discount_multi_items_enabled) return 0
+    if (quantity >= 3) return settings.discount_3_items_plus_syp
+    if (quantity >= 2) return settings.discount_2_items_syp
+    return 0
+  }, [quantity, settings])
+
+  const multiDiscUsd = useMemo(() => {
+    if (multiDiscSyp === 0) return 0
+    const ratio = product.price_syp > 0 ? product.price_usd / product.price_syp : 0
+    return parseFloat((multiDiscSyp * ratio).toFixed(2))
+  }, [multiDiscSyp, product.price_syp, product.price_usd])
+
+  const currentMultiDisc = currency === 'SYP' ? multiDiscSyp : multiDiscUsd
+  const totalPrice = (displayPrice * quantity) - currentMultiDisc
 
   const handleAddToCart = useCallback(() => {
     if (outOfStock) return
@@ -109,6 +127,12 @@ export default function ProductActions({ product, onColorChange }: Props) {
             <span className="text-[#9E9890] line-through text-base tabular-nums">
               {formatPrice(originalPrice, currency)}
             </span>
+          )}
+          {multiDiscSyp > 0 && quantity > 1 && (
+             <span className="text-[#B8860B] font-arabic text-sm font-bold flex items-center gap-1.5 animate-pulse">
+               <span className="w-2 h-2 rounded-full bg-[#B8860B]" />
+               عرض خاص: خصم إضافي {formatPrice(currentMultiDisc, currency)}
+             </span>
           )}
         </div>
         {/* Currency toggle */}
@@ -285,10 +309,10 @@ export default function ProductActions({ product, onColorChange }: Props) {
 
           {/* Total for multiple items */}
           {quantity > 1 && (
-            <span className="mr-3 font-arabic text-sm text-[#6B6560]">
-              الإجمالي:{' '}
-              <span className="font-bold text-[#785600] tabular-nums">
-                {formatPrice(displayPrice * quantity, currency)}
+            <span className="mr-3 font-arabic text-sm text-[#6B6560] flex flex-col items-start gap-0.5">
+              <span className="opacity-70">المجموع النهائي:</span>
+              <span className="font-bold text-[#785600] text-lg tabular-nums">
+                {formatPrice(totalPrice, currency)}
               </span>
             </span>
           )}

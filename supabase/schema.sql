@@ -189,6 +189,16 @@ CREATE TABLE IF NOT EXISTS homepage_settings (
   stat_exchanges_count        TEXT DEFAULT '2%',
   shipping_policy             TEXT DEFAULT '',
   return_policy               TEXT DEFAULT '',
+  hero_badge_text             TEXT DEFAULT '',
+  hero_badge_color            TEXT DEFAULT '#785600',
+  sham_cash_enabled           BOOLEAN DEFAULT false,
+  sham_cash_number            TEXT DEFAULT '',
+  sham_cash_image_url         TEXT DEFAULT NULL,
+  sham_cash_public_id         TEXT DEFAULT NULL,
+  sham_cash_instructions      TEXT DEFAULT '',
+  discount_multi_items_enabled BOOLEAN DEFAULT false,
+  discount_2_items_syp        INTEGER DEFAULT 2000,
+  discount_3_items_plus_syp   INTEGER DEFAULT 3000,
   created_at                  TIMESTAMPTZ DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ DEFAULT NOW()
 );

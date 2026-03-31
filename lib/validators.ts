@@ -40,7 +40,10 @@ export type LoginFormData = z.infer<typeof loginSchema>
 export const productSchema = z.object({
   name: z.string().min(2, 'اسم المنتج مطلوب').max(200),
   description: z.string().min(10, 'الوصف يجب أن يكون 10 أحرف على الأقل'),
-  category_id: z.string().uuid('يرجى اختيار قسم').nullable(),
+  category_id: z.preprocess(
+    val => (val === '' || val == null) ? null : val,
+    z.string().uuid('يرجى اختيار قسم صحيح').nullable()
+  ),
   price_syp: z.number().positive('السعر بالليرة مطلوب'),
   price_usd: z.number().positive('السعر بالدولار مطلوب'),
   discount_price_syp: z.number().positive().nullable().optional(),
