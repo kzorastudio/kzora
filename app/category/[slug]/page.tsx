@@ -49,15 +49,17 @@ async function getCategoryProducts(categoryId: string): Promise<ProductFull[]> {
 
   if (error || !data) return []
 
-  return data.map((p: Record<string, unknown>) => ({
+  return (data || []).map((p: any) => ({
     ...p,
-    images:   [...((p.product_images as { display_order: number }[]) ?? [])].sort(
+    images: [...((p.product_images as { display_order: number }[]) ?? [])].sort(
       (a, b) => a.display_order - b.display_order
     ),
-    colors:   p.product_colors ?? [],
-    sizes:    ((p.product_sizes as { size: number }[]) ?? []).map((s) => s.size).sort((a, b) => a - b),
-    tags:     ((p.product_tags as { tag: string }[]) ?? []).map((t) => t.tag),
-    category: Array.isArray(p.categories) ? (p.categories[0] ?? null) : (p.categories ?? null),
+    colors: p.product_colors ?? [],
+    sizes: ((p.product_sizes as { size: number; is_available: boolean }[]) ?? []).sort(
+      (a, b) => a.size - b.size
+    ),
+    tags: ((p.product_tags as { tag: string }[]) ?? []).map((t) => t.tag),
+    category: Array.isArray(p.categories) ? p.categories[0] ?? null : p.categories ?? null,
   })) as ProductFull[]
 }
 
