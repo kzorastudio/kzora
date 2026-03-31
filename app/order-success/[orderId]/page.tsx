@@ -7,9 +7,9 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
-import { formatPrice } from '@/lib/utils'
-import { SHIPPING_LABELS } from '@/lib/utils'
-import type { OrderFull, OrderItem } from '@/types'
+import { formatPrice, SHIPPING_LABELS } from '@/lib/utils'
+import type { OrderFull, OrderItem, HomepageSettings } from '@/types'
+import { CreditCard } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'تم استلام طلبك — كزورا',
@@ -44,6 +44,17 @@ async function getOrder(orderId: string): Promise<OrderFull | null> {
     items:          items          ?? [],
     status_history: history        ?? [],
   } as OrderFull
+}
+
+async function getHomepageSettings(): Promise<HomepageSettings | null> {
+  const { data, error } = await supabaseAdmin
+    .from('homepage_settings')
+    .select('*')
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return data as HomepageSettings
 }
 
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? '963964514765'
@@ -118,6 +129,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
   }
 
   const order = await getOrder(orderId)
+  const settings = await getHomepageSettings()
 
   if (!order) notFound()
 
@@ -307,9 +319,60 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   </span>
                 </div>
                 <p className="text-xs font-arabic text-secondary text-left" dir="ltr">
-                  الدفع عند الاستلام 💵
+                  {order.payment_method === 'sham_cash' ? (
+                    <span className="flex flex-col items-end gap-1">
+                      <span className="text-[#785600] font-bold">شام كاش (تحويل مسبق) 📱</span>
+                      <span className="text-[10px] text-secondary">رقم المحفظة: {order.customer_phone}</span>
+                    </span>
+                  ) : (
+                    'الدفع عند الاستلام 💵'
+                  )}
                 </p>
               </div>
+
+              {/* Sham Cash Post-Purchase Instructions */}
+              {order.payment_method === 'sham_cash' && (
+                <div className="bg-[#785600]/5 border border-[#785600]/20 rounded-xl p-5 space-y-4 animate-in fade-in zoom-in duration-500">
+                  <div className="flex items-center gap-2 text-[#785600]">
+                    <CreditCard size={18} />
+                    <h3 className="font-arabic font-bold text-sm">خطوات إتمام الدفع (شام كاش)</h3>
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-5 text-center">
+                    <p className="font-arabic text-xs text-[#4A4742] leading-relaxed">
+                      يرجى تحويل المبلغ الإجمالي إلى الرقم أدناه وإرفاق صورة الإشعار عبر الواتساب لتأكيد الطلب.
+                    </p>
+                    
+                    <div className="w-full space-y-4">
+                       <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] font-arabic text-secondary">رقم المحفظة (التحويل إلى):</span>
+                          <span className="font-body text-xl font-black text-primary select-all bg-white px-6 py-2 rounded-xl border border-primary/20 shadow-sm transition-all active:scale-95">
+                             {settings?.sham_cash_number || '0964514765'}
+                          </span>
+                       </div>
+
+                       {settings?.sham_cash_image_url && (
+                          <div className="bg-white p-3 rounded-2xl shadow-sm border border-outline-variant/10 inline-block mx-auto">
+                             <img 
+                                src={settings.sham_cash_image_url} 
+                                alt="Sham Cash QR" 
+                                className="w-[180px] h-auto rounded-lg"
+                             />
+                             <p className="text-[9px] font-arabic text-secondary mt-2 opacity-60">صورة الحساب / QR Code</p>
+                          </div>
+                       )}
+
+                       {settings?.sham_cash_instructions && (
+                          <div className="mt-2 text-right bg-white/50 p-3 rounded-lg border border-[#785600]/5">
+                             <p className="font-arabic text-[11px] text-[#4A4742] leading-relaxed whitespace-pre-line">
+                                {settings.sham_cash_instructions}
+                             </p>
+                          </div>
+                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* WhatsApp reminder */}
               <div className="bg-[#25D366]/8 rounded-xl p-4">

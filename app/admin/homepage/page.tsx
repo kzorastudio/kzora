@@ -67,6 +67,8 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   hero_badge_color:       '#785600',
   sham_cash_enabled:      false,
   sham_cash_number:       '',
+  sham_cash_image_url:    null,
+  sham_cash_public_id:    null,
   sham_cash_instructions: '',
   discount_multi_items_enabled: false,
   discount_2_items_syp: 2000,
@@ -79,6 +81,7 @@ export default function HomepagePage() {
   const [saving, setSaving]       = useState(false)
   const [dirty, setDirty]         = useState(false)
   const [bannerImages, setBannerImages] = useState<UploadedImage[]>([])
+  const [shamCashImages, setShamCashImages] = useState<UploadedImage[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
 
   const fetchSettings = useCallback(async () => {
@@ -94,6 +97,15 @@ export default function HomepagePage() {
           id: 'promo',
           url: s.promo_banner_url,
           public_id: s.promo_banner_public_id!,
+          isLocal: false,
+          is_main: true
+        }])
+      }
+      if (s.sham_cash_image_url) {
+        setShamCashImages([{
+          id: 'sham',
+          url: s.sham_cash_image_url,
+          public_id: s.sham_cash_public_id!,
           isLocal: false,
           is_main: true
         }])
@@ -135,6 +147,19 @@ export default function HomepagePage() {
       } else if (bannerImages.length === 0) {
         finalSettings.promo_banner_url = null
         finalSettings.promo_banner_public_id = null
+      }
+
+      if (shamCashImages[0]?.isLocal && shamCashImages[0].file) {
+        const fd = new FormData()
+        fd.append('file', shamCashImages[0].file)
+        fd.append('folder', 'homepage')
+        const res = await fetch('/api/images/upload', { method: 'POST', body: fd })
+        const uploadData = await res.json()
+        finalSettings.sham_cash_image_url = uploadData.url
+        finalSettings.sham_cash_public_id = uploadData.public_id
+      } else if (shamCashImages.length === 0) {
+        finalSettings.sham_cash_image_url = null
+        finalSettings.sham_cash_public_id = null
       }
 
       // No need to delete images at save time if we delete them in real-time
@@ -415,6 +440,35 @@ export default function HomepagePage() {
                       placeholder="اشرح للزبون كيفية التحويل وماذا يفعل بعد التحويل..."
                       className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-arabic focus:border-[#785600] outline-none min-h-[100px] transition-all"
                     />
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-sm font-arabic font-bold text-secondary flex items-center gap-2">
+                      <ImageIcon size={16} /> صورة الحساب أو QR Code (اختياري)
+                    </label>
+                    <ImageUploader
+                      images={shamCashImages}
+                      onAddFiles={(files) => {
+                        const file = files[0]; if (!file) return;
+                        setShamCashImages([{ id: 'new-sham', file, url: URL.createObjectURL(file), public_id: '', isLocal: true, is_main: true }]);
+                        setDirty(true);
+                      }}
+                      onRemoveImage={() => { 
+                        if (shamCashImages[0] && !shamCashImages[0].isLocal && shamCashImages[0].public_id) {
+                          fetch('/api/images/delete', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ public_id: shamCashImages[0].public_id })
+                          }).catch(err => console.error('Failed to delete sham image', err))
+                        }
+                        if (shamCashImages[0]?.isLocal && shamCashImages[0].url) URL.revokeObjectURL(shamCashImages[0].url)
+                        setShamCashImages([]); 
+                        setDirty(true); 
+                      }}
+                      onSetMain={() => {}}
+                      maxFiles={1}
+                    />
+                    <p className="text-[11px] text-secondary/60 font-arabic">سوف تظهر هذه الصورة للزبون عند اختيار شام كاش لتسهيل عملية التحويل.</p>
                   </div>
                 </div>
               )}

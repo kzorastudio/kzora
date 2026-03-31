@@ -196,6 +196,8 @@ export interface HomepageSettings {
   hero_badge_color: string | null
   sham_cash_enabled: boolean
   sham_cash_number: string | null
+  sham_cash_image_url: string | null
+  sham_cash_public_id: string | null
   sham_cash_instructions: string | null
   discount_multi_items_enabled: boolean
   discount_2_items_syp: number

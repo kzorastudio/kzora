@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { href: '/admin/navigation', label: 'إدارة التنقل',     icon: Menu,             exact: false },
   { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false },
   { href: '/admin/coupons',    label: 'الكوبونات',        icon: Tag,              exact: false },
-  { href: '/admin/homepage',   label: 'الصفحة الرئيسية', icon: Image,            exact: false },
+  { href: '/admin/homepage',   label: 'محتوى المتجر',     icon: Image,            exact: false },
   { href: '/admin/shipping',   label: 'شركات الشحن',      icon: Truck,            exact: false },
   { href: '/admin/pages',      label: 'الصفحات',          icon: FileText,         exact: false },
 ]

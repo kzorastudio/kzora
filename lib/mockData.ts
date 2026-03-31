@@ -297,6 +297,8 @@ export const MOCK_HOMEPAGE_SETTINGS: HomepageSettings = {
   hero_badge_color: '#785600',
   sham_cash_enabled: false,
   sham_cash_number: null,
+  sham_cash_image_url: null,
+  sham_cash_public_id: null,
   sham_cash_instructions: null,
   discount_multi_items_enabled: false,
   discount_2_items_syp: 2000,

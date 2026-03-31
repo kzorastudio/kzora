@@ -350,6 +350,17 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
               <AlertTriangle size={14} className="text-[#1976D2] shrink-0 mt-0.5" />
               <p className="font-arabic text-[10px] text-[#1976D2]">يرجى إرفاق إشعار الدفع عبر الواتساب فور إرسال الطلب ليتم تأكيده.</p>
             </div>
+
+            {settings.sham_cash_image_url && (
+              <div className="mt-4 flex flex-col items-center gap-3">
+                <p className="font-arabic text-[10px] text-[#785600] font-bold">امسح الكود أو استخدم صورة الحساب للتحويل:</p>
+                <img 
+                  src={settings.sham_cash_image_url} 
+                  alt="Sham Cash QR/Account" 
+                  className="max-sm:w-full w-[220px] h-auto rounded-2xl border-4 border-white shadow-lg bg-white"
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

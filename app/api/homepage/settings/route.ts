@@ -46,6 +46,8 @@ export async function GET(_request: NextRequest) {
           hero_badge_color:       '#785600',
           sham_cash_enabled:      false,
           sham_cash_number:       '',
+          sham_cash_image_url:    null,
+          sham_cash_public_id:    null,
           sham_cash_instructions: '',
           discount_multi_items_enabled: false,
           discount_2_items_syp: 2000,
@@ -96,6 +98,8 @@ export async function PUT(request: NextRequest) {
       'hero_badge_color',
       'sham_cash_enabled',
       'sham_cash_number',
+      'sham_cash_image_url',
+      'sham_cash_public_id',
       'sham_cash_instructions',
       'discount_multi_items_enabled',
       'discount_2_items_syp',
@@ -152,11 +156,21 @@ export async function PUT(request: NextRequest) {
     }
 
     // Cleanup Cloudinary if promo banner changed
-    if (oldPublicId && body.promo_banner_public_id && oldPublicId !== body.promo_banner_public_id) {
+    if (oldPublicId && oldPublicId !== body.promo_banner_public_id) {
        try {
          await deleteImage(oldPublicId)
        } catch (err) {
          console.error('Cloudinary promo banner delete error:', err)
+       }
+    }
+
+    // Cleanup Cloudinary if sham cash image changed
+    const oldShamPublicId = existing?.sham_cash_public_id
+    if (oldShamPublicId && oldShamPublicId !== body.sham_cash_public_id) {
+       try {
+         await deleteImage(oldShamPublicId)
+       } catch (err) {
+         console.error('Cloudinary sham cash image delete error:', err)
        }
     }
 
