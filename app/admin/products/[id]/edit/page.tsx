@@ -22,7 +22,7 @@ async function getProduct(id: string): Promise<ProductFull | null> {
       category:categories(*),
       images:product_images(*),
       colors:product_colors(*),
-      sizes:product_sizes(size),
+      sizes:product_sizes(size, is_available),
       tags:product_tags(tag)
       `
     )
@@ -33,8 +33,11 @@ async function getProduct(id: string): Promise<ProductFull | null> {
 
   return {
     ...data,
-    sizes: (data.sizes as { size: number }[]).map((s) => s.size),
-    tags:  (data.tags  as { tag: string }[]).map((t) => t.tag) as ProductFull['tags'],
+    sizes: (data.sizes as { size: number; is_available: boolean }[]).map((s) => ({
+      size: s.size,
+      is_available: s.is_available ?? true,
+    })),
+    tags: (data.tags as { tag: string }[]).map((t) => t.tag) as ProductFull['tags'],
   } as ProductFull
 }
 

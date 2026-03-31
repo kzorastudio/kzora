@@ -266,10 +266,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {product.sizes.map((s) => {
-                const item = typeof s === 'number' ? { size: s, is_available: true } : s
-                const size = item.size
-                const isAvailable = item.is_available
+              {(product.sizes || []).map((s) => {
+                const size = s.size
+                const isAvailable = s.is_available
 
                 return (
                   <button
