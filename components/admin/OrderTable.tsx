@@ -12,6 +12,7 @@ const SHIPPING_DISPLAY: Record<string, string> = {
   karam:   'كرم',
   qadmous: 'قدموس',
   masarat: 'مسارات',
+  regular_delivery: 'توصيل عادي',
 }
 
 interface OrderTableProps {
