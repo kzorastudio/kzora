@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Edit2, X, Check, Loader2, User, Phone, MapPin, Truck, FileText } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Edit2, X, Check, Loader2, User, Phone, MapPin, Truck, FileText, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { GOVERNORATES } from '@/lib/constants'
 import type { OrderFull } from '@/types'
+import { cn } from '@/lib/utils'
 
 interface OrderDetailsEditorProps {
   order: OrderFull
@@ -37,7 +38,36 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     }
   }, [isEditing])
 
+  // Get branch addresses for the selected governorate and shipping company
+  const availableBranches = useMemo(() => {
+    if (!formData.customer_governorate) return []
+    
+    // If shipping company is selected, filter by it
+    if (formData.shipping_company) {
+      const company = shippingMethods.find(m => m.slug === formData.shipping_company)
+      const gov = company?.governorates?.find((g: any) => g.name === formData.customer_governorate)
+      if (gov?.branch_addresses) {
+        return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
+      }
+    }
+
+    // Fallback: aggregated branches from all companies for this governorate
+    const all = new Set<string>()
+    shippingMethods.forEach(m => {
+      const gov = m.governorates?.find((g: any) => g.name === formData.customer_governorate)
+      if (gov?.branch_addresses) {
+        gov.branch_addresses.split('\n').forEach((s: string) => all.add(s.trim()))
+      }
+    })
+    return Array.from(all).filter(Boolean).sort()
+  }, [formData.customer_governorate, formData.shipping_company, shippingMethods])
+
   async function handleUpdate() {
+    if (!formData.customer_address) {
+      toast.error('يرجى اختيار العنوان بالتفصيل')
+      return
+    }
+
     setUpdating(true)
     try {
       const res = await fetch(`/api/orders/${order.id}`, {
@@ -87,7 +117,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
           {/* Customer Name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-              <User size={14} /> الاسم الكامل
+              <User size={14} /> الاسم الكامل <span className="text-error">*</span>
             </label>
             <input
               type="text"
@@ -100,7 +130,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
           {/* Phone */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-              <Phone size={14} /> رقم الهاتف
+              <Phone size={14} /> رقم الهاتف <span className="text-error">*</span>
             </label>
             <input
               type="tel"
@@ -115,13 +145,16 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
             {/* Governorate */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-                <MapPin size={14} /> المحافظة
+                <MapPin size={14} /> المحافظة <span className="text-error">*</span>
               </label>
               <select
                 value={formData.customer_governorate}
-                onChange={(e) => setFormData({ ...formData, customer_governorate: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, customer_governorate: e.target.value, customer_address: '' })
+                }}
                 className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
               >
+                <option value="">اختر المحافظة...</option>
                 {GOVERNORATES.map(gov => <option key={gov} value={gov}>{gov}</option>)}
               </select>
             </div>
@@ -129,38 +162,55 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
             {/* Shipping Company — Dynamic */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-                <Truck size={14} /> شركة الشحن
+                <Truck size={14} /> شركة الشحن <span className="text-error">*</span>
               </label>
               <select
                 value={formData.shipping_company}
-                onChange={(e) => setFormData({ ...formData, shipping_company: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, shipping_company: e.target.value, customer_address: '' })
+                }}
                 className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
               >
+                <option value="">اختر شركة الشحن...</option>
                 {shippingMethods.length > 0 ? (
                   shippingMethods.map((m: any) => (
                     <option key={m.slug} value={m.slug}>{m.name}</option>
                   ))
                 ) : (
-                  /* Fallback: show current value while loading */
                   <option value={formData.shipping_company}>{formData.shipping_company}</option>
                 )}
               </select>
             </div>
           </div>
 
-          {/* Address — Optional */}
+          {/* Address — Mandatory SELECT */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-              <MapPin size={14} /> العنوان بالتفصيل
-              <span className="text-[10px] text-secondary/60 font-normal">(اختياري)</span>
+              <MapPin size={14} /> العنوان بالتفصيل <span className="text-error">*</span>
             </label>
-            <textarea
-              rows={2}
-              value={formData.customer_address}
-              onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
-              placeholder="يمكنك ترك هذا الحقل فارغاً..."
-              className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none placeholder:text-secondary/40"
-            />
+            <div className="relative">
+              <select
+                value={formData.customer_address}
+                onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
+                className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container pr-4 pl-10 text-sm font-arabic focus:outline-none focus:border-primary/60 transition appearance-none"
+              >
+                {!formData.customer_governorate ? (
+                  <option value="">يرجى اختيار المحافظة أولاً...</option>
+                ) : availableBranches.length > 0 ? (
+                  <>
+                    <option value="">اختر العنوان بالتفصيل...</option>
+                    {availableBranches.map((branch: string, idx: number) => (
+                      <option key={idx} value={branch}>{branch}</option>
+                    ))}
+                  </>
+                ) : (
+                  <option value="">لا تتوفر فروع حالياً لهده الخصائص</option>
+                )}
+              </select>
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary/40">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </div>
 
           {/* Notes */}

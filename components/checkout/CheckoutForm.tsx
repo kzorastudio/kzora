@@ -238,7 +238,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
           {/* Address */}
           <div>
             <label htmlFor="address" className={labelBase}>
-              مركز الاستلام <span className="text-[#BA1A1A]">*</span>
+              العنوان بالتفصيل <span className="text-[#BA1A1A]">*</span>
             </label>
             
             <div className="relative">
@@ -251,7 +251,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
                   <option value="">يرجى اختيار المحافظة أولاً...</option>
                 ) : selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
                   <>
-                    <option value="">اختر مركز الاستلام / الفرع...</option>
+                    <option value="">اختر العنوان بالتفصيل...</option>
                     {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
                       <option key={idx} value={branch}>
                         {branch}
