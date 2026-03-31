@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
         total_syp,
         total_usd,
         currency_used,
+        payment_method,
+        payment_transaction_id,
         status,
         notes,
         created_at,

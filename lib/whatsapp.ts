@@ -10,6 +10,7 @@ interface OrderForWhatsApp {
   governorate: string
   address: string
   shippingCompany: string
+  shippingCompanyName?: string
   items: CartItem[]
   couponCode?: string
   discountSyp?: number
@@ -20,6 +21,7 @@ interface OrderForWhatsApp {
   totalUsd: number
   currency: Currency
   paymentMethod?: string
+  paymentTransactionId?: string
   shamCashNumber?: string
 }
 
@@ -39,7 +41,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     `▫️ *العنوان:* ${order.address}`,
     ``,
     `🚚 *تفاصيل الشحن:*`,
-    `▫️ *الشركة:* ${SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`,
+    `▫️ *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`,
     ``,
     `📦 *المنتجات المطلوبة:*`,
   ]
@@ -83,6 +85,10 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   
   if (order.paymentMethod === 'sham_cash' && order.shamCashNumber) {
     lines.push(`📱 *رقم محفظة شام كاش:* ${order.shamCashNumber}`)
+  }
+  
+  if (order.paymentMethod === 'sham_cash' && order.paymentTransactionId) {
+    lines.push(`🔑 *رمز/رقم عملية التحويل:* ${order.paymentTransactionId}`)
   }
 
   lines.push(``)

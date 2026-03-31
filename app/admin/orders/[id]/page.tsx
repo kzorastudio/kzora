@@ -40,9 +40,20 @@ async function getOrder(id: string): Promise<OrderFull | null> {
   return data as OrderFull
 }
 
+async function getShippingMethodName(slug: string): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from('shipping_methods')
+    .select('name')
+    .eq('slug', slug)
+    .maybeSingle()
+  return data?.name || SHIPPING_LABELS[slug] || slug
+}
+
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const order = await getOrder(params.id)
   if (!order) notFound()
+
+  const shippingName = await getShippingMethodName(order.shipping_company)
 
   const subtotal = order.currency_used === 'USD'
     ? formatPrice(order.subtotal_usd, 'USD')
@@ -231,9 +242,17 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               <div className="text-sm font-arabic">
                 <span className="text-secondary">شركة الشحن: </span>
                 <span className="text-on-surface font-medium">
-                  {SHIPPING_LABELS[order.shipping_company] ?? order.shipping_company}
+                  {shippingName}
                 </span>
               </div>
+              {(order as any).payment_transaction_id && (
+                <div className="flex justify-between items-center bg-[#FFF3E0] px-3 py-2 rounded-xl border border-[#FFB74D]/30">
+                  <span className="text-xs font-arabic text-[#5D4037]">رمز عملية التحويل</span>
+                  <span className="text-xs font-label font-bold text-[#E65100]" dir="ltr">
+                    {(order as any).payment_transaction_id}
+                  </span>
+                </div>
+              )}
               {order.notes && (
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-arabic text-secondary">ملاحظات</span>

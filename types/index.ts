@@ -104,6 +104,7 @@ export interface Order {
   total_usd: number
   currency_used: 'SYP' | 'USD'
   payment_method: string
+  payment_transaction_id: string | null
   status: OrderStatus
   notes: string | null
   created_at: string
@@ -281,6 +282,7 @@ export interface CreateOrderPayload {
   }
   shipping_company: string
   payment_method: string
+  payment_transaction_id?: string
   coupon_code?: string
   currency_used: Currency
   notes?: string

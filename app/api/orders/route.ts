@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderPayload = await request.json()
-    const { items, customer, shipping_company, payment_method, coupon_code, currency_used, notes } = body
+    const { items, customer, shipping_company, payment_method, payment_transaction_id, coupon_code, currency_used, notes } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -264,6 +264,7 @@ export async function POST(request: NextRequest) {
         customer_address:     customer.address,
         shipping_company,
         payment_method:       payment_method || 'cod',
+        payment_transaction_id: payment_transaction_id || null,
         coupon_code:          appliedCouponCode,
         discount_amount_syp:  finalDiscountSyp,
         discount_amount_usd:  finalDiscountUsd,

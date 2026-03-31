@@ -57,6 +57,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
       notes: '',
       coupon_code: '',
       payment_method: 'cod',
+      payment_transaction_id: '',
     },
   })
 
@@ -361,6 +362,25 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
                 />
               </div>
             )}
+
+            {/* Transaction ID Input */}
+            <div className="mt-4">
+              <label htmlFor="payment_transaction_id" className={labelBase}>
+                رقم/رمز عملية التحويل <span className="text-[#BA1A1A]">*</span>
+              </label>
+              <input
+                id="payment_transaction_id"
+                type="text"
+                dir="ltr"
+                placeholder="أدخل رقم أو رمز عملية التحويل من شام كاش..."
+                className={cn(fieldBase, errors.payment_transaction_id && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                {...register('payment_transaction_id')}
+              />
+              {errors.payment_transaction_id && <p className={errorBase}>{errors.payment_transaction_id.message}</p>}
+              <p className="mt-1 text-[10px] font-arabic text-[#9E9890]">
+                ستجد رقم العملية في إشعار التحويل على تطبيق شام كاش
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -26,6 +26,7 @@ export default function CheckoutPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mounted,      setMounted]      = useState(false)
+  const [shippingMethods, setShippingMethods] = useState<any[]>([])
 
   // Coupon state
   const [couponCode,   setCouponCode]   = useState<string | undefined>()
@@ -42,6 +43,10 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true)
+    fetch('/api/shipping')
+      .then(r => r.json())
+      .then(d => setShippingMethods(d.methods || []))
+      .catch(() => {})
   }, [])
 
   const handleCouponApply = useCallback(
@@ -88,6 +93,7 @@ export default function CheckoutPage() {
           },
           shipping_company: (formData.shipping_company as string) ?? '',
           payment_method:   formData.payment_method,
+          payment_transaction_id: formData.payment_transaction_id ?? undefined,
           coupon_code:      couponCode,
           currency_used:    currency,
           notes:            formData.notes ?? undefined,
@@ -108,6 +114,11 @@ export default function CheckoutPage() {
 
         const { orderId, orderNumber } = data as { orderId: string; orderNumber: string }
 
+        // Find shipping company display name dynamically
+        const shippingSlug = (formData.shipping_company as string) ?? ''
+        const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
+        const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug] || shippingSlug
+
         // Build and open WhatsApp URL
         const whatsappUrl = buildWhatsAppUrl({
           orderNumber,
@@ -115,7 +126,8 @@ export default function CheckoutPage() {
           customerPhone:   formData.phone,
           governorate:     formData.governorate,
           address:         formData.address ?? '',
-          shippingCompany: SHIPPING_LABELS[formData.shipping_company as keyof typeof SHIPPING_LABELS] ?? formData.shipping_company ?? '',
+          shippingCompany: shippingSlug,
+          shippingCompanyName,
           items,
           couponCode,
           discountSyp:     discountSyp || undefined,
@@ -126,6 +138,7 @@ export default function CheckoutPage() {
           totalUsd:        Math.max(0, subtotalUsd() - discountUsd),
           currency,
           paymentMethod:   formData.payment_method,
+          paymentTransactionId: formData.payment_transaction_id ?? undefined,
           shamCashNumber:  settings?.sham_cash_number ?? undefined,
         })
 

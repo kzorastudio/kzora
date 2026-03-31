@@ -71,6 +71,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
 }
 
 export const SHIPPING_LABELS: Record<string, string> = {
+  regular_delivery: 'توصيل عادي (مندوب داخلي)',
   karam:   'كرم (Karam)',
   qadmous: 'قدموس (Qadmous)',
   masarat: 'مسارات (Masarat)',

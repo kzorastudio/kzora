@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Edit2, X, Check, Loader2, User, Phone, MapPin, Truck, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
-import { GOVERNORATES, SHIPPING_COMPANIES } from '@/lib/constants'
+import { GOVERNORATES } from '@/lib/constants'
 import type { OrderFull } from '@/types'
 
 interface OrderDetailsEditorProps {
@@ -15,6 +15,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [shippingMethods, setShippingMethods] = useState<any[]>([])
 
   // Form State
   const [formData, setFormData] = useState({
@@ -25,6 +26,16 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     shipping_company: order.shipping_company,
     notes: order.notes || '',
   })
+
+  // Fetch shipping methods dynamically from DB
+  useEffect(() => {
+    if (isEditing) {
+      fetch('/api/shipping')
+        .then(r => r.json())
+        .then(d => setShippingMethods(d.methods || []))
+        .catch(() => {})
+    }
+  }, [isEditing])
 
   async function handleUpdate() {
     setUpdating(true)
@@ -115,31 +126,40 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
               </select>
             </div>
 
-            {/* Shipping Company */}
+            {/* Shipping Company — Dynamic */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
                 <Truck size={14} /> شركة الشحن
               </label>
               <select
                 value={formData.shipping_company}
-                onChange={(e) => setFormData({ ...formData, shipping_company: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, shipping_company: e.target.value })}
                 className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
               >
-                {SHIPPING_COMPANIES.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}
+                {shippingMethods.length > 0 ? (
+                  shippingMethods.map((m: any) => (
+                    <option key={m.slug} value={m.slug}>{m.name}</option>
+                  ))
+                ) : (
+                  /* Fallback: show current value while loading */
+                  <option value={formData.shipping_company}>{formData.shipping_company}</option>
+                )}
               </select>
             </div>
           </div>
 
-          {/* Address */}
+          {/* Address — Optional */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
               <MapPin size={14} /> العنوان بالتفصيل
+              <span className="text-[10px] text-secondary/60 font-normal">(اختياري)</span>
             </label>
             <textarea
               rows={2}
               value={formData.customer_address}
               onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
-              className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none"
+              placeholder="يمكنك ترك هذا الحقل فارغاً..."
+              className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none placeholder:text-secondary/40"
             />
           </div>
 
@@ -147,12 +167,14 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
               <FileText size={14} /> ملاحظات إضافية
+              <span className="text-[10px] text-secondary/60 font-normal">(اختياري)</span>
             </label>
             <textarea
               rows={2}
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none"
+              placeholder="أضف ملاحظة..."
+              className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none placeholder:text-secondary/40"
             />
           </div>
         </div>

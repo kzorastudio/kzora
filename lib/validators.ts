@@ -18,8 +18,20 @@ export const checkoutSchema = z.object({
   shipping_company: z.string({ required_error: 'يرجى اختيار شركة الشحن' }).min(1, 'يرجى اختيار شركة الشحن'),
   coupon_code: z.string().optional(),
   payment_method: z.enum(['cod', 'sham_cash']).default('cod'),
+  payment_transaction_id: z.string().optional(),
   notes: z.string().max(300, 'الملاحظات طويلة جداً').optional(),
-})
+}).refine(
+  (data) => {
+    if (data.payment_method === 'sham_cash') {
+      return !!data.payment_transaction_id && data.payment_transaction_id.trim().length >= 3
+    }
+    return true
+  },
+  {
+    message: 'يرجى إدخال رقم/رمز عملية التحويل',
+    path: ['payment_transaction_id'],
+  }
+)
 
 export type CheckoutFormData = z.infer<typeof checkoutSchema>
 
