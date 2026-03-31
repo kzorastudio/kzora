@@ -75,6 +75,22 @@ export default function OrdersPage() {
     }
   }
 
+  async function handleDeleteOrder(id: string) {
+    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')) return
+
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error()
+      
+      toast.success('تم حذف الطلب بنجاح')
+      setOrders((prev) => prev.filter((o) => o.id !== id))
+    } catch {
+      toast.error('فشل حذف الطلب، يرجى المحاولة مرة أخرى')
+    }
+  }
+
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSearch(searchInput)
@@ -156,6 +172,7 @@ export default function OrdersPage() {
         <OrderTable
           orders={orders}
           onStatusChange={handleStatusChange}
+          onDeleteOrder={handleDeleteOrder}
           page={page}
           totalPages={totalPages}
           onPageChange={handlePageChange}

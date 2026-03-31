@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Trash2 } from 'lucide-react'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, formatPrice } from '@/lib/utils'
 import StatusBadge from './StatusBadge'
@@ -18,6 +18,7 @@ const SHIPPING_DISPLAY: Record<string, string> = {
 interface OrderTableProps {
   orders: Order[]
   onStatusChange: (id: string, status: OrderStatus) => void
+  onDeleteOrder: (id: string) => void
   page: number
   totalPages: number
   onPageChange: (page: number) => void
@@ -27,6 +28,7 @@ interface OrderTableProps {
 export default function OrderTable({
   orders,
   onStatusChange,
+  onDeleteOrder,
   page,
   totalPages,
   onPageChange,
@@ -118,17 +120,25 @@ export default function OrderTable({
               </div>
               <span>{formatDate(order.created_at)}</span>
             </div>
-            {/* Row 4: status change */}
-            <div className="mt-3 pt-3 border-t border-outline-variant/20" onClick={(e) => e.stopPropagation()}>
+            {/* Row 4: status change + delete */}
+            <div className="mt-3 pt-3 border-t border-outline-variant/20 flex gap-2" onClick={(e) => e.stopPropagation()}>
               <select
                 value={order.status}
                 onChange={(e) => handleStatusChange(e, order.id)}
-                className="w-full text-sm font-arabic bg-surface-container rounded-xl border border-outline-variant/50 px-3 py-2 text-on-surface focus:outline-none focus:border-primary/60 cursor-pointer transition"
+                className="flex-1 text-sm font-arabic bg-surface-container rounded-xl border border-outline-variant/50 px-3 py-2 text-on-surface focus:outline-none focus:border-primary/60 cursor-pointer transition"
               >
                 {ORDER_STATUS_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
               </select>
+              
+              <button
+                onClick={() => onDeleteOrder(order.id)}
+                className="h-10 w-10 flex items-center justify-center rounded-xl bg-error-container/30 text-error hover:bg-error-container/50 transition-colors"
+                title="حذف الطلب"
+              >
+                <Trash2 size={18} />
+              </button>
             </div>
           </div>
         ))}
@@ -188,13 +198,22 @@ export default function OrderTable({
                     <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={order.status} /></td>
                     <td className="px-4 py-3 text-sm font-arabic text-secondary whitespace-nowrap">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <select value={order.status} onChange={(e) => handleStatusChange(e, order.id)}
-                        className="text-xs font-arabic bg-surface-container rounded-lg border border-outline-variant/50 px-2 py-1.5 text-on-surface focus:outline-none cursor-pointer transition"
-                      >
-                        {ORDER_STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.id} value={opt.id}>{opt.label}</option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <select value={order.status} onChange={(e) => handleStatusChange(e, order.id)}
+                          className="text-xs font-arabic bg-surface-container rounded-lg border border-outline-variant/50 px-2 py-1.5 text-on-surface focus:outline-none cursor-pointer transition flex-1 min-w-[100px]"
+                        >
+                          {ORDER_STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => onDeleteOrder(order.id)}
+                          className="p-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container/40 transition-colors"
+                          title="حذف الطلب"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

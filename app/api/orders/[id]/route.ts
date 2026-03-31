@@ -134,3 +134,35 @@ export async function PUT(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+// ─── DELETE /api/orders/[id] ──────────────────────────────────────────────────
+// Admin only. Deletes order.
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getAuthSession(_request)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+
+    // We assume cascading deletes are set up in Supabase for order_items and status_history
+    const { error } = await supabaseAdmin
+      .from('orders')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Supabase delete error:', error)
+      return NextResponse.json({ error: 'فشل حذف الطلب' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Order DELETE [id] unexpected error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
