@@ -18,6 +18,7 @@ export const checkoutSchema = z.object({
     .max(500, 'العنوان طويل جداً'),
   shipping_company: z.string({ required_error: 'يرجى اختيار شركة الشحن' }).min(1, 'يرجى اختيار شركة الشحن'),
   coupon_code: z.string().optional(),
+  payment_method: z.enum(['cod', 'sham_cash']).default('cod'),
   notes: z.string().max(300, 'الملاحظات طويلة جداً').optional(),
 })
 

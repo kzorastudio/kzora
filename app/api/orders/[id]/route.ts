@@ -69,7 +69,8 @@ export async function PUT(
       customer_phone, 
       customer_governorate, 
       customer_address, 
-      shipping_company 
+      shipping_company,
+      payment_method
     } = body
 
     // ─── Fetch current order to check status change ───────────────────────
@@ -102,6 +103,7 @@ export async function PUT(
     if (customer_governorate !== undefined) updateFields.customer_governorate = customer_governorate
     if (customer_address !== undefined) updateFields.customer_address = customer_address
     if (shipping_company !== undefined) updateFields.shipping_company = shipping_company
+    if (payment_method !== undefined) updateFields.payment_method = payment_method
 
     // ─── Perform Update ──────────────────────────────────────────────────
     const { data: order, error: updateError } = await supabaseAdmin

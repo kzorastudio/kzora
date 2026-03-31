@@ -101,6 +101,7 @@ export interface Order {
   total_syp: number
   total_usd: number
   currency_used: 'SYP' | 'USD'
+  payment_method: string
   status: OrderStatus
   notes: string | null
   created_at: string
@@ -191,6 +192,12 @@ export interface HomepageSettings {
   return_policy: string | null
   hero_badge_text: string | null
   hero_badge_color: string | null
+  sham_cash_enabled: boolean
+  sham_cash_number: string | null
+  sham_cash_instructions: string | null
+  discount_multi_items_enabled: boolean
+  discount_2_items_syp: number
+  discount_3_items_plus_syp: number
 }
 
 export interface StaticPage {
@@ -269,6 +276,7 @@ export interface CreateOrderPayload {
     address: string
   }
   shipping_company: string
+  payment_method: string
   coupon_code?: string
   currency_used: Currency
   notes?: string

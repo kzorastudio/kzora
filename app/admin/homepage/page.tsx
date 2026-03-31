@@ -65,6 +65,12 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   return_policy:          'إرجاع خلال 7 أيام من الاستلام.',
   hero_badge_text:        'تشكيلة كزورا الفاخرة ٢٠٢٦',
   hero_badge_color:       '#785600',
+  sham_cash_enabled:      false,
+  sham_cash_number:       '',
+  sham_cash_instructions: '',
+  discount_multi_items_enabled: false,
+  discount_2_items_syp: 2000,
+  discount_3_items_plus_syp: 3000,
 }
 
 export default function HomepagePage() {
@@ -131,15 +137,9 @@ export default function HomepagePage() {
         finalSettings.promo_banner_public_id = null
       }
 
-      if (imagesToDelete.length > 0) {
-        await Promise.all(imagesToDelete.map(pid => 
-          fetch('/api/images/delete', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ public_id: pid })
-          })
-        ))
-      }
+      // No need to delete images at save time if we delete them in real-time
+      // But we still need to keep the code for cleanup if necessary, 
+      // though real-time is preferred.
 
       const res = await fetch('/api/homepage/settings', {
         method: 'PUT',
@@ -352,12 +352,123 @@ export default function HomepagePage() {
                         setBannerImages([{ id: 'new', file, url: URL.createObjectURL(file), public_id: '', isLocal: true, is_main: true }]);
                         setDirty(true);
                       }}
-                      onRemoveImage={() => { setBannerImages([]); setDirty(true); }}
+                      onRemoveImage={() => { 
+                        if (bannerImages[0] && !bannerImages[0].isLocal && bannerImages[0].public_id) {
+                          // Real-time deletion from Cloudinary
+                          fetch('/api/images/delete', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ public_id: bannerImages[0].public_id })
+                          }).catch(err => console.error('Failed to delete banner image', err))
+                        }
+                        if (bannerImages[0]?.isLocal && bannerImages[0].url) URL.revokeObjectURL(bannerImages[0].url)
+                        setBannerImages([]); 
+                        setDirty(true); 
+                      }}
                       onSetMain={() => {}}
                       maxFiles={1}
                     />
                   </div>
                 </div>
+              )}
+            </section>
+
+            {/* إعدادات شام كاش */}
+            <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-base font-arabic font-bold text-on-surface flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-[#785600] rounded-full" />
+                  إعدادات شام كاش (Sham Cash)
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => { setSettings({ ...settings, sham_cash_enabled: !settings.sham_cash_enabled }); setDirty(true); }}
+                  className={cn(
+                    'relative h-6 w-11 rounded-full transition-colors',
+                    settings.sham_cash_enabled ? 'bg-[#785600]' : 'bg-surface-container-high'
+                  )}
+                >
+                  <span className={cn(
+                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                    settings.sham_cash_enabled ? 'translate-x-5' : 'translate-x-0.5'
+                  )} />
+                </button>
+              </div>
+
+              {settings.sham_cash_enabled && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-sm font-arabic font-bold text-secondary">رقم المحفظة (Wallet Number)</label>
+                    <input
+                      type="text"
+                      value={settings.sham_cash_number || ''}
+                      onChange={(e) => { setSettings({ ...settings, sham_cash_number: e.target.value }); setDirty(true); }}
+                      placeholder="مثال: 09xx xxx xxx"
+                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#785600] outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-arabic font-bold text-secondary">تعليمات الدفع (تظهر للزبون عند اختيار شام كاش)</label>
+                    <textarea
+                      value={settings.sham_cash_instructions || ''}
+                      onChange={(e) => { setSettings({ ...settings, sham_cash_instructions: e.target.value }); setDirty(true); }}
+                      placeholder="اشرح للزبون كيفية التحويل وماذا يفعل بعد التحويل..."
+                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-arabic focus:border-[#785600] outline-none min-h-[100px] transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+              {!settings.sham_cash_enabled && (
+                <p className="text-xs font-arabic text-secondary/60">خيار الدفع عبر شام كاش معطل حالياً للزبائن.</p>
+              )}
+            </section>
+
+            {/* إعدادات الخصم المتعدد */}
+            <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-base font-arabic font-bold text-on-surface flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-[#B8860B] rounded-full" />
+                  خصم تعدد المنتجات (Multi-Product Discount)
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => { setSettings({ ...settings, discount_multi_items_enabled: !settings.discount_multi_items_enabled }); setDirty(true); }}
+                  className={cn(
+                    'relative h-6 w-11 rounded-full transition-colors',
+                    settings.discount_multi_items_enabled ? 'bg-[#B8860B]' : 'bg-surface-container-high'
+                  )}
+                >
+                  <span className={cn(
+                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                    settings.discount_multi_items_enabled ? 'translate-x-5' : 'translate-x-0.5'
+                  )} />
+                </button>
+              </div>
+
+              {settings.discount_multi_items_enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-sm font-arabic font-bold text-secondary">خصم منتجين (ل.س)</label>
+                    <input
+                      type="number"
+                      value={settings.discount_2_items_syp || 0}
+                      onChange={(e) => { setSettings({ ...settings, discount_2_items_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#B8860B] outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-arabic font-bold text-secondary">خصم 3 منتجات فأكثر (ل.س)</label>
+                    <input
+                      type="number"
+                      value={settings.discount_3_items_plus_syp || 0}
+                      onChange={(e) => { setSettings({ ...settings, discount_3_items_plus_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#B8860B] outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+              {!settings.discount_multi_items_enabled && (
+                <p className="text-xs font-arabic text-secondary/60">خصم تعدد المنتجات معطل حالياً.</p>
               )}
             </section>
           </div>

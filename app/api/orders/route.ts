@@ -1,4 +1,4 @@
-﻿export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderPayload = await request.json()
-    const { items, customer, shipping_company, coupon_code, currency_used, notes } = body
+    const { items, customer, shipping_company, payment_method, coupon_code, currency_used, notes } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -141,6 +141,25 @@ export async function POST(request: NextRequest) {
       (sum, i) => sum + i.unit_price_usd * i.quantity, 0
     )
 
+    // ─── Step 2.5: Multi-product discount calculation ───────────────────
+    const totalItemsCount = sanitizedItems.reduce((acc, item) => acc + item.quantity, 0)
+    let multiProductDiscountSyp = 0
+    
+    // Fetch settings for multi-item discount
+    const { data: settings } = await supabaseAdmin
+      .from('homepage_settings')
+      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp')
+      .limit(1)
+      .maybeSingle()
+
+    if (settings?.discount_multi_items_enabled) {
+      if (totalItemsCount >= 3) {
+        multiProductDiscountSyp = settings.discount_3_items_plus_syp
+      } else if (totalItemsCount >= 2) {
+        multiProductDiscountSyp = settings.discount_2_items_syp
+      }
+    }
+
     // â”€â”€ Step 3: Validate coupon if provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let discountSyp = 0
     let discountUsd = 0
@@ -196,8 +215,14 @@ export async function POST(request: NextRequest) {
         .eq('id', coupon.id)
     }
 
-    const totalSyp = Math.max(0, subtotalSyp - discountSyp)
-    const totalUsd = Math.max(0, parseFloat((subtotalUsd - discountUsd).toFixed(2)))
+    // Combine both discounts
+    const finalDiscountSyp = discountSyp + multiProductDiscountSyp
+    // Calculate USD equivalent for multi-product discount using current ratio
+    const ratio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
+    const finalDiscountUsd = parseFloat((discountUsd + (multiProductDiscountSyp * ratio)).toFixed(2))
+
+    const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp)
+    const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd).toFixed(2)))
 
     // â”€â”€ Step 5: Generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const orderNumber = await generateOrderNumber()
@@ -212,9 +237,10 @@ export async function POST(request: NextRequest) {
         customer_governorate: customer.governorate,
         customer_address:     customer.address,
         shipping_company,
+        payment_method:       payment_method || 'cod',
         coupon_code:          appliedCouponCode,
-        discount_amount_syp:  discountSyp,
-        discount_amount_usd:  discountUsd,
+        discount_amount_syp:  finalDiscountSyp,
+        discount_amount_usd:  finalDiscountUsd,
         subtotal_syp:         subtotalSyp,
         subtotal_usd:         subtotalUsd,
         total_syp:            totalSyp,

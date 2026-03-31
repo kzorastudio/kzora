@@ -15,6 +15,8 @@ interface Props {
   couponCode?: string
   currency: Currency
   isSubmitting?: boolean
+  multiProductDiscountSyp?: number
+  multiProductDiscountUsd?: number
 }
 
 export default function OrderSummaryPanel({
@@ -26,11 +28,14 @@ export default function OrderSummaryPanel({
   couponCode,
   currency,
   isSubmitting = false,
+  multiProductDiscountSyp = 0,
+  multiProductDiscountUsd = 0,
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
   const discount = currency === 'SYP' ? (discountSyp ?? 0) : (discountUsd ?? 0)
-  const total = subtotal - discount
+  const multiDiscount = currency === 'SYP' ? (multiProductDiscountSyp ?? 0) : (multiProductDiscountUsd ?? 0)
+  const total = subtotal - discount - multiDiscount
 
   const hasDiscount = discount > 0
 
@@ -147,13 +152,22 @@ export default function OrderSummaryPanel({
           {hasDiscount && (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">
-                خصم
+                خصم الكوبون
                 {couponCode && (
                   <span className="font-body text-[#785600] mr-1 text-xs">({couponCode})</span>
                 )}
               </span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="ltr">
                 -{formatPrice(discount, currency)}
+              </span>
+            </div>
+          )}
+
+          {multiDiscount > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-arabic text-[#6B6560]">خصم تعدد المنتجات</span>
+              <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="ltr">
+                -{formatPrice(multiDiscount, currency)}
               </span>
             </div>
           )}

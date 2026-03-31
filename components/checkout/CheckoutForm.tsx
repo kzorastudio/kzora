@@ -9,9 +9,12 @@ import { ShippingCompanySelector } from '@/components/checkout/ShippingCompanySe
 import { GovernorateDropdown } from '@/components/checkout/GovernorateDropdown'
 import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
 
+import type { HomepageSettings } from '@/types'
+
 interface Props {
   onSubmit: (data: CheckoutFormData) => Promise<void>
   isSubmitting: boolean
+  settings: HomepageSettings | null
 }
 
 const fieldBase =
@@ -33,7 +36,7 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
   )
 }
 
-export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
+export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props) {
   const [shippingMethods, setShippingMethods] = useState<any[]>([])
 
   const {
@@ -53,11 +56,13 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
       address: '',
       notes: '',
       coupon_code: '',
+      payment_method: 'cod',
     },
   })
 
   const shippingCompany = watch('shipping_company')
   const governorate = watch('governorate')
+  const paymentMethod = watch('payment_method')
 
   // Fetch shipping methods from DB
   useEffect(() => {
@@ -270,17 +275,85 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: Props) {
       {/* ═══ Section 3: Payment Method ═════════════════════════════════════ */}
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
         <SectionHeading icon={CreditCard} title="طريقة الدفع" />
-        <div className="flex items-center gap-4 bg-[#F0F7ED] border-2 border-[#4B6339]/30 rounded-xl p-4">
-          <div className="w-10 h-10 rounded-full bg-[#4B6339]/10 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={22} className="text-[#4B6339]" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">💵</span>
-              <p className="font-arabic font-bold text-sm text-[#1A1A1A]">الدفع عند الاستلام</p>
+        
+        <div className="space-y-3">
+          {/* Cash on Delivery */}
+          <label className={cn(
+            "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200",
+            paymentMethod === 'cod' 
+              ? "bg-[#F0F7ED] border-[#4B6339] shadow-sm" 
+              : "bg-white border-[#F0EBE3] hover:border-[#E8E3DB]"
+          )}>
+            <input 
+              type="radio" 
+              value="cod" 
+              className="sr-only"
+              {...register('payment_method')} 
+            />
+            <div className={cn(
+              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+              paymentMethod === 'cod' ? "border-[#4B6339] bg-[#4B6339]" : "border-[#D1C9BE]"
+            )}>
+              {paymentMethod === 'cod' && <CheckCircle2 size={14} className="text-white" />}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💵</span>
+                <p className="font-arabic font-bold text-sm text-[#1A1A1A]">الدفع عند الاستلام</p>
+              </div>
+              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5">ادفع نقداً عند استلام طلبيتك من المندوب أو الفرع.</p>
+            </div>
+          </label>
+
+          {/* Sham Cash */}
+          {settings?.sham_cash_enabled && (
+            <label className={cn(
+              "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200",
+              paymentMethod === 'sham_cash' 
+                ? "bg-[#FFF9F0] border-[#785600] shadow-sm" 
+                : "bg-white border-[#F0EBE3] hover:border-[#E8E3DB]"
+            )}>
+              <input 
+                type="radio" 
+                value="sham_cash" 
+                className="sr-only"
+                {...register('payment_method')} 
+              />
+              <div className={cn(
+                "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                paymentMethod === 'sham_cash' ? "border-[#785600] bg-[#785600]" : "border-[#D1C9BE]"
+              )}>
+                {paymentMethod === 'sham_cash' && <CheckCircle2 size={14} className="text-white" />}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📱</span>
+                  <p className="font-arabic font-bold text-sm text-[#1A1A1A]">شام كاش (تحويل مسبق)</p>
+                </div>
+                <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5">قم بالتحويل إلى رقم المحفظة أدناه قبل إتمام الطلب.</p>
+              </div>
+            </label>
+          )}
+        </div>
+
+        {/* Sham Cash Instructions */}
+        {paymentMethod === 'sham_cash' && settings?.sham_cash_enabled && (
+          <div className="mt-4 p-4 bg-[#785600]/5 border border-[#785600]/20 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-arabic text-xs font-bold text-[#785600]">رقم محفظة شام كاش:</span>
+              <span className="font-body text-sm font-bold text-[#1A1A1A] bg-white px-2 py-0.5 rounded border border-[#E8E3DB]">{settings.sham_cash_number}</span>
+            </div>
+            {settings.sham_cash_instructions && (
+              <p className="font-arabic text-[11px] text-[#4A4742] leading-relaxed whitespace-pre-line">
+                {settings.sham_cash_instructions}
+              </p>
+            )}
+            <div className="mt-3 flex items-start gap-2 px-3 py-2 bg-[#E3F2FD] rounded-lg">
+              <AlertTriangle size={14} className="text-[#1976D2] shrink-0 mt-0.5" />
+              <p className="font-arabic text-[10px] text-[#1976D2]">يرجى إرفاق إشعار الدفع عبر الواتساب فور إرسال الطلب ليتم تأكيده.</p>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ═══ Warning Banner ════════════════════════════════════════════════ */}

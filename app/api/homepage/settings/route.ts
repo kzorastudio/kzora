@@ -44,6 +44,12 @@ export async function GET(_request: NextRequest) {
           return_policy:          'إرجاع خلال 7 أيام من الاستلام.',
           hero_badge_text:        'تشكيلة كزورا الفاخرة ٢٠٢٦',
           hero_badge_color:       '#785600',
+          sham_cash_enabled:      false,
+          sham_cash_number:       '',
+          sham_cash_instructions: '',
+          discount_multi_items_enabled: false,
+          discount_2_items_syp: 2000,
+          discount_3_items_plus_syp: 3000,
         },
       })
     }
@@ -88,6 +94,12 @@ export async function PUT(request: NextRequest) {
       'return_policy',
       'hero_badge_text',
       'hero_badge_color',
+      'sham_cash_enabled',
+      'sham_cash_number',
+      'sham_cash_instructions',
+      'discount_multi_items_enabled',
+      'discount_2_items_syp',
+      'discount_3_items_plus_syp',
     ]
 
     const updateFields: Record<string, unknown> = {}

@@ -112,6 +112,9 @@ export default function OrderTable({
                 {order.currency_used === 'USD' ? formatPrice(order.total_usd, 'USD') : formatPrice(order.total_syp, 'SYP')}
               </span>
               <span>{order.customer_governorate}</span>
+              <div className="flex items-center gap-1.5 bg-surface-container-high px-2 py-0.5 rounded-lg border border-outline-variant/30 text-[10px] font-arabic font-bold text-on-surface-variant">
+                <span>{order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}</span>
+              </div>
               <span>{formatDate(order.created_at)}</span>
             </div>
             {/* Row 4: status change */}
@@ -136,7 +139,7 @@ export default function OrderTable({
           <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b border-outline-variant/40">
-                {['رقم الطلب','العميل','المحافظة','الإجمالي','شركة الشحن','الحالة','التاريخ','الإجراءات'].map((col) => (
+                {['رقم الطلب','العميل','المحافظة','الإجمالي','الدفع','شركة الشحن','الحالة','التاريخ','الإجراءات'].map((col) => (
                   <th key={col} className="px-4 py-3 text-right text-xs font-arabic font-semibold text-secondary uppercase tracking-wide whitespace-nowrap">{col}</th>
                 ))}
               </tr>
@@ -167,6 +170,16 @@ export default function OrderTable({
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface whitespace-nowrap">{order.customer_governorate}</td>
                     <td className="px-4 py-3 text-sm font-label font-semibold text-on-surface whitespace-nowrap">
                       {order.currency_used === 'USD' ? formatPrice(order.total_usd, 'USD') : formatPrice(order.total_syp, 'SYP')}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-arabic text-on-surface whitespace-nowrap">
+                      <span className={cn(
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold",
+                        order.payment_method === 'sham_cash' 
+                          ? "bg-amber-100 text-amber-800 border border-amber-200" 
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                      )}>
+                        {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface-variant whitespace-nowrap">
                       {SHIPPING_DISPLAY[order.shipping_company] ?? order.shipping_company}

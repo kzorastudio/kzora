@@ -19,60 +19,78 @@ interface OrderForWhatsApp {
   totalSyp: number
   totalUsd: number
   currency: Currency
+  paymentMethod?: string
+  shamCashNumber?: string
 }
 
 export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   const currency = order.currency
   const lines: string[] = [
-    `🛍️ *طلب جديد من كزورا*`,
-    `━━━━━━━━━━━━━━━━━━━━`,
-    `📋 *رقم الطلب:* ${order.orderNumber}`,
+    `✨ *طلب جديد من متجر كزورا* ✨`,
     ``,
-    `👤 *بيانات العميل:*`,
-    `الاسم: ${order.customerName}`,
-    `الهاتف: ${order.customerPhone}`,
-    `المحافظة: ${order.governorate}`,
-    `العنوان: ${order.address}`,
+    `📌 *رقم الطلب:* \`${order.orderNumber}\``,
+    `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-SY')}`,
+    `------------------------------------------`,
     ``,
-    `🚚 *شركة الشحن:* ${SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`,
+    `👤 *معلومات الزبون:*`,
+    `▫️ *الاسم:* ${order.customerName}`,
+    `▫️ *الهاتف:* ${order.customerPhone}`,
+    `▫️ *المحافظة:* ${order.governorate}`,
+    `▫️ *العنوان:* ${order.address}`,
     ``,
-    `📦 *المنتجات:*`,
+    `🚚 *تفاصيل الشحن:*`,
+    `▫️ *الشركة:* ${SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`,
+    ``,
+    `📦 *المنتجات المطلوبة:*`,
   ]
 
   order.items.forEach((item, i) => {
     const price = currency === 'SYP'
       ? formatPrice(item.discount_price_syp ?? item.price_syp, 'SYP')
       : formatPrice(item.discount_price_usd ?? item.price_usd, 'USD')
-    lines.push(`${i + 1}. ${item.name}`)
-    if (item.color) lines.push(`   اللون: ${item.color}`)
-    if (item.size)  lines.push(`   المقاس: ${item.size}`)
-    lines.push(`   الكمية: ${item.quantity} × ${price}`)
+    
+    lines.push(`------------------------------------------`)
+    lines.push(`${i + 1}. *${item.name}*`)
+    if (item.color) lines.push(`   🎨 *اللون:* ${item.color}`)
+    if (item.size)  lines.push(`   📏 *المقاس:* ${item.size}`)
+    lines.push(`   🔢 *الكمية:* ${item.quantity} × ${price}`)
   })
 
-  lines.push(``)
-  lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+  lines.push(`------------------------------------------`)
 
   const subtotal = currency === 'SYP'
     ? formatPrice(order.subtotalSyp, 'SYP')
     : formatPrice(order.subtotalUsd, 'USD')
 
-  lines.push(`المجموع الفرعي: ${subtotal}`)
+  lines.push(`💰 *المجموع الفرعي:* ${subtotal}`)
 
   if (order.couponCode && (order.discountSyp || order.discountUsd)) {
     const discount = currency === 'SYP'
       ? formatPrice(order.discountSyp!, 'SYP')
       : formatPrice(order.discountUsd!, 'USD')
-    lines.push(`كود الخصم (${order.couponCode}): -${discount}`)
+    lines.push(`🎫 *خصم (${order.couponCode}):* -${discount}`)
   }
 
   const total = currency === 'SYP'
     ? formatPrice(order.totalSyp, 'SYP')
     : formatPrice(order.totalUsd, 'USD')
 
-  lines.push(`*الإجمالي: ${total}*`)
-  lines.push(`طريقة الدفع: الدفع عند الاستلام 💵`)
+  lines.push(``)
+  lines.push(`✅ *الإجمالي النهائي: ${total}*`)
+  
+  const pMethod = order.paymentMethod === 'sham_cash' ? 'شام كاش (تم التحويل)' : 'الدفع عند الاستلام'
+  lines.push(`💳 *طريقة الدفع:* ${pMethod}`)
+  
+  if (order.paymentMethod === 'sham_cash' && order.shamCashNumber) {
+    lines.push(`📱 *رقم محفظة شام كاش:* ${order.shamCashNumber}`)
+  }
+
+  lines.push(``)
+  lines.push(`شكراً لتسوقكم من كزورا! ❤️`)
+  lines.push(`سيتم تأكيد طلبكم قريباً...`)
 
   const message = lines.join('\n')
   const encoded = encodeURIComponent(message)
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`
 }
+

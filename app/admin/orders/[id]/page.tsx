@@ -265,6 +265,12 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   <span className="text-on-surface font-semibold">الإجمالي</span>
                   <span className="text-on-surface font-bold text-base">{total}</span>
                 </div>
+                <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
+                  <span className="text-secondary text-xs">طريقة الدفع</span>
+                  <span className="text-[11px] font-arabic font-bold text-on-surface">
+                    {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
+                  </span>
+                </div>
                 <div className="text-xs text-secondary text-center mt-1">
                   العملة المستخدمة: {order.currency_used}
                 </div>

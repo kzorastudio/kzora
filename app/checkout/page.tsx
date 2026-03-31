@@ -14,7 +14,7 @@ import { useCurrencyStore } from '@/store/currencyStore'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import { SHIPPING_LABELS } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
-import type { CreateOrderPayload } from '@/types'
+import type { CreateOrderPayload, HomepageSettings } from '@/types'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
@@ -31,6 +31,14 @@ export default function CheckoutPage() {
   const [couponCode,   setCouponCode]   = useState<string | undefined>()
   const [discountSyp,  setDiscountSyp]  = useState(0)
   const [discountUsd,  setDiscountUsd]  = useState(0)
+  const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
+
+  useEffect(() => {
+    fetch('/api/homepage/settings')
+      .then(r => r.json())
+      .then(d => setSettings(d.settings))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setMounted(true)
@@ -79,6 +87,7 @@ export default function CheckoutPage() {
             address:     formData.address,
           },
           shipping_company: formData.shipping_company as CreateOrderPayload['shipping_company'],
+          payment_method:   formData.payment_method,
           coupon_code:      couponCode,
           currency_used:    currency,
           notes:            formData.notes ?? undefined,
@@ -116,6 +125,8 @@ export default function CheckoutPage() {
           totalSyp:        Math.max(0, subtotalSyp() - discountSyp),
           totalUsd:        Math.max(0, subtotalUsd() - discountUsd),
           currency,
+          paymentMethod:   formData.payment_method,
+          shamCashNumber:  settings?.sham_cash_number ?? undefined,
         })
 
         // Open WhatsApp in new tab
@@ -185,6 +196,24 @@ export default function CheckoutPage() {
   const sub_syp = subtotalSyp()
   const sub_usd = subtotalUsd()
 
+  // Multi-product discount calculation
+  let multiProductDiscountSyp = 0
+  let multiProductDiscountUsd = 0
+  const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0)
+
+  if (settings?.discount_multi_items_enabled) {
+    if (totalItemsCount >= 3) {
+      multiProductDiscountSyp = settings.discount_3_items_plus_syp
+    } else if (totalItemsCount >= 2) {
+      multiProductDiscountSyp = settings.discount_2_items_syp
+    }
+
+    if (multiProductDiscountSyp > 0) {
+      const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
+      multiProductDiscountUsd = parseFloat((multiProductDiscountSyp * ratio).toFixed(2))
+    }
+  }
+
   return (
     <>
       <Header />
@@ -205,6 +234,7 @@ export default function CheckoutPage() {
               <CheckoutForm
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
+                settings={settings}
               />
             </div>
 
@@ -221,6 +251,8 @@ export default function CheckoutPage() {
                   couponCode={couponCode}
                   currency={currency}
                   isSubmitting={isSubmitting}
+                  multiProductDiscountSyp={multiProductDiscountSyp}
+                  multiProductDiscountUsd={multiProductDiscountUsd}
                 />
 
                 {/* Coupon */}
