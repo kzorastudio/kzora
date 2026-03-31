@@ -237,7 +237,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
           {/* Address */}
           <div>
             <label htmlFor="address" className={labelBase}>
-              العنوان التفصيلي <span className="text-[#BA1A1A]">*</span>
+              العنوان التفصيلي <span className="text-[#9E9890] font-arabic text-[11px] font-normal mr-1.5">(اختياري)</span>
             </label>
             
             {selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (

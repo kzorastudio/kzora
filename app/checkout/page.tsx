@@ -84,9 +84,9 @@ export default function CheckoutPage() {
             full_name:   formData.full_name,
             phone:       formData.phone,
             governorate: formData.governorate,
-            address:     formData.address,
+            address:     formData.address ?? '',
           },
-          shipping_company: formData.shipping_company as CreateOrderPayload['shipping_company'],
+          shipping_company: (formData.shipping_company as string) ?? '',
           payment_method:   formData.payment_method,
           coupon_code:      couponCode,
           currency_used:    currency,
@@ -114,8 +114,8 @@ export default function CheckoutPage() {
           customerName:    formData.full_name,
           customerPhone:   formData.phone,
           governorate:     formData.governorate,
-          address:         formData.address,
-          shippingCompany: SHIPPING_LABELS[formData.shipping_company] ?? formData.shipping_company,
+          address:         formData.address ?? '',
+          shippingCompany: SHIPPING_LABELS[formData.shipping_company as keyof typeof SHIPPING_LABELS] ?? formData.shipping_company ?? '',
           items,
           couponCode,
           discountSyp:     discountSyp || undefined,
@@ -218,7 +218,7 @@ export default function CheckoutPage() {
     <>
       <Header />
 
-      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-24 pb-16">
+      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-[160px] pb-16">
         <div className="max-w-screen-xl mx-auto px-4 md:px-8 lg:px-16">
           {/* Page heading — centered */}
           <div className="text-center mb-10">
