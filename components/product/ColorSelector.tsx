@@ -31,6 +31,7 @@ export function ColorSelector({
             <button
               type="button"
               aria-label={color.name_ar}
+              disabled={!color.is_available}
               onClick={() => onChange(color.id, color)}
               onMouseEnter={() => setTooltip(color.id)}
               onMouseLeave={() => setTooltip(null)}
@@ -39,10 +40,17 @@ export function ColorSelector({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                 isSelected
                   ? 'ring-2 ring-primary ring-offset-2 scale-110'
-                  : 'hover:scale-105 ring-1 ring-black/25'
+                  : 'hover:scale-105 ring-1 ring-black/25',
+                !color.is_available && 'opacity-25 cursor-not-allowed scale-90 grayscale ring-0'
               )}
               style={{ backgroundColor: color.hex_code }}
             />
+            
+            {!color.is_available && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="w-[1px] h-full bg-white/60 rotate-45" />
+              </div>
+            )}
 
             {/* Tooltip */}
             {tooltip === color.id && (

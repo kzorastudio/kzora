@@ -50,13 +50,17 @@ export const productSchema = z.object({
   is_featured: z.boolean(),
   is_published: z.boolean(),
   sort_order: z.number().min(0),
-  sizes: z.array(z.number()).min(1, 'يرجى اختيار مقاس واحد على الأقل'),
+  sizes: z.array(z.object({
+    size:         z.number(),
+    is_available: z.boolean(),
+  })).min(1, 'يرجى اختيار مقاس واحد على الأقل'),
   tags: z.array(z.enum(['new', 'best_seller', 'on_sale'])),
   colors: z.array(z.object({
     name_ar: z.string().min(1, 'اسم اللون مطلوب'),
     hex_code: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'كود اللون غير صحيح'),
     swatch_url: z.string().optional(),
     swatch_public_id: z.string().optional(),
+    is_available: z.boolean().default(true),
   })),
 })
 

@@ -111,9 +111,9 @@ function makeProduct(
   const category = MOCK_CATEGORIES.find(c => c.id === categoryId) ?? null
   
   const colors = [
-    { id: `col-${id}-1`, product_id: id, name_ar: 'أسود',  hex_code: '#1A1A1A', swatch_url: null, swatch_public_id: null },
-    { id: `col-${id}-2`, product_id: id, name_ar: 'بني',   hex_code: '#5D4037', swatch_url: null, swatch_public_id: null },
-    { id: `col-${id}-3`, product_id: id, name_ar: 'عاجي',  hex_code: '#F5F5DC', swatch_url: null, swatch_public_id: null },
+    { id: `col-${id}-1`, product_id: id, name_ar: 'أسود',  hex_code: '#1A1A1A', swatch_url: null, swatch_public_id: null, is_available: true },
+    { id: `col-${id}-2`, product_id: id, name_ar: 'بني',   hex_code: '#5D4037', swatch_url: null, swatch_public_id: null, is_available: true },
+    { id: `col-${id}-3`, product_id: id, name_ar: 'عاجي',  hex_code: '#F5F5DC', swatch_url: null, swatch_public_id: null, is_available: true },
   ]
 
   // Mocking image per color
@@ -159,7 +159,15 @@ function makeProduct(
     updated_at: '2026-01-01T00:00:00.000Z',
     images: allImages,
     colors,
-    sizes: [39, 40, 41, 42, 43, 44, 45],
+    sizes: [
+      { size: 39, is_available: true },
+      { size: 40, is_available: true },
+      { size: 41, is_available: true },
+      { size: 42, is_available: true },
+      { size: 43, is_available: true },
+      { size: 44, is_available: true },
+      { size: 45, is_available: true }
+    ],
     tags,
     category,
   }
@@ -287,6 +295,12 @@ export const MOCK_HOMEPAGE_SETTINGS: HomepageSettings = {
   return_policy: 'تبديل وإرجاع سهل خلال 14 يوماً',
   hero_badge_text: 'تشكيلة كزورا الفاخرة ٢٠٢٦',
   hero_badge_color: '#785600',
+  sham_cash_enabled: false,
+  sham_cash_number: null,
+  sham_cash_instructions: null,
+  discount_multi_items_enabled: false,
+  discount_2_items_syp: 2000,
+  discount_3_items_plus_syp: 3000,
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────

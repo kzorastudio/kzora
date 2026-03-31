@@ -96,7 +96,11 @@ export async function POST(request: NextRequest) {
 
     const { data: dbProducts, error: productsError } = await supabaseAdmin
       .from('products')
-      .select('id, name, price_syp, price_usd, discount_price_syp, discount_price_usd, stock_status, is_published')
+      .select(`
+        id, name, price_syp, price_usd, discount_price_syp, discount_price_usd, stock_status, is_published,
+        colors:product_colors(name_ar, is_available),
+        sizes:product_sizes(size, is_available)
+      `)
       .in('id', productIds)
 
     if (productsError) {
@@ -119,9 +123,31 @@ export async function POST(request: NextRequest) {
       }
       if (!dbProduct.is_published || dbProduct.stock_status === 'out_of_stock') {
         return NextResponse.json(
-          { error: `Product "${dbProduct.name}" is unavailable` },
+          { error: `المنتج "${dbProduct.name}" غير متوفر حالياً` },
           { status: 400 }
         )
+      }
+
+      // Check specific color availability
+      if (item.color) {
+        const color = dbProduct.colors?.find((c: any) => c.name_ar === item.color)
+        if (color && !color.is_available) {
+          return NextResponse.json(
+            { error: `اللون "${item.color}" للمنتج "${dbProduct.name}" غير متوفر حالياً` },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Check specific size availability
+      if (item.size) {
+        const sizeObj = dbProduct.sizes?.find((s: any) => s.size === item.size)
+        if (sizeObj && !sizeObj.is_available) {
+          return NextResponse.json(
+            { error: `المقاس "${item.size}" للمنتج "${dbProduct.name}" غير متوفر حالياً` },
+            { status: 400 }
+          )
+        }
       }
 
       // Use effective (discounted if exists) prices from DB

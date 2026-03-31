@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 
 interface SizeSelectorProps {
-  sizes: number[]
+  sizes: { size: number; is_available: boolean }[] | number[]
   selectedSize: number | null
   onChange: (size: number) => void
   outOfStock?: boolean
@@ -29,14 +29,17 @@ export function SizeSelector({
       </p>
 
       <div className="flex flex-wrap gap-2">
-        {sizes.map((size) => {
+        {sizes.map((s) => {
+          const item = typeof s === 'number' ? { size: s, is_available: true } : s
+          const size = item.size
+          const isItemAvailable = item.is_available && !outOfStock
           const isSelected = selectedSize === size
 
           return (
             <button
               key={size}
               type="button"
-              disabled={outOfStock}
+              disabled={!isItemAvailable}
               onClick={() => onChange(size)}
               className={cn(
                 'min-w-[2.5rem] h-10 px-2 rounded-lg',
@@ -53,7 +56,7 @@ export function SizeSelector({
                       'hover:bg-surface-container hover:text-on-surface',
                       'border-b-2 border-transparent',
                     ],
-                outOfStock && 'opacity-40 cursor-not-allowed line-through'
+                !isItemAvailable && 'opacity-30 cursor-not-allowed line-through'
               )}
             >
               {size}

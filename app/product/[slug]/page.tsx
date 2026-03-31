@@ -35,7 +35,12 @@ async function getProduct(slug: string): Promise<ProductFull | null> {
         (a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order
       ),
       colors:   data.product_colors  ?? [],
-      sizes:    (data.product_sizes  ?? []).map((s: { size: number }) => s.size).sort((a: number, b: number) => a - b),
+      sizes:    (data.product_sizes  ?? [])
+                  .map((s: { size: number; is_available: boolean }) => ({ 
+                    size: s.size, 
+                    is_available: s.is_available ?? true 
+                  }))
+                  .sort((a: { size: number }, b: { size: number }) => a.size - b.size),
       tags:     (data.product_tags   ?? []).map((t: { tag: string }) => t.tag),
       category: Array.isArray(data.categories) ? (data.categories[0] ?? null) : (data.categories ?? null),
     } as ProductFull

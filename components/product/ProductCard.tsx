@@ -63,30 +63,42 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const handleQuickAdd = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      if (product.sizes.length <= 1) {
-        const item: CartItem = {
-          id:                 product.id,
-          slug:               product.slug,
-          name:               product.name,
-          image:              imageUrl,
-          color:              product.colors?.[0]?.name_ar ?? null,
-          color_hex:          product.colors?.[0]?.hex_code ?? null,
-          size:               product.sizes[0] ?? null,
-          quantity:           1,
-          price_syp:          product.price_syp,
-          price_usd:          product.price_usd,
-          discount_price_syp: product.discount_price_syp ?? null,
-          discount_price_usd: product.discount_price_usd ?? null,
-        }
-        addItem(item)
-        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
-        if (isDesktop) {
-          router.push('/checkout')
-        } else {
-          openCart()
-        }
-      } else {
+      const hasMultipleColors = (product.colors ?? []).length > 1
+      const hasMultipleSizes = (product.sizes ?? []).length > 1
+
+      if (hasMultipleColors) {
+        // If there are multiple colors, they MUST go to the product page to choose one
+        router.push(`/product/${product.slug}`)
+        return
+      }
+
+      if (hasMultipleSizes) {
+        // Only sizes to pick
         setShowSizeBar(true)
+        return
+      }
+
+      // Only one color, one (or no) size - add immediately
+      const item: CartItem = {
+        id:                 product.id,
+        slug:               product.slug,
+        name:               product.name,
+        image:              imageUrl,
+        color:              product.colors?.[0]?.name_ar ?? null,
+        color_hex:          product.colors?.[0]?.hex_code ?? null,
+        size:               product.sizes.find(s => s.is_available)?.size ?? null,
+        quantity:           1,
+        price_syp:          product.price_syp,
+        price_usd:          product.price_usd,
+        discount_price_syp: product.discount_price_syp ?? null,
+        discount_price_usd: product.discount_price_usd ?? null,
+      }
+      addItem(item)
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+      if (isDesktop) {
+        router.push('/checkout')
+      } else {
+        openCart()
       }
     },
     [product, imageUrl, addItem, openCart, router]
@@ -254,21 +266,29 @@ export function ProductCard({ product, className }: ProductCardProps) {
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => handleAddWithSize(size)}
-                  className={cn(
-                    'min-w-[2.2rem] h-7 px-1.5 rounded-lg text-xs font-medium tabular-nums',
-                    'bg-[#F5F1EB] text-[#1A1A1A]',
-                    'hover:bg-[#785600] hover:text-white',
-                    'transition-all duration-150 focus-visible:outline-none'
-                  )}
-                >
-                  {size}
-                </button>
-              ))}
+              {product.sizes.map((s) => {
+                const item = typeof s === 'number' ? { size: s, is_available: true } : s
+                const size = item.size
+                const isAvailable = item.is_available
+
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    disabled={!isAvailable}
+                    onClick={() => handleAddWithSize(size)}
+                    className={cn(
+                      'min-w-[2.2rem] h-7 px-1.5 rounded-lg text-xs font-medium tabular-nums',
+                      'transition-all duration-150 focus-visible:outline-none',
+                      isAvailable 
+                        ? 'bg-[#F5F1EB] text-[#1A1A1A] hover:bg-[#785600] hover:text-white'
+                        : 'bg-[#F5F1EB]/50 text-[#9E9890] cursor-not-allowed line-through'
+                    )}
+                  >
+                    {size}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}

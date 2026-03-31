@@ -23,8 +23,8 @@ export async function GET(
         *,
         category:categories(id, name_ar, slug, image_url),
         images:product_images(id, url, public_id, color_variant, display_order, is_main),
-        colors:product_colors(id, name_ar, hex_code, swatch_url, swatch_public_id),
-        sizes:product_sizes(size),
+        colors:product_colors(id, name_ar, hex_code, swatch_url, swatch_public_id, is_available),
+        sizes:product_sizes(size, is_available),
         tags:product_tags(tag)
         `
       )
@@ -44,7 +44,7 @@ export async function GET(
 
     const normalized = {
       ...product,
-      sizes: (product.sizes || []).map((s: { size: number }) => s.size),
+      sizes: (product.sizes || []).map((s: { size: number; is_available: boolean }) => ({ size: s.size, is_available: s.is_available })),
       tags:  (product.tags  || []).map((t: { tag: ProductTag }) => t.tag),
     }
 
@@ -203,6 +203,7 @@ export async function PUT(
             hex_code:         c.hex_code,
             swatch_url:       c.swatch_url || null,
             swatch_public_id: c.swatch_public_id || null,
+            is_available:     c.is_available ?? true,
           }))
         )
       }
@@ -222,7 +223,7 @@ export async function PUT(
       if (sizes.length > 0) {
         await supabaseAdmin
           .from('product_sizes')
-          .insert(sizes.map((s: number) => ({ product_id: id, size: s })))
+          .insert(sizes.map((s: any) => ({ product_id: id, size: s.size, is_available: s.is_available ?? true })))
       }
     }
 

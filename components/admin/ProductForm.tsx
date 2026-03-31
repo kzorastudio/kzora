@@ -56,13 +56,14 @@ export default function ProductForm({
       is_featured: initialData?.is_featured ?? false,
       is_published: initialData ? initialData.is_published : true,
       sort_order: initialData?.sort_order ?? 0,
-      sizes: initialData?.sizes ?? [],
+      sizes: initialData?.sizes?.map(s => (typeof s === 'number' ? { size: s, is_available: true } : s)) ?? [],
       tags: initialData?.tags ?? [],
       colors: initialData?.colors?.map((c) => ({
         name_ar: c.name_ar,
         hex_code: c.hex_code,
         swatch_url: c.swatch_url ?? '',
         swatch_public_id: c.swatch_public_id ?? '',
+        is_available: c.is_available ?? true,
       })) ?? [],
     },
   })
@@ -91,13 +92,14 @@ export default function ProductForm({
         is_featured: initialData.is_featured,
         is_published: initialData.is_published,
         sort_order: initialData.sort_order,
-        sizes: initialData.sizes,
+        sizes: initialData.sizes?.map(s => (typeof s === 'number' ? { size: s, is_available: true } : s)) ?? [],
         tags: initialData.tags,
         colors: initialData.colors?.map(c => ({
           name_ar: c.name_ar,
           hex_code: c.hex_code,
           swatch_url: c.swatch_url || '',
           swatch_public_id: c.swatch_public_id || '',
+          is_available: c.is_available ?? true,
         })) || []
       })
     }
@@ -257,17 +259,41 @@ export default function ProductForm({
       <section className={SECTION_CLASS}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-arabic font-semibold">الألوان المتاحة</h2>
-          <button type="button" onClick={() => appendColor({ name_ar: '', hex_code: '#000000', swatch_url: '', swatch_public_id: '' })} className="text-primary text-sm flex items-center gap-1">
+          <button type="button" onClick={() => appendColor({ name_ar: '', hex_code: '#000000', swatch_url: '', swatch_public_id: '', is_available: true })} className="text-primary text-sm flex items-center gap-1">
             <Plus size={16} /> إضافة لون
           </button>
         </div>
         {colorFields.map((field, index) => (
-          <div key={field.id} className="flex gap-3 p-3 rounded-xl bg-surface-container">
-            <input type="text" placeholder="اسم اللون" {...register(`colors.${index}.name_ar`)} className={FIELD_CLASS} />
-            <Controller control={control} name={`colors.${index}.hex_code`} render={({ field: f }) => (
-              <input type="color" {...f} className="h-10 w-12 rounded-lg cursor-pointer" />
-            )} />
-            <button type="button" onClick={() => removeColor(index)} className="text-error mt-2"><Trash2 size={18} /></button>
+          <div key={field.id} className="flex flex-col gap-2 p-3 rounded-xl bg-surface-container">
+            <div className="flex gap-3 items-center">
+              <input type="text" placeholder="اسم اللون" {...register(`colors.${index}.name_ar`)} className={FIELD_CLASS} />
+              <Controller control={control} name={`colors.${index}.hex_code`} render={({ field: f }) => (
+                <input type="color" {...f} className="h-10 w-12 rounded-lg cursor-pointer" />
+              )} />
+              <button type="button" onClick={() => removeColor(index)} className="text-error"><Trash2 size={18} /></button>
+            </div>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-arabic text-secondary">متوفر حالياً؟</span>
+              <Controller
+                control={control}
+                name={`colors.${index}.is_available`}
+                render={({ field: f }) => (
+                  <button
+                    type="button"
+                    onClick={() => f.onChange(!f.value)}
+                    className={cn(
+                      'relative h-5 w-10 shrink-0 rounded-full transition-colors duration-200',
+                      f.value ? 'bg-primary' : 'bg-surface-container-high'
+                    )}
+                  >
+                    <span className={cn(
+                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200',
+                      f.value ? 'translate-x-5' : 'translate-x-0.5'
+                    )} />
+                  </button>
+                )}
+              />
+            </div>
           </div>
         ))}
       </section>
@@ -280,27 +306,48 @@ export default function ProductForm({
           render={({ field }) => (
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_SIZES.map(size => {
-                const selected = field.value?.includes(size)
+                const selected = field.value?.some((s: any) => s.size === size)
                 return (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => {
-                      if (selected) {
-                        field.onChange(field.value.filter((s: number) => s !== size))
-                      } else {
-                        field.onChange([...(field.value ?? []), size])
-                      }
-                    }}
-                    className={cn(
-                      'min-w-[2.75rem] h-10 px-3 rounded-xl text-sm font-arabic font-medium transition-all border-2',
-                      selected
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-surface-container text-secondary border-outline-variant/40 hover:border-primary/40 hover:text-on-surface'
+                  <div key={size} className="flex flex-col items-center gap-1.5">
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => {
+                        const current = field.value || []
+                        const exists = current.find((s: any) => s.size === size)
+                        if (exists) {
+                          field.onChange(current.filter((s: any) => s.size !== size))
+                        } else {
+                          field.onChange([...current, { size, is_available: true }])
+                        }
+                      }}
+                      className={cn(
+                        'min-w-[2.75rem] h-10 px-3 rounded-xl text-sm font-arabic font-medium transition-all border-2',
+                        field.value?.some((s: any) => s.size === size)
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-surface-container text-secondary border-outline-variant/40 hover:border-primary/40 hover:text-on-surface'
+                      )}
+                    >
+                      {size}
+                    </button>
+                    {field.value?.some((s: any) => s.size === size) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = field.value || []
+                          field.onChange(current.map((s: any) => s.size === size ? { ...s, is_available: !s.is_available } : s))
+                        }}
+                        className={cn(
+                          'px-2 py-0.5 rounded-full text-[10px] font-arabic border transition-colors',
+                          field.value?.find((s: any) => s.size === size)?.is_available
+                            ? 'bg-success/10 text-success border-success/20'
+                            : 'bg-error/10 text-error border-error/20'
+                        )}
+                      >
+                        {field.value?.find((s: any) => s.size === size)?.is_available ? 'متوفر' : 'غير متوفر'}
+                      </button>
                     )}
-                  >
-                    {size}
-                  </button>
+                  </div>
                 )
               })}
             </div>

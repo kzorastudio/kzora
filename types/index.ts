@@ -60,12 +60,14 @@ export interface ProductColor {
   hex_code: string
   swatch_url: string | null
   swatch_public_id: string | null
+  is_available: boolean
 }
 
 export interface ProductSize {
   id: string
   product_id: string
   size: number
+  is_available: boolean
 }
 
 export type ProductTag = 'new' | 'best_seller' | 'on_sale'
@@ -80,7 +82,7 @@ export interface ProductTagRow {
 export interface ProductFull extends Product {
   images: ProductImage[]
   colors: ProductColor[]
-  sizes: number[]
+  sizes: { size: number; is_available: boolean }[]
   tags: ProductTag[]
   category: Category | null
 }
@@ -253,8 +255,8 @@ export interface CreateProductPayload {
   is_published: boolean
   sort_order: number
   images: { url: string; public_id: string; color_variant?: string | null; display_order: number; is_main: boolean }[]
-  colors: { name_ar: string; hex_code: string; swatch_url?: string; swatch_public_id?: string }[]
-  sizes: number[]
+  colors: { name_ar: string; hex_code: string; swatch_url?: string; swatch_public_id?: string; is_available: boolean }[]
+  sizes: { size: number; is_available: boolean }[]
   tags: ProductTag[]
 }
 

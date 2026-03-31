@@ -22,13 +22,14 @@ export default function ProductActions({ product, onColorChange }: Props) {
   const { addItem, openCart } = useCartStore()
 
   const [selectedColorId, setSelectedColorId] = useState<string | null>(
-    product.colors.length === 1 ? product.colors[0].id : null
+    product.colors.filter(c => c.is_available).length === 1 ? product.colors.find(c => c.is_available)!.id : null
   )
   const [selectedSize, setSelectedSize] = useState<number | null>(
-    product.sizes.length === 1 ? product.sizes[0] : null
+    product.sizes.filter(s => s.is_available).length === 1 ? product.sizes.find(s => s.is_available)!.size : null
   )
   const [quantity, setQuantity] = useState(1)
   const [sizeError, setSizeError] = useState(false)
+  const [colorError, setColorError] = useState(false)
 
   const selectedColor = useMemo(
     () => product.colors.find((c) => c.id === selectedColorId) ?? null,
@@ -51,6 +52,11 @@ export default function ProductActions({ product, onColorChange }: Props) {
 
   const handleAddToCart = useCallback(() => {
     if (outOfStock) return
+    if (product.colors.length > 0 && selectedColorId === null) {
+      setColorError(true)
+      toast.error('يرجى اختيار اللون أولاً')
+      return
+    }
     if (product.sizes.length > 0 && selectedSize === null) {
       setSizeError(true)
       toast.error('يرجى اختيار المقاس أولاً')
@@ -134,30 +140,46 @@ export default function ProductActions({ product, onColorChange }: Props) {
       {product.colors.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-sm font-arabic">
-            <span className="text-[#6B6560] font-medium">اللون:</span>
+            <span className={cn(
+              'font-medium transition-colors',
+              colorError ? 'text-[#BA1A1A]' : 'text-[#6B6560]'
+            )}>اللون:</span>
             {selectedColor && (
               <span className="text-[#1A1A1A] font-bold">{selectedColor.name_ar}</span>
             )}
             {!selectedColor && (
-              <span className="text-[#9E9890] text-xs font-medium italic opacity-70">يرجى اختيار لون</span>
+              <span className={cn(
+                "text-xs font-medium italic opacity-70",
+                colorError ? "text-[#BA1A1A] font-bold animate-pulse" : "text-[#9E9890]"
+              )}>
+                {colorError ? "يرجى اختيار لون" : "يرجى اختيار لون"}
+              </span>
             )}
           </div>
           <div className="flex gap-3 flex-wrap">
             {product.colors.map((color: ProductColor) => (
-              <button
-                key={color.id}
-                type="button"
-                title={color.name_ar}
-                onClick={() => setSelectedColorId(color.id)}
-                className={cn(
-                  'w-10 h-10 rounded-full transition-all duration-200 shadow-sm',
-                  'focus-visible:outline-none',
-                  selectedColorId === color.id
-                    ? 'ring-2 ring-[#785600] ring-offset-3'
-                    : 'ring-1 ring-black/40 ring-offset-2 hover:ring-[#785600]'
+              <div key={color.id} className="relative">
+                <button
+                  type="button"
+                  title={color.name_ar}
+                  disabled={!color.is_available}
+                  onClick={() => { setSelectedColorId(color.id); setColorError(false) }}
+                  className={cn(
+                    'w-10 h-10 rounded-full transition-all duration-200 shadow-sm',
+                    'focus-visible:outline-none',
+                    selectedColorId === color.id
+                      ? 'ring-2 ring-[#785600] ring-offset-3'
+                      : 'ring-1 ring-black/40 ring-offset-2 hover:ring-[#785600]',
+                    !color.is_available && 'opacity-25 cursor-not-allowed grayscale scale-90'
+                  )}
+                  style={{ backgroundColor: color.hex_code }}
+                />
+                {!color.is_available && (
+                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                     <div className="w-[1px] h-full bg-white/60 rotate-45" />
+                   </div>
                 )}
-                style={{ backgroundColor: color.hex_code }}
-              />
+              </div>
             ))}
           </div>
         </div>
@@ -193,23 +215,30 @@ export default function ProductActions({ product, onColorChange }: Props) {
             </a>
           </div>
           <div className="grid grid-cols-5 gap-2">
-            {product.sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => { setSelectedSize(size); setSizeError(false) }}
-                disabled={outOfStock}
-                className={cn(
-                  'py-3 text-center text-sm font-medium tabular-nums transition-all duration-150',
-                  'border-b-2 focus-visible:outline-none',
-                  selectedSize === size
-                    ? 'border-[#785600] bg-[#F5F1EB] text-[#785600] font-bold'
-                    : 'border-transparent bg-[#F5F3F0] text-[#6B6560] hover:bg-[#EDE8E0] hover:text-[#1A1A1A]'
-                )}
-              >
-                {size}
-              </button>
-            ))}
+            {product.sizes.map((s) => {
+              const item = typeof s === 'number' ? { size: s, is_available: true } : s
+              const size = item.size
+              const isAvailable = item.is_available && !outOfStock
+
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => { setSelectedSize(size); setSizeError(false) }}
+                  disabled={!isAvailable}
+                  className={cn(
+                    'py-3 text-center text-sm font-medium tabular-nums transition-all duration-150',
+                    'border-b-2 focus-visible:outline-none',
+                    selectedSize === size
+                      ? 'border-[#785600] bg-[#F5F1EB] text-[#785600] font-bold'
+                      : 'border-transparent bg-[#F5F3F0] text-[#6B6560] hover:bg-[#EDE8E0] hover:text-[#1A1A1A]',
+                    !isAvailable && 'opacity-40 cursor-not-allowed line-through grayscale border-transparent bg-[#F5F3F0]/50'
+                  )}
+                >
+                  {size}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}

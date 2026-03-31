@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
         *,
         category:categories(id, name_ar, slug),
         images:product_images(id, url, public_id, color_variant, display_order, is_main),
-        colors:product_colors(id, name_ar, hex_code, swatch_url, swatch_public_id),
-        sizes:product_sizes(size),
+        colors:product_colors(id, name_ar, hex_code, swatch_url, swatch_public_id, is_available),
+        sizes:product_sizes(size, is_available),
         tags:product_tags(tag)
         `,
         { count: 'exact' }
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
     // Normalize sizes and tags
     const products = (data || []).map((p: any) => ({
       ...p,
-      sizes: (p.sizes || []).map((s: { size: number }) => s.size),
+      sizes: (p.sizes || []).map((s: { size: number; is_available: boolean }) => ({ size: s.size, is_available: s.is_available })),
       tags:  (p.tags  || []).map((t: { tag: ProductTag }) => t.tag),
     }))
 
@@ -256,6 +256,7 @@ export async function POST(request: NextRequest) {
             hex_code:         c.hex_code,
             swatch_url:       c.swatch_url || null,
             swatch_public_id: c.swatch_public_id || null,
+            is_available:     c.is_available ?? true,
           }))
         )
 
@@ -268,7 +269,7 @@ export async function POST(request: NextRequest) {
     if (sizes && sizes.length > 0) {
       const { error: sizeError } = await supabaseAdmin
         .from('product_sizes')
-        .insert(sizes.map((s) => ({ product_id: productId, size: s })))
+        .insert(sizes.map((s) => ({ product_id: productId, size: s.size, is_available: s.is_available ?? true })))
 
       if (sizeError) {
         console.error('Product sizes insert error:', sizeError)
