@@ -305,12 +305,14 @@ export const MOCK_HOMEPAGE_SETTINGS: HomepageSettings = {
   discount_multi_items_enabled: false,
   discount_2_items_syp: 2000,
   discount_3_items_plus_syp: 3000,
-  shipping_fee_1_piece_syp: 0,
-  shipping_fee_1_piece_usd: 0,
-  shipping_fee_2_pieces_syp: 0,
-  shipping_fee_2_pieces_usd: 0,
-  shipping_fee_3_plus_pieces_syp: 0,
-  shipping_fee_3_plus_pieces_usd: 0,
+  shipping_fee_1_piece_syp: 25000,
+  shipping_fee_1_piece_usd: 1.5,
+  shipping_fee_2_pieces_syp: 35000,
+  shipping_fee_2_pieces_usd: 2.5,
+  shipping_fee_3_plus_pieces_syp: 45000,
+  shipping_fee_3_plus_pieces_usd: 3.5,
+  delivery_fee_syp: 15000,
+  delivery_fee_usd: 1.0,
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
