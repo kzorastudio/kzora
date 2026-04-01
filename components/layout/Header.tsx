@@ -236,15 +236,15 @@ export function Header() {
           {/* Actions — appears on LEFT in RTL */}
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
 
-            {/* Currency switcher — visible on all screens, small and elegant */}
-            <div className="flex items-center bg-[#F5F1EB] rounded-full p-[2px] border border-[#E8E3DB] shadow-inner ml-1 md:ml-2 shrink-0">
+            {/* Currency switcher — even smaller and more elegant */}
+            <div className="flex items-center bg-black/5 backdrop-blur-sm rounded-full p-[1.5px] border border-[#E8E3DB]/40 ml-1 md:ml-2 transition-all shrink-0">
               <button
                 type="button"
                 onClick={() => setCurrency('USD')}
                 className={cn(
-                  'px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-bold transition-all duration-300',
+                  'px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full text-[9px] md:text-[11px] font-bold transition-all duration-300',
                   currency === 'USD' 
-                    ? 'bg-gradient-to-r from-[#785600] to-[#B8860B] text-white shadow-md cursor-default' 
+                    ? 'bg-white text-[#785600] shadow-sm cursor-default' 
                     : 'text-[#9E9890] hover:text-[#1A1A1A]'
                 )}
               >
@@ -254,9 +254,9 @@ export function Header() {
                 type="button"
                 onClick={() => setCurrency('SYP')}
                 className={cn(
-                  'px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-bold font-arabic transition-all duration-300',
+                  'px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full text-[9px] md:text-[11px] font-bold font-arabic transition-all duration-300',
                   currency === 'SYP' 
-                    ? 'bg-gradient-to-r from-[#785600] to-[#B8860B] text-white shadow-md cursor-default' 
+                    ? 'bg-white text-[#785600] shadow-sm cursor-default' 
                     : 'text-[#9E9890] hover:text-[#1A1A1A]'
                 )}
               >

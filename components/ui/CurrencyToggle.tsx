@@ -20,7 +20,7 @@ function CurrencyToggle({ className }: CurrencyToggleProps) {
       aria-label="تبديل العملة"
       className={cn(
         'inline-flex items-center',
-        'bg-surface-container rounded-full p-0.5',
+        'bg-black/5 backdrop-blur-sm rounded-full p-[1.5px] border border-[#E8E3DB]/40',
         'gap-0.5',
         className
       )}
@@ -33,12 +33,10 @@ function CurrencyToggle({ className }: CurrencyToggleProps) {
             onClick={() => setCurrency(option)}
             aria-pressed={isActive}
             className={cn(
-              'relative px-3 py-1 rounded-full text-xs font-label font-semibold',
-              'transition-all duration-200',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+              'px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all duration-300',
               isActive
-                ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
-                : 'text-secondary hover:text-on-surface'
+                ? 'bg-white text-[#785600] shadow-sm cursor-default scale-100'
+                : 'text-[#9E9890] hover:text-[#1A1A1A] scale-95 opacity-80'
             )}
           >
             {option}

@@ -185,9 +185,9 @@ function Lightbox({
         </>
       )}
 
-      {/* Image */}
+      {/* Image container with AnimatePresence */}
       <div
-        className="relative z-10 w-full h-full flex items-center justify-center p-4 md:p-16"
+        className="relative z-10 w-full h-full flex items-center justify-center p-4 md:p-16 overflow-hidden"
         onClick={(e) => { if (e.target === e.currentTarget && !isZoomed) onClose() }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -198,23 +198,37 @@ function Lightbox({
         onTouchEnd={(e) => { setIsDragging(false); handleSwipeEnd(e) }}
         style={{ cursor: isZoomed ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in' }}
       >
-        <div
-          className="relative max-w-4xl w-full aspect-[4/5] md:aspect-[3/4] transition-transform duration-200"
-          style={{
-            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-          }}
-          onClick={(e) => { e.stopPropagation(); toggleZoom() }}
-        >
-          <Image
-            src={images[index].url}
-            alt={`${productName} - صورة ${index + 1}`}
-            fill
-            sizes="100vw"
-            quality={95}
-            className="object-contain select-none pointer-events-none"
-            priority
-          />
-        </div>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={images[index].id}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ 
+              opacity: 1, 
+              scale: isZoomed ? scale : 1,
+              x: position.x,
+              y: position.y,
+            }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{
+              opacity: { duration: 0.3, ease: 'easeInOut' },
+              scale: { duration: 0.2, ease: 'easeOut' },
+              x: { type: 'tween', duration: 0 }, // Immediate position sync when zoomed
+              y: { type: 'tween', duration: 0 },
+            }}
+            className="relative max-w-4xl w-full aspect-[4/5] md:aspect-[3/4]"
+            onClick={(e) => { e.stopPropagation(); if (!isDragging) toggleZoom() }}
+          >
+            <Image
+              src={images[index].url}
+              alt={`${productName} - صورة ${index + 1}`}
+              fill
+              sizes="100vw"
+              quality={95}
+              className="object-contain select-none pointer-events-none"
+              priority
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Bottom thumbnails */}
