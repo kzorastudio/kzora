@@ -1,4 +1,4 @@
-import { Package, ShoppingBag, Clock, AlertTriangle } from 'lucide-react'
+import { Package, ShoppingBag, Clock, AlertTriangle, TrendingUp, Info } from 'lucide-react'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
@@ -153,7 +153,17 @@ export default async function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
-              <span className="text-xs font-arabic font-bold text-secondary">آخر ٢٤ ساعة</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-arabic font-bold text-secondary">آخر ٢٤ ساعة</span>
+                <div className="group/info relative cursor-help">
+                  <Info size={14} className="text-secondary/40" />
+                  <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#1A1A1A] text-white text-[10px] p-2 rounded-lg opacity-0 group-hover/info:opacity-100 transition-opacity z-10 pointer-events-none font-arabic">
+                    <p className="font-bold border-b border-white/20 pb-1 mb-1">توضيح الأرقام:</p>
+                    <p>• الزوار الفريدين: عدد الأشخاص أو الأجهزة المختلفة.</p>
+                    <p>• إجمالي الزيارات: كل مرة يتم فيها فتح صفحة في الموقع.</p>
+                  </div>
+                </div>
+              </div>
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last24h.unique}</span>
@@ -163,7 +173,17 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
-              <span className="text-xs font-arabic font-bold text-secondary">آخر أسبوع</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-arabic font-bold text-secondary">آخر أسبوع</span>
+                <div className="group/info relative cursor-help">
+                  <Info size={14} className="text-secondary/40" />
+                  <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#1A1A1A] text-white text-[10px] p-2 rounded-lg opacity-0 group-hover/info:opacity-100 transition-opacity z-10 pointer-events-none font-arabic">
+                    <p className="font-bold border-b border-white/20 pb-1 mb-1">توضيح الأرقام:</p>
+                    <p>• الزوار الفريدين: عدد الأشخاص أو الأجهزة المختلفة.</p>
+                    <p>• إجمالي الزيارات: كل مرة يتم فيها فتح صفحة في الموقع.</p>
+                  </div>
+                </div>
+              </div>
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last7d.unique}</span>
@@ -173,7 +193,17 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
-              <span className="text-xs font-arabic font-bold text-secondary">آخر شهر</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-arabic font-bold text-secondary">آخر شهر</span>
+                <div className="group/info relative cursor-help">
+                  <Info size={14} className="text-secondary/40" />
+                  <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#1A1A1A] text-white text-[10px] p-2 rounded-lg opacity-0 group-hover/info:opacity-100 transition-opacity z-10 pointer-events-none font-arabic">
+                    <p className="font-bold border-b border-white/20 pb-1 mb-1">توضيح الأرقام:</p>
+                    <p>• الزوار الفريدين: عدد الأشخاص أو الأجهزة المختلفة.</p>
+                    <p>• إجمالي الزيارات: كل مرة يتم فيها فتح صفحة في الموقع.</p>
+                  </div>
+                </div>
+              </div>
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last30d.unique}</span>
