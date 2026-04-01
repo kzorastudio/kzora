@@ -53,7 +53,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const order = await getOrder(params.id)
   if (!order) notFound()
 
-  const shippingName = await getShippingMethodName(order.shipping_company)
+  const deliveryType = (order as any).delivery_type || 'shipping'
+  const shippingName = deliveryType === 'delivery' ? 'توصيل عادي' : (await getShippingMethodName(order.shipping_company || ''))
 
   const subtotal = order.currency_used === 'USD'
     ? formatPrice(order.subtotal_usd, 'USD')
@@ -240,9 +241,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <h3 className="text-sm font-arabic font-semibold text-on-surface">معلومات الشحن</h3>
               </div>
               <div className="text-sm font-arabic">
-                <span className="text-secondary">شركة الشحن: </span>
+                <span className="text-secondary">{deliveryType === 'delivery' ? 'نوع التوصيل: ' : 'شركة الشحن: '} </span>
                 <span className="text-on-surface font-medium">
-                  {shippingName}
+                  {deliveryType === 'delivery' ? '🚀 توصيل عادي (مندوب داخلي)' : shippingName}
                 </span>
               </div>
               {(order as any).payment_transaction_id && (

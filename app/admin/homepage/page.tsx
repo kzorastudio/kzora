@@ -73,14 +73,14 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   discount_multi_items_enabled: false,
   discount_2_items_syp: 2000,
   discount_3_items_plus_syp: 3000,
-  delivery_fee_syp: 0,
-  delivery_fee_usd: 0,
   shipping_fee_1_piece_syp: 0,
   shipping_fee_1_piece_usd: 0,
   shipping_fee_2_pieces_syp: 0,
   shipping_fee_2_pieces_usd: 0,
   shipping_fee_3_plus_pieces_syp: 0,
   shipping_fee_3_plus_pieces_usd: 0,
+  delivery_fee_syp: 0,
+  delivery_fee_usd: 0,
 }
 
 export default function HomepagePage() {
@@ -540,16 +540,16 @@ export default function HomepagePage() {
                 <span className="w-1.5 h-6 bg-[#2E7D32] rounded-full" />
                 أسعار التوصيل والشحن
               </h2>
-
-              {/* Regular Delivery Fee */}
-              <div className="mb-8">
+              
+              {/* Regular Delivery Flat Fee */}
+              <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
                 <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
                   <Truck size={16} className="text-[#2E7D32]" />
-                  التوصيل العادي (سعر ثابت)
+                  رسوم التوصيل العادي (Flat Fee)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-arabic font-bold text-secondary">سعر التوصيل (ل.س)</label>
+                    <label className="text-xs font-arabic font-bold text-secondary">السعر بالليرة السورية (ل.س)</label>
                     <input
                       type="number"
                       min={0}
@@ -559,7 +559,7 @@ export default function HomepagePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-arabic font-bold text-secondary">سعر التوصيل ($)</label>
+                    <label className="text-xs font-arabic font-bold text-secondary">السعر بالدولار ($)</label>
                     <input
                       type="number"
                       min={0}

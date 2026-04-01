@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { cn, formatPrice } from '@/lib/utils'
 import { Trash2, Plus, Minus } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
-import type { CartItem, Currency, DeliveryType } from '@/types'
+import type { CartItem, Currency } from '@/types'
 
 interface Props {
   items: CartItem[]
@@ -19,7 +19,6 @@ interface Props {
   multiProductDiscountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
-  deliveryType?: DeliveryType
 }
 
 export default function OrderSummaryPanel({
@@ -35,7 +34,6 @@ export default function OrderSummaryPanel({
   multiProductDiscountUsd = 0,
   shippingFeeSyp = 0,
   shippingFeeUsd = 0,
-  deliveryType,
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
@@ -182,7 +180,7 @@ export default function OrderSummaryPanel({
           {shippingFee > 0 && (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">
-                {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
+                أجرة الشحن
               </span>
               <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
                 +{formatPrice(shippingFee, currency)}

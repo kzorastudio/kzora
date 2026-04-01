@@ -106,8 +106,8 @@ export interface Order {
   customer_phone: string
   customer_governorate: string
   customer_address: string
-  shipping_company: string
   delivery_type: DeliveryType
+  shipping_company: string | null
   shipping_fee_syp: number
   shipping_fee_usd: number
   coupon_code: string | null
@@ -218,15 +218,16 @@ export interface HomepageSettings {
   discount_multi_items_enabled: boolean
   discount_2_items_syp: number
   discount_3_items_plus_syp: number
-  // Delivery & Shipping fees
-  delivery_fee_syp: number
-  delivery_fee_usd: number
+  // Shipping fees
   shipping_fee_1_piece_syp: number
   shipping_fee_1_piece_usd: number
   shipping_fee_2_pieces_syp: number
   shipping_fee_2_pieces_usd: number
   shipping_fee_3_plus_pieces_syp: number
   shipping_fee_3_plus_pieces_usd: number
+  // Delivery flat fee
+  delivery_fee_syp: number
+  delivery_fee_usd: number
 }
 
 export interface StaticPage {
@@ -318,8 +319,8 @@ export interface CreateOrderPayload {
     governorate: string
     address: string
   }
-  shipping_company: string
   delivery_type: DeliveryType
+  shipping_company?: string | null
   payment_method: string
   payment_transaction_id?: string
   coupon_code?: string

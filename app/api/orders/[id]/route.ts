@@ -70,6 +70,7 @@ export async function PUT(
       customer_governorate, 
       customer_address, 
       shipping_company,
+      delivery_type,
       payment_method
     } = body
 
@@ -103,6 +104,7 @@ export async function PUT(
     if (customer_governorate !== undefined) updateFields.customer_governorate = customer_governorate
     if (customer_address !== undefined) updateFields.customer_address = customer_address
     if (shipping_company !== undefined) updateFields.shipping_company = shipping_company
+    if (delivery_type !== undefined) updateFields.delivery_type = delivery_type
     if (payment_method !== undefined) updateFields.payment_method = payment_method
 
     // ─── Perform Update ──────────────────────────────────────────────────

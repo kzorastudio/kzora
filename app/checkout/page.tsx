@@ -14,7 +14,7 @@ import { useCurrencyStore } from '@/store/currencyStore'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import { SHIPPING_LABELS } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
-import type { CreateOrderPayload, HomepageSettings, DeliveryType } from '@/types'
+import type { CreateOrderPayload, HomepageSettings } from '@/types'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
@@ -33,7 +33,7 @@ export default function CheckoutPage() {
   const [discountSyp,  setDiscountSyp]  = useState(0)
   const [discountUsd,  setDiscountUsd]  = useState(0)
   const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
-  const [deliveryType, setDeliveryType] = useState<DeliveryType>('shipping')
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('delivery')
 
   useEffect(() => {
     fetch('/api/homepage/settings')
@@ -92,8 +92,8 @@ export default function CheckoutPage() {
             governorate: formData.governorate,
             address:     formData.address ?? '',
           },
-          shipping_company: (formData.shipping_company as string) ?? '',
-          delivery_type:    formData.delivery_type,
+          delivery_type: deliveryType,
+          shipping_company: (formData.shipping_company as string) ?? null,
           payment_method:   formData.payment_method,
           payment_transaction_id: formData.payment_transaction_id ?? undefined,
           coupon_code:      couponCode,
@@ -121,13 +121,12 @@ export default function CheckoutPage() {
         const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
         const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug] || shippingSlug
 
-        // Calculate shipping fee at submit time based on current delivery type
-        const submitDeliveryType = formData.delivery_type
+        // Calculate shipping fee at submit time
         let submitShippingFeeSyp = 0
         let submitShippingFeeUsd = 0
         const submitTotalItems = items.reduce((acc, item) => acc + item.quantity, 0)
         if (settings) {
-          if (submitDeliveryType === 'delivery') {
+          if (deliveryType === 'delivery') {
             submitShippingFeeSyp = settings.delivery_fee_syp || 0
             submitShippingFeeUsd = settings.delivery_fee_usd || 0
           } else {
@@ -151,9 +150,9 @@ export default function CheckoutPage() {
           customerPhone:   formData.phone,
           governorate:     formData.governorate,
           address:         formData.address ?? '',
+          deliveryType:    deliveryType,
           shippingCompany: shippingSlug,
           shippingCompanyName,
-          deliveryType:    submitDeliveryType,
           items,
           couponCode,
           discountSyp:     discountSyp || undefined,
@@ -184,7 +183,7 @@ export default function CheckoutPage() {
         setIsSubmitting(false)
       }
     },
-    [items, couponCode, discountSyp, discountUsd, currency, clearCart, router, subtotalSyp, subtotalUsd, shippingMethods, settings]
+    [items, couponCode, discountSyp, discountUsd, currency, clearCart, router, subtotalSyp, subtotalUsd, shippingMethods, settings, deliveryType]
   )
 
   // Avoid hydration mismatch — render empty cart check only after mount
@@ -255,7 +254,7 @@ export default function CheckoutPage() {
     }
   }
 
-  // Shipping/Delivery fee calculation
+  // Shipping fee calculation
   let shippingFeeSyp = 0
   let shippingFeeUsd = 0
   if (settings) {
@@ -263,7 +262,7 @@ export default function CheckoutPage() {
       shippingFeeSyp = settings.delivery_fee_syp || 0
       shippingFeeUsd = settings.delivery_fee_usd || 0
     } else {
-      // Shipping — per piece count
+      // Calculate by pieces for shipping
       if (totalItemsCount >= 3) {
         shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
         shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
@@ -319,7 +318,6 @@ export default function CheckoutPage() {
                   multiProductDiscountUsd={multiProductDiscountUsd}
                   shippingFeeSyp={shippingFeeSyp}
                   shippingFeeUsd={shippingFeeUsd}
-                  deliveryType={deliveryType}
                 />
 
                 {/* Coupon */}

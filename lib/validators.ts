@@ -15,8 +15,8 @@ export const checkoutSchema = z.object({
   address: z
     .string()
     .min(1, 'يرجى اختيار مركز الاستلام أو العنوان'),
-  shipping_company: z.string().optional().default(''),
-  delivery_type: z.enum(['delivery', 'shipping']).default('shipping'),
+  delivery_type: z.enum(['delivery', 'shipping']).default('delivery'),
+  shipping_company: z.string().optional().nullable(),
   coupon_code: z.string().optional(),
   payment_method: z.enum(['cod', 'sham_cash']).default('cod'),
   payment_transaction_id: z.string().optional(),
@@ -24,7 +24,7 @@ export const checkoutSchema = z.object({
 }).refine(
   (data) => {
     if (data.delivery_type === 'shipping') {
-      return !!data.shipping_company && data.shipping_company.trim().length > 0
+      return !!data.shipping_company && data.shipping_company.length > 0
     }
     return true
   },

@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderPayload = await request.json()
-    const { items, customer, shipping_company, delivery_type, payment_method, payment_transaction_id, coupon_code, currency_used, notes } = body
+    const { items, customer, delivery_type, shipping_company, payment_method, payment_transaction_id, coupon_code, currency_used, notes } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -196,10 +196,10 @@ export async function POST(request: NextRequest) {
     const totalItemsCount = sanitizedItems.reduce((acc, item) => acc + item.quantity, 0)
     let multiProductDiscountSyp = 0
     
-    // Fetch settings for multi-item discount
+    // Fetch settings for multi-item discount and shipping fees
     const { data: settings } = await supabaseAdmin
       .from('homepage_settings')
-      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, delivery_fee_syp, delivery_fee_usd, shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd')
+      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, delivery_fee_syp, delivery_fee_usd')
       .limit(1)
       .maybeSingle()
 
@@ -266,12 +266,11 @@ export async function POST(request: NextRequest) {
         .eq('id', coupon.id)
     }
 
-    // ─── Step 2.7: Calculate shipping/delivery fee ───────────────────────
+    // ─── Step 2.7: Calculate shipping/delivery fee ───────────────
     let shippingFeeSyp = 0
     let shippingFeeUsd = 0
-    const effectiveDeliveryType = delivery_type || 'shipping'
 
-    if (effectiveDeliveryType === 'delivery') {
+    if (delivery_type === 'delivery') {
       shippingFeeSyp = settings?.delivery_fee_syp || 0
       shippingFeeUsd = settings?.delivery_fee_usd || 0
     } else {
@@ -308,8 +307,8 @@ export async function POST(request: NextRequest) {
         customer_phone:       customer.phone,
         customer_governorate: customer.governorate,
         customer_address:     customer.address,
-        shipping_company:     shipping_company || '',
-        delivery_type:        effectiveDeliveryType,
+        delivery_type:        delivery_type || 'shipping',
+        shipping_company:     shipping_company || null,
         shipping_fee_syp:     shippingFeeSyp,
         shipping_fee_usd:     shippingFeeUsd,
         payment_method:       payment_method || 'cod',

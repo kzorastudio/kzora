@@ -25,6 +25,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     customer_governorate: order.customer_governorate,
     customer_address: order.customer_address,
     shipping_company: order.shipping_company,
+    delivery_type: (order as any).delivery_type || 'shipping',
     notes: order.notes || '',
   })
 
@@ -162,25 +163,39 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
             {/* Shipping Company — Dynamic */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-                <Truck size={14} /> شركة الشحن <span className="text-error">*</span>
+                <Truck size={14} /> خيار التوصيل <span className="text-error">*</span>
               </label>
               <select
-                value={formData.shipping_company}
+                value={formData.delivery_type}
                 onChange={(e) => {
-                  setFormData({ ...formData, shipping_company: e.target.value, customer_address: '' })
+                  setFormData({ ...formData, delivery_type: e.target.value, shipping_company: e.target.value === 'delivery' ? null : formData.shipping_company, customer_address: '' })
                 }}
                 className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
               >
-                <option value="">اختر شركة الشحن...</option>
-                {shippingMethods.length > 0 ? (
-                  shippingMethods.map((m: any) => (
-                    <option key={m.slug} value={m.slug}>{m.name}</option>
-                  ))
-                ) : (
-                  <option value={formData.shipping_company}>{formData.shipping_company}</option>
-                )}
+                <option value="delivery">🚀 توصيل عادي</option>
+                <option value="shipping">📦 شحن محافظات</option>
               </select>
             </div>
+
+            {formData.delivery_type === 'shipping' && (
+              <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
+                  <Truck size={14} /> شركة الشحن <span className="text-error">*</span>
+                </label>
+                <select
+                  value={formData.shipping_company || ''}
+                  onChange={(e) => {
+                    setFormData({ ...formData, shipping_company: e.target.value, customer_address: '' })
+                  }}
+                  className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
+                >
+                  <option value="">اختر شركة الشحن...</option>
+                  {shippingMethods.map((m: any) => (
+                    <option key={m.slug} value={m.slug}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Address */}
@@ -188,7 +203,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
               <MapPin size={14} /> العنوان بالتفصيل <span className="text-error">*</span>
             </label>
-            {formData.customer_governorate === 'حلب' ? (
+            {formData.delivery_type === 'delivery' || formData.customer_governorate === 'حلب' || formData.customer_governorate === 'إدلب' ? (
               <textarea
                 rows={2}
                 value={formData.customer_address}

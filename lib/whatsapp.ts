@@ -1,4 +1,4 @@
-import type { CartItem, Currency, DeliveryType } from '@/types'
+import type { CartItem, Currency } from '@/types'
 import { formatPrice, SHIPPING_LABELS } from './utils'
 
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || '963964514765'
@@ -9,9 +9,9 @@ interface OrderForWhatsApp {
   customerPhone: string
   governorate: string
   address: string
+  deliveryType: 'delivery' | 'shipping'
   shippingCompany: string
   shippingCompanyName?: string
-  deliveryType: DeliveryType
   items: CartItem[]
   couponCode?: string
   discountSyp?: number
@@ -43,9 +43,9 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     `- *المحافظة:* ${order.governorate}`,
     `- *العنوان:* ${order.address}`,
     ``,
-    `🚚 *تفاصيل التوصيل:*`,
-    `- *الطريقة:* ${order.deliveryType === 'delivery' ? 'توصيل عادي' : 'شحن عبر شركة'}`,
-    ...(order.deliveryType === 'shipping' ? [`- *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`] : []),
+    `🚚 *تفاصيل الشحن:*`,
+    `- *طريقة التوصيل:* ${order.deliveryType === 'delivery' ? 'توصيل عادي (دمشق وريفها)' : 'شحن ضمن المحافظات'}`,
+    order.deliveryType === 'shipping' ? `- *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}` : ``,
     ``,
     `📦 *المنتجات المطلوبة:*`,
   ]
@@ -82,8 +82,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
   const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
   if (shippingFee > 0) {
-    const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
-    lines.push(`🚛 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
+    lines.push(`🚛 *أجرة الشحن:* +${formatPrice(shippingFee, currency)}`)
   }
 
   const total = currency === 'SYP'
