@@ -298,16 +298,18 @@ export function ProductGallery({
 
   const slideVariants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? '10%' : '-10%',
       opacity: 0,
+      scale: 1.05,
     }),
     center: {
-      x: 0,
       opacity: 1,
+      scale: 1,
+      zIndex: 1,
     },
     exit: (direction: number) => ({
-      x: direction < 0 ? '10%' : '-10%',
       opacity: 0,
+      scale: 0.95,
+      zIndex: 0,
     }),
   }
 
@@ -330,7 +332,7 @@ export function ProductGallery({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <AnimatePresence initial={false} custom={direction} mode="wait">
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
             {activeImage && (
               <motion.div
                 key={activeImage.id}
@@ -340,12 +342,12 @@ export function ProductGallery({
                 animate="center"
                 exit="exit"
                 transition={{
-                  x: { type: 'tween', duration: 0.2, ease: 'easeOut' },
-                  opacity: { duration: 0.15 },
+                  opacity: { duration: 0.3, ease: 'easeInOut' },
+                  scale: { duration: 0.4, ease: [0.32, 0.72, 0, 1] },
                 }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.6}
+                dragElastic={0.5}
                 onDragEnd={(e, { offset, velocity }) => {
                   const swipe = Math.abs(offset.x) > 50 || Math.abs(velocity.x) > 500
                   if (swipe) {
@@ -356,7 +358,7 @@ export function ProductGallery({
                     }
                   }
                 }}
-                className="absolute inset-0 cursor-grab active:cursor-grabbing w-full h-full"
+                className="absolute inset-0 cursor-grab active:cursor-grabbing"
               >
                 <div 
                   className="w-full h-full relative"
