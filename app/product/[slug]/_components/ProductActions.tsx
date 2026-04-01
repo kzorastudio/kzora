@@ -60,28 +60,35 @@ export default function ProductActions({ product, settings, activeColorName, onC
     [product.colors, selectedColorId]
   )
 
-  // Sync color selection to parent
-  useEffect(() => {
-    onColorChange?.(selectedColor)
-  }, [selectedColor, onColorChange])
-
   // Sync color from parent (e.g. from gallery swiping)
   useEffect(() => {
-    if (activeColorName) {
-      if (!selectedColor || selectedColor.name_ar !== activeColorName) {
-        const parentColorObj = product.colors.find(c => c.name_ar === activeColorName)
-        if (parentColorObj) {
-          setSelectedColorId(parentColorObj.id)
-          setColorError(false)
-        }
-      }
-    } else if (activeColorName === null && selectedColorId !== null) {
-      // Only deselect if there is more than 1 color (if only 1, it's often auto-selected)
-      if (product.colors.length > 1) {
+    if (!activeColorName) {
+      if (selectedColorId !== null && product.colors.length > 1) {
         setSelectedColorId(null)
+      }
+      return
+    }
+
+    const trimmedParent = activeColorName.trim().toLowerCase()
+    const currentName = selectedColor?.name_ar?.trim().toLowerCase()
+
+    if (trimmedParent !== currentName) {
+      const match = product.colors.find(c => c.name_ar?.trim().toLowerCase() === trimmedParent)
+      if (match) {
+        setSelectedColorId(match.id)
+        setColorError(false)
       }
     }
   }, [activeColorName, product.colors, selectedColor, selectedColorId])
+
+  // NO feedback loop useEffect for onColorChange. 
+  // We call onColorChange directly in handleColorSelect.
+
+  const handleColorSelect = (color: ProductColor) => {
+    setSelectedColorId(color.id)
+    setColorError(false)
+    onColorChange?.(color)
+  }
 
   const currentAvailableStock = useMemo(() => {
     if (!product.variants || product.variants.length === 0) return 999
@@ -276,7 +283,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
                     type="button"
                     title={color.name_ar}
                     disabled={!available}
-                    onClick={() => { setSelectedColorId(color.id); setColorError(false) }}
+                    onClick={() => handleColorSelect(color)}
                     className={cn(
                       'w-10 h-10 rounded-full transition-all duration-200 shadow-sm',
                       'focus-visible:outline-none',
