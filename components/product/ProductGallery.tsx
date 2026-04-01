@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -268,24 +268,26 @@ export function ProductGallery({
     return [...(images ?? [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
   }, [images])
 
-  // Optimization: Detect color prop change during render to avoid useEffect delay
-  const [prevColor, setPrevColor] = useState<string | null>(null)
+  // Stable synchronization between activeColor prop and internal gallery index
+  const lastPropColor = useRef<string | null>(activeColor)
   
-  if (activeColor !== prevColor) {
-    setPrevColor(activeColor)
-    if (activeColor) {
-      const trimmedActive = activeColor.trim().toLowerCase()
-      // Check if current image matches
-      const currentImg = sorted[activeIndex]
-      if (currentImg?.color_variant?.trim().toLowerCase() !== trimmedActive) {
-        const colorIndex = sorted.findIndex(img => img.color_variant?.trim().toLowerCase() === trimmedActive)
-        if (colorIndex !== -1) {
-          setDirection(colorIndex > activeIndex ? 1 : -1)
-          setActiveIndex(colorIndex)
+  useEffect(() => {
+    if (activeColor !== lastPropColor.current) {
+      lastPropColor.current = activeColor
+      if (activeColor) {
+        const trimmedActive = activeColor.trim().toLowerCase()
+        const currentImg = sorted[activeIndex]
+        
+        if (currentImg?.color_variant?.trim().toLowerCase() !== trimmedActive) {
+          const colorIndex = sorted.findIndex(img => img.color_variant?.trim().toLowerCase() === trimmedActive)
+          if (colorIndex !== -1) {
+            setDirection(colorIndex > activeIndex ? 1 : -1)
+            setActiveIndex(colorIndex)
+          }
         }
       }
     }
-  }
+  }, [activeColor, sorted, activeIndex])
 
   const handleIndexChange = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return
