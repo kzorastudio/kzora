@@ -203,7 +203,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
               <MapPin size={14} /> العنوان بالتفصيل <span className="text-error">*</span>
             </label>
-            {formData.delivery_type === 'delivery' || formData.customer_governorate === 'حلب' || formData.customer_governorate === 'إدلب' ? (
+            {formData.delivery_type === 'delivery' || formData.customer_governorate === 'حلب' ? (
               <textarea
                 rows={2}
                 value={formData.customer_address}

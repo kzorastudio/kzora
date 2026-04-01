@@ -313,6 +313,12 @@ export const MOCK_HOMEPAGE_SETTINGS: HomepageSettings = {
   shipping_fee_3_plus_pieces_usd: 3.5,
   delivery_fee_syp: 15000,
   delivery_fee_usd: 1.0,
+  delivery_fee_1_piece_syp: 15000,
+  delivery_fee_1_piece_usd: 1.0,
+  delivery_fee_2_pieces_syp: 15000,
+  delivery_fee_2_pieces_usd: 1.0,
+  delivery_fee_3_plus_pieces_syp: 15000,
+  delivery_fee_3_plus_pieces_usd: 1.0,
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────

@@ -289,7 +289,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliv
               العنوان بالتفصيل <span className="text-[#BA1A1A]">*</span>
             </label>
             
-            {deliveryType === 'delivery' || governorate === 'حلب' || governorate === 'إدلب' ? (
+            {deliveryType === 'delivery' || governorate === 'حلب' ? (
               <textarea
                 id="address"
                 rows={2}
