@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS products (
   price_usd             NUMERIC(10,2) NOT NULL,
   discount_price_syp    NUMERIC(12,2) DEFAULT NULL,
   discount_price_usd    NUMERIC(10,2) DEFAULT NULL,
+  mold_type             TEXT NOT NULL DEFAULT 'normal' CHECK (mold_type IN ('chinese','normal')),
   stock_status          TEXT NOT NULL DEFAULT 'in_stock' CHECK (stock_status IN ('in_stock','low_stock','out_of_stock')),
   is_featured           BOOLEAN DEFAULT false,
   is_published          BOOLEAN DEFAULT true,
@@ -86,6 +87,16 @@ CREATE TABLE IF NOT EXISTS product_tags (
   tag         TEXT NOT NULL CHECK (tag IN ('new','best_seller','on_sale'))
 );
 
+-- Product Variants (Inventory by Color + Size)
+CREATE TABLE IF NOT EXISTS product_variants (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id  UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  color       TEXT DEFAULT '',
+  size        NUMERIC DEFAULT 0,
+  quantity    INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(product_id, color, size)
+);
+
 -- Orders
 CREATE TABLE IF NOT EXISTS orders (
   id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -94,7 +105,10 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_phone      TEXT NOT NULL,
   customer_governorate TEXT NOT NULL,
   customer_address    TEXT NOT NULL,
-  shipping_company    TEXT NOT NULL CHECK (shipping_company IN ('karam','qadmous','masarat')),
+  shipping_company    TEXT NOT NULL DEFAULT '',
+  delivery_type       TEXT NOT NULL DEFAULT 'shipping' CHECK (delivery_type IN ('delivery','shipping')),
+  shipping_fee_syp    NUMERIC(12,2) DEFAULT 0,
+  shipping_fee_usd    NUMERIC(10,2) DEFAULT 0,
   coupon_code         TEXT DEFAULT NULL,
   discount_amount_syp NUMERIC(12,2) DEFAULT 0,
   discount_amount_usd NUMERIC(10,2) DEFAULT 0,
@@ -199,6 +213,14 @@ CREATE TABLE IF NOT EXISTS homepage_settings (
   discount_multi_items_enabled BOOLEAN DEFAULT false,
   discount_2_items_syp        INTEGER DEFAULT 2000,
   discount_3_items_plus_syp   INTEGER DEFAULT 3000,
+  delivery_fee_syp            BIGINT DEFAULT 0,
+  delivery_fee_usd            NUMERIC(10,2) DEFAULT 0,
+  shipping_fee_1_piece_syp    BIGINT DEFAULT 0,
+  shipping_fee_1_piece_usd    NUMERIC(10,2) DEFAULT 0,
+  shipping_fee_2_pieces_syp   BIGINT DEFAULT 0,
+  shipping_fee_2_pieces_usd   NUMERIC(10,2) DEFAULT 0,
+  shipping_fee_3_plus_pieces_syp BIGINT DEFAULT 0,
+  shipping_fee_3_plus_pieces_usd NUMERIC(10,2) DEFAULT 0,
   created_at                  TIMESTAMPTZ DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -318,6 +340,7 @@ ALTER TABLE product_images     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_colors     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_sizes      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_tags       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_variants   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_status_history ENABLE ROW LEVEL SECURITY;
@@ -354,6 +377,9 @@ CREATE POLICY "public_read_product_sizes" ON product_sizes
   FOR SELECT TO anon USING (true);
 
 CREATE POLICY "public_read_product_tags" ON product_tags
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "public_read_product_variants" ON product_variants
   FOR SELECT TO anon USING (true);
 
 -- Hero slides: public can read active slides
@@ -399,6 +425,9 @@ CREATE POLICY "service_role_all_product_sizes" ON product_sizes
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 CREATE POLICY "service_role_all_product_tags" ON product_tags
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "service_role_all_product_variants" ON product_variants
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Orders: service role only (no public access)
@@ -481,6 +510,7 @@ BEGIN
     'colors',  (SELECT json_agg(row_to_json(pc)) FROM product_colors pc WHERE pc.product_id = p.id),
     'sizes',   (SELECT json_agg(ps.size ORDER BY ps.size) FROM product_sizes ps WHERE ps.product_id = p.id),
     'tags',    (SELECT json_agg(pt.tag) FROM product_tags pt WHERE pt.product_id = p.id),
+    'variants',(SELECT json_agg(row_to_json(pv)) FROM product_variants pv WHERE pv.product_id = p.id),
     'category',(SELECT row_to_json(c) FROM categories c WHERE c.id = p.category_id)
   )
   INTO result
@@ -490,3 +520,23 @@ BEGIN
   RETURN result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================
+-- MIGRATIONS (Append new columns here for easy copy-paste)
+-- ============================================================
+
+-- Added Mold Type
+ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS mold_type TEXT DEFAULT 'normal' CHECK (mold_type IN ('chinese','normal'));
+
+-- Added Variants
+CREATE TABLE IF NOT EXISTS product_variants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  color TEXT DEFAULT '',
+  size NUMERIC DEFAULT 0,
+  quantity INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(product_id, color, size)
+);
+ALTER TABLE product_variants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_product_variants" ON product_variants FOR SELECT TO anon USING (true);
+CREATE POLICY "service_role_all_product_variants" ON product_variants FOR ALL TO service_role USING (true) WITH CHECK (true);

@@ -22,7 +22,7 @@ async function getProduct(slug: string): Promise<ProductFull | null> {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select(`*, product_images (*), product_colors (*), product_sizes (*), product_tags (*), categories (*)`)
+      .select(`*, product_images (*), product_colors (*), product_sizes (*), product_tags (*), product_variants (*), categories (*)`)
       .eq('slug', decodedSlug)
       .eq('is_published', true)
       .maybeSingle()
@@ -43,6 +43,7 @@ async function getProduct(slug: string): Promise<ProductFull | null> {
                   .sort((a: { size: number }, b: { size: number }) => a.size - b.size),
       tags:     (data.product_tags   ?? []).map((t: { tag: string }) => t.tag),
       category: Array.isArray(data.categories) ? (data.categories[0] ?? null) : (data.categories ?? null),
+      variants: data.product_variants ?? [],
     } as ProductFull
   } catch (e) {
     return null

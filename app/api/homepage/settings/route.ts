@@ -52,6 +52,14 @@ export async function GET(_request: NextRequest) {
           discount_multi_items_enabled: false,
           discount_2_items_syp: 2000,
           discount_3_items_plus_syp: 3000,
+          delivery_fee_syp: 0,
+          delivery_fee_usd: 0,
+          shipping_fee_1_piece_syp: 0,
+          shipping_fee_1_piece_usd: 0,
+          shipping_fee_2_pieces_syp: 0,
+          shipping_fee_2_pieces_usd: 0,
+          shipping_fee_3_plus_pieces_syp: 0,
+          shipping_fee_3_plus_pieces_usd: 0,
         },
       })
     }
@@ -104,6 +112,14 @@ export async function PUT(request: NextRequest) {
       'discount_multi_items_enabled',
       'discount_2_items_syp',
       'discount_3_items_plus_syp',
+      'delivery_fee_syp',
+      'delivery_fee_usd',
+      'shipping_fee_1_piece_syp',
+      'shipping_fee_1_piece_usd',
+      'shipping_fee_2_pieces_syp',
+      'shipping_fee_2_pieces_usd',
+      'shipping_fee_3_plus_pieces_syp',
+      'shipping_fee_3_plus_pieces_usd',
     ]
 
     const updateFields: Record<string, unknown> = {}

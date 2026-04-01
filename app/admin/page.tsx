@@ -11,12 +11,20 @@ import { formatDate, formatPrice } from '@/lib/utils'
 import type { Order } from '@/types'
 
 async function getDashboardStats() {
+  const now = new Date()
+  const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
   const [
     { count: totalProducts },
     { count: totalOrders },
     { count: pendingOrders },
     { count: deliveredOrders },
     { count: lowStockProducts },
+    { data: visits24h },
+    { data: visits7d },
+    { data: visits30d },
   ] = await Promise.all([
     supabaseAdmin
       .from('products')
@@ -40,7 +48,28 @@ async function getDashboardStats() {
       .from('products')
       .select('id', { count: 'exact', head: true })
       .in('stock_status', ['low_stock', 'out_of_stock']),
+
+    // Accurate visit counting (unique sessions)
+    supabaseAdmin
+      .from('site_visits')
+      .select('session_id')
+      .gte('visited_at', last24h),
+
+    supabaseAdmin
+      .from('site_visits')
+      .select('session_id')
+      .gte('visited_at', last7d),
+
+    supabaseAdmin
+      .from('site_visits')
+      .select('session_id')
+      .gte('visited_at', last30d),
   ])
+
+  // Count unique session_ids for actual visitor count
+  const unique24h = new Set((visits24h || []).map(v => v.session_id)).size
+  const unique7d = new Set((visits7d || []).map(v => v.session_id)).size
+  const unique30d = new Set((visits30d || []).map(v => v.session_id)).size
 
   return {
     totalProducts:   totalProducts   ?? 0,
@@ -48,6 +77,11 @@ async function getDashboardStats() {
     pendingOrders:   pendingOrders   ?? 0,
     deliveredOrders: deliveredOrders ?? 0,
     lowStockProducts: lowStockProducts ?? 0,
+    visitorStats: {
+      last24h: unique24h,
+      last7d: unique7d,
+      last30d: unique30d
+    }
   }
 }
 
@@ -102,6 +136,44 @@ export default async function AdminDashboardPage() {
             {/* Decorative background elements */}
             <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-black/10 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+        </div>
+
+        {/* Visitor Statistics Section */}
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-ambient border border-outline-variant/10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-xl font-arabic font-black text-[#1A1A1A]">إحصائيات زوار المتجر</h2>
+              <p className="text-xs font-arabic text-secondary">أرقام حقيقية ودقيقة لزيارات متجرك (عدد الزوار الفريدين)</p>
+            </div>
+            <div className="flex items-center gap-2 bg-[#FAF8F5] px-4 py-2 rounded-2xl border border-divider">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-arabic font-bold text-secondary">إحصائيات مباشرة</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
+              <span className="text-xs font-arabic font-bold text-secondary">آخر ٢٤ ساعة</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last24h}</span>
+                <span className="text-xs font-arabic font-bold text-secondary">زائر</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
+              <span className="text-xs font-arabic font-bold text-secondary">آخر أسبوع</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last7d}</span>
+                <span className="text-xs font-arabic font-bold text-secondary">زائر</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
+              <span className="text-xs font-arabic font-bold text-secondary">آخر شهر</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last30d}</span>
+                <span className="text-xs font-arabic font-bold text-secondary">زائر</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stats grid */}

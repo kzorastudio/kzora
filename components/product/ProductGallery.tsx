@@ -14,6 +14,7 @@ interface ProductGalleryProps {
   discountPct?: number
   className?: string
   activeColor?: string | null
+  onIndexChange?: (index: number) => void
 }
 
 const TAG_LABELS: Record<string, string> = {
@@ -249,6 +250,7 @@ export function ProductGallery({
   discountPct = 0,
   className,
   activeColor = null,
+  onIndexChange
 }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
@@ -258,38 +260,29 @@ export function ProductGallery({
     return [...(images ?? [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
   }, [images])
 
-  // Filter images based on the selected color
-  const sorted = useMemo(() => {
-    const trimmedActive = activeColor?.trim()
+  // Show all images but allow jumping to color-specific ones
+  const sorted = allSorted
 
-    if (trimmedActive) {
-      // Try to find images explicitly assigned to this color
-      const colorImages = allSorted.filter(img => img.color_variant?.trim() === trimmedActive)
-      if (colorImages.length > 0) return colorImages
-
-      // Fallback: show images with no color assigned (shared/common images)
-      const commonImages = allSorted.filter(img => !img.color_variant)
-      if (commonImages.length > 0) return commonImages
-
-      // Last resort: show all images
-      return allSorted
+  // Jump to first image of that color when color selection changes in parent
+  useEffect(() => {
+    if (activeColor) {
+      const trimmedActive = activeColor.trim()
+      const colorIndex = sorted.findIndex(img => img.color_variant?.trim() === trimmedActive)
+      if (colorIndex !== -1) {
+        setActiveIndex(colorIndex)
+      }
     }
+  }, [activeColor, sorted])
 
-    // No color selected: show ONLY the main image
-    const mainImg = allSorted.find(img => img.is_main)
-    if (mainImg) {
-      return [mainImg]
-    }
-
-    // Fallback: show images without color_variant or everything
-    const commonImages = allSorted.filter(img => !img.color_variant)
-    return commonImages.length > 0 ? commonImages : allSorted
-  }, [allSorted, activeColor])
+  const handleIndexChange = useCallback((newIndex: number) => {
+    setActiveIndex(newIndex)
+    if (onIndexChange) onIndexChange(newIndex)
+  }, [onIndexChange])
 
   // Reset to first image when color changes
   useEffect(() => {
-    setActiveIndex(0)
-  }, [activeColor])
+    handleIndexChange(0)
+  }, [activeColor, handleIndexChange])
 
   const activeImage = sorted[activeIndex]
 
@@ -313,17 +306,19 @@ export function ProductGallery({
           onClick={() => setLightboxOpen(true)}
         >
           {activeImage && (
-            <Image
-              src={activeImage.url}
-              alt={productName}
-              fill
-              sizes="(max-width: 768px) 100vw, 60vw"
-              priority
-              className={cn(
-                'object-cover transition-transform duration-700 ease-out',
-                isHovered ? 'scale-110' : 'scale-100'
-              )}
-            />
+            <div className="absolute inset-0 transition-opacity duration-500 ease-in-out" key={activeImage.id}>
+              <Image
+                src={activeImage.url}
+                alt={productName}
+                fill
+                sizes="(max-width: 768px) 100vw, 60vw"
+                priority
+                className={cn(
+                  'object-cover transition-transform duration-700 ease-out',
+                  isHovered ? 'scale-105' : 'scale-100'
+                )}
+              />
+            </div>
           )}
 
           {/* Zoom indicator */}
@@ -370,29 +365,25 @@ export function ProductGallery({
               <button
                 type="button"
                 aria-label="الصورة السابقة"
-                onClick={(e) => { e.stopPropagation(); setActiveIndex((p) => (p === 0 ? sorted.length - 1 : p - 1)) }}
-                className="absolute top-1/2 right-3 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#1A1A1A] hover:bg-white transition-colors shadow-sm z-10"
+                onClick={(e) => { e.stopPropagation(); handleIndexChange(activeIndex === 0 ? sorted.length - 1 : activeIndex - 1) }}
+                className="absolute top-1/2 right-3 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-[#1A1A1A] hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md z-10"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
-                </svg>
+                <ChevronRight size={24} />
               </button>
               <button
                 type="button"
                 aria-label="الصورة التالية"
-                onClick={(e) => { e.stopPropagation(); setActiveIndex((p) => (p === sorted.length - 1 ? 0 : p + 1)) }}
-                className="absolute top-1/2 left-3 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#1A1A1A] hover:bg-white transition-colors shadow-sm z-10"
+                onClick={(e) => { e.stopPropagation(); handleIndexChange(activeIndex === sorted.length - 1 ? 0 : activeIndex + 1) }}
+                className="absolute top-1/2 left-3 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-[#1A1A1A] hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md z-10"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
-                </svg>
+                <ChevronLeft size={24} />
               </button>
             </>
           )}
 
           {/* Counter */}
           {sorted.length > 1 && (
-            <div className="absolute bottom-3 left-3 bg-black/50 text-white text-xs font-arabic rounded-full px-2.5 py-1 backdrop-blur-sm z-10">
+            <div className="absolute bottom-3 left-3 bg-black/60 text-white text-xs font-arabic rounded-full px-3 py-1.5 backdrop-blur-sm z-10">
               {activeIndex + 1} / {sorted.length}
             </div>
           )}
@@ -400,20 +391,20 @@ export function ProductGallery({
 
         {/* Thumbnail strip */}
         {sorted.length > 1 && (
-          <div className="flex flex-row gap-3 overflow-x-auto md:flex-col md:overflow-y-auto md:max-h-[560px] md:w-20 shrink-0 no-scrollbar">
+          <div className="flex flex-row gap-3 overflow-x-auto md:flex-col md:overflow-y-auto md:max-h-[560px] md:w-20 shrink-0 no-scrollbar pb-2">
             {sorted.map((img, i) => (
               <button
                 key={img.id}
                 type="button"
                 aria-label={`صورة ${i + 1}`}
-                onClick={() => setActiveIndex(i)}
+                onClick={() => handleIndexChange(i)}
                 className={cn(
-                  'relative shrink-0 rounded-xl overflow-hidden transition-all duration-150',
+                  'relative shrink-0 rounded-xl overflow-hidden transition-all duration-200',
                   'w-[72px] h-20 md:w-full md:aspect-[4/5]',
                   'focus-visible:outline-none',
                   i === activeIndex
-                    ? 'ring-2 ring-[#785600] ring-offset-2'
-                    : 'opacity-55 hover:opacity-90 hover:ring-1 hover:ring-[#D3C4AF] hover:ring-offset-1'
+                    ? 'ring-2 ring-[#785600] ring-offset-2 scale-95 opacity-100 shadow-sm'
+                    : 'opacity-50 hover:opacity-100 hover:ring-1 hover:ring-[#E8E3DB] hover:ring-offset-1'
                 )}
               >
                 <Image

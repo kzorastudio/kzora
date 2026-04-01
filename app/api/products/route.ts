@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
       price_usd,
       discount_price_syp,
       discount_price_usd,
+      mold_type,
       stock_status,
       is_featured,
       is_published,
@@ -180,6 +181,7 @@ export async function POST(request: NextRequest) {
       colors,
       sizes,
       tags,
+      variants,
     } = body
 
     if (!name || !price_syp || !price_usd) {
@@ -210,6 +212,7 @@ export async function POST(request: NextRequest) {
         price_usd,
         discount_price_syp: discount_price_syp || null,
         discount_price_usd: discount_price_usd || null,
+        mold_type: mold_type || 'normal',
         stock_status: stock_status || 'in_stock',
         is_featured: is_featured ?? false,
         is_published: is_published ?? false,
@@ -284,6 +287,22 @@ export async function POST(request: NextRequest) {
 
       if (tagError) {
         console.error('Product tags insert error:', tagError)
+      }
+    }
+
+    // Insert variants
+    if (variants && variants.length > 0) {
+      const { error: variantError } = await supabaseAdmin
+        .from('product_variants')
+        .insert(variants.map(v => ({
+          product_id: productId,
+          color: v.color || '',
+          size: v.size || 0,
+          quantity: v.quantity || 0,
+        })))
+
+      if (variantError) {
+        console.error('Product variants insert error:', variantError)
       }
     }
 

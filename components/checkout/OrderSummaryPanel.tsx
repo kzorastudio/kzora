@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { cn, formatPrice } from '@/lib/utils'
 import { Trash2, Plus, Minus } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
-import type { CartItem, Currency } from '@/types'
+import type { CartItem, Currency, DeliveryType } from '@/types'
 
 interface Props {
   items: CartItem[]
@@ -17,6 +17,9 @@ interface Props {
   isSubmitting?: boolean
   multiProductDiscountSyp?: number
   multiProductDiscountUsd?: number
+  shippingFeeSyp?: number
+  shippingFeeUsd?: number
+  deliveryType?: DeliveryType
 }
 
 export default function OrderSummaryPanel({
@@ -30,12 +33,16 @@ export default function OrderSummaryPanel({
   isSubmitting = false,
   multiProductDiscountSyp = 0,
   multiProductDiscountUsd = 0,
+  shippingFeeSyp = 0,
+  shippingFeeUsd = 0,
+  deliveryType,
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
   const discount = currency === 'SYP' ? (discountSyp ?? 0) : (discountUsd ?? 0)
   const multiDiscount = currency === 'SYP' ? (multiProductDiscountSyp ?? 0) : (multiProductDiscountUsd ?? 0)
-  const total = subtotal - discount - multiDiscount
+  const shippingFee = currency === 'SYP' ? (shippingFeeSyp ?? 0) : (shippingFeeUsd ?? 0)
+  const total = subtotal - discount - multiDiscount + shippingFee
 
   const hasDiscount = discount > 0
 
@@ -104,7 +111,7 @@ export default function OrderSummaryPanel({
                     )}
                     {item.size && (
                       <span className="text-[10px] font-arabic text-[#6B6560]">
-                        | {item.size}
+                        | {item.size} {item.mold_type === 'chinese' && <span className="text-[#E65C00] font-bold">(صيني)</span>}
                       </span>
                     )}
                   </div>
@@ -168,6 +175,17 @@ export default function OrderSummaryPanel({
               <span className="font-arabic text-[#6B6560]">خصم تعدد المنتجات</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="ltr">
                 -{formatPrice(multiDiscount, currency)}
+              </span>
+            </div>
+          )}
+
+          {shippingFee > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-arabic text-[#6B6560]">
+                {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
+              </span>
+              <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
+                +{formatPrice(shippingFee, currency)}
               </span>
             </div>
           )}

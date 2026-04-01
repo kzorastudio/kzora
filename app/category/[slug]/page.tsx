@@ -39,6 +39,7 @@ async function getCategoryProducts(categoryId: string): Promise<ProductFull[]> {
       product_colors (*),
       product_sizes  (*),
       product_tags   (*),
+      product_variants (*),
       categories     (*)
     `)
     .eq('is_published', true)
@@ -60,6 +61,7 @@ async function getCategoryProducts(categoryId: string): Promise<ProductFull[]> {
     ),
     tags: ((p.product_tags as { tag: string }[]) ?? []).map((t) => t.tag),
     category: Array.isArray(p.categories) ? p.categories[0] ?? null : p.categories ?? null,
+    variants: p.product_variants ?? [],
   })) as ProductFull[]
 }
 

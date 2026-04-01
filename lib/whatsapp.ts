@@ -1,4 +1,4 @@
-import type { CartItem, Currency } from '@/types'
+import type { CartItem, Currency, DeliveryType } from '@/types'
 import { formatPrice, SHIPPING_LABELS } from './utils'
 
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || '963964514765'
@@ -11,10 +11,13 @@ interface OrderForWhatsApp {
   address: string
   shippingCompany: string
   shippingCompanyName?: string
+  deliveryType: DeliveryType
   items: CartItem[]
   couponCode?: string
   discountSyp?: number
   discountUsd?: number
+  shippingFeeSyp?: number
+  shippingFeeUsd?: number
   subtotalSyp: number
   subtotalUsd: number
   totalSyp: number
@@ -35,13 +38,14 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     `------------------------------------------`,
     ``,
     `👤 *معلومات الزبون:*`,
-    `▫️ *الاسم:* ${order.customerName}`,
-    `▫️ *الهاتف:* ${order.customerPhone}`,
-    `▫️ *المحافظة:* ${order.governorate}`,
-    `▫️ *العنوان:* ${order.address}`,
+    `- *الاسم:* ${order.customerName}`,
+    `- *الهاتف:* ${order.customerPhone}`,
+    `- *المحافظة:* ${order.governorate}`,
+    `- *العنوان:* ${order.address}`,
     ``,
-    `🚚 *تفاصيل الشحن:*`,
-    `▫️ *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`,
+    `🚚 *تفاصيل التوصيل:*`,
+    `- *الطريقة:* ${order.deliveryType === 'delivery' ? 'توصيل عادي' : 'شحن عبر شركة'}`,
+    ...(order.deliveryType === 'shipping' ? [`- *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}`] : []),
     ``,
     `📦 *المنتجات المطلوبة:*`,
   ]
@@ -54,7 +58,10 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     lines.push(`------------------------------------------`)
     lines.push(`${i + 1}. *${item.name}*`)
     if (item.color) lines.push(`   🎨 *اللون:* ${item.color}`)
-    if (item.size)  lines.push(`   📏 *المقاس:* ${item.size}`)
+    if (item.size) {
+      const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ''
+      lines.push(`   📏 *المقاس:* ${item.size}${moldNotice}`)
+    }
     lines.push(`   🔢 *الكمية:* ${item.quantity} × ${price}`)
   })
 
@@ -71,6 +78,12 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
       ? formatPrice(order.discountSyp!, 'SYP')
       : formatPrice(order.discountUsd!, 'USD')
     lines.push(`🎫 *خصم (${order.couponCode}):* -${discount}`)
+  }
+
+  const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
+  if (shippingFee > 0) {
+    const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
+    lines.push(`🚛 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
   }
 
   const total = currency === 'SYP'

@@ -28,7 +28,8 @@
       "Bash(npx vercel:*)",
       "Bash(rm:*)",
       "Bash(xargs sed:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(node -e ':*)"
     ]
   }
 }

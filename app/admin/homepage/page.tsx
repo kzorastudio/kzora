@@ -73,6 +73,14 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   discount_multi_items_enabled: false,
   discount_2_items_syp: 2000,
   discount_3_items_plus_syp: 3000,
+  delivery_fee_syp: 0,
+  delivery_fee_usd: 0,
+  shipping_fee_1_piece_syp: 0,
+  shipping_fee_1_piece_usd: 0,
+  shipping_fee_2_pieces_syp: 0,
+  shipping_fee_2_pieces_usd: 0,
+  shipping_fee_3_plus_pieces_syp: 0,
+  shipping_fee_3_plus_pieces_usd: 0,
 }
 
 export default function HomepagePage() {
@@ -524,6 +532,136 @@ export default function HomepagePage() {
               {!settings.discount_multi_items_enabled && (
                 <p className="text-xs font-arabic text-secondary/60">خصم تعدد المنتجات معطل حالياً.</p>
               )}
+            </section>
+
+            {/* أسعار التوصيل والشحن */}
+            <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
+              <h2 className="text-base font-arabic font-bold text-on-surface mb-6 flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-[#2E7D32] rounded-full" />
+                أسعار التوصيل والشحن
+              </h2>
+
+              {/* Regular Delivery Fee */}
+              <div className="mb-8">
+                <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
+                  <Truck size={16} className="text-[#2E7D32]" />
+                  التوصيل العادي (سعر ثابت)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-arabic font-bold text-secondary">سعر التوصيل (ل.س)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={settings.delivery_fee_syp || 0}
+                      onChange={(e) => { setSettings({ ...settings, delivery_fee_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-arabic font-bold text-secondary">سعر التوصيل ($)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={settings.delivery_fee_usd || 0}
+                      onChange={(e) => { setSettings({ ...settings, delivery_fee_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping Fee per pieces */}
+              <div>
+                <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
+                  <Truck size={16} className="text-[#1565C0]" />
+                  أجور الشحن (حسب عدد القطع)
+                </h3>
+                <div className="space-y-4">
+                  {/* 1 piece */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعة واحدة (1)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.shipping_fee_1_piece_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, shipping_fee_1_piece_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#1565C0] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.shipping_fee_1_piece_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, shipping_fee_1_piece_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#1565C0] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* 2 pieces */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعتان (2)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.shipping_fee_2_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, shipping_fee_2_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#1565C0] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.shipping_fee_2_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, shipping_fee_2_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#1565C0] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* 3+ pieces */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">3 قطع فأكثر (3+)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.shipping_fee_3_plus_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, shipping_fee_3_plus_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#1565C0] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.shipping_fee_3_plus_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, shipping_fee_3_plus_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#1565C0] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
           </div>
         )}

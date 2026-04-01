@@ -21,7 +21,7 @@ async function fetchRelated(categorySlug: string, excludeId: string): Promise<Pr
 
   const { data, error } = await supabase
     .from('products')
-    .select(`*, product_images (*), product_colors (*), product_sizes (*), product_tags (*), categories (*)`)
+    .select(`*, product_images (*), product_colors (*), product_sizes (*), product_tags (*), product_variants (*), categories (*)`)
     .eq('is_published', true)
     .eq('category_id', cat.id)
     .neq('id', excludeId)
@@ -38,6 +38,7 @@ async function fetchRelated(categorySlug: string, excludeId: string): Promise<Pr
     sizes:    ((p.product_sizes as { size: number; is_available: boolean }[]) ?? []).sort((a, b) => a.size - b.size),
     tags:     ((p.product_tags as { tag: string }[]) ?? []).map((t) => t.tag),
     category: Array.isArray(p.categories) ? (p.categories[0] ?? null) : (p.categories ?? null),
+    variants: p.product_variants ?? [],
   })) as ProductFull[]
 }
 

@@ -25,7 +25,8 @@ export async function GET(
         images:product_images(id, url, public_id, color_variant, display_order, is_main),
         colors:product_colors(id, name_ar, hex_code, swatch_url, swatch_public_id, is_available),
         sizes:product_sizes(size, is_available),
-        tags:product_tags(tag)
+        tags:product_tags(tag),
+        variants:product_variants(*)
         `
       )
       .eq('id', id)
@@ -78,6 +79,7 @@ export async function PUT(
       price_usd,
       discount_price_syp,
       discount_price_usd,
+      mold_type,
       stock_status,
       is_featured,
       is_published,
@@ -86,6 +88,7 @@ export async function PUT(
       colors,
       sizes,
       tags,
+      variants,
     } = body
 
     // 1. Fetch existing product with category slug to handle revalidation
@@ -112,6 +115,7 @@ export async function PUT(
     if (price_usd         !== undefined) updateFields.price_usd          = price_usd
     if (discount_price_syp !== undefined) updateFields.discount_price_syp = discount_price_syp
     if (discount_price_usd !== undefined) updateFields.discount_price_usd = discount_price_usd
+    if (mold_type         !== undefined) updateFields.mold_type          = mold_type
     if (stock_status      !== undefined) updateFields.stock_status       = stock_status
     if (is_featured       !== undefined) updateFields.is_featured        = is_featured
     if (is_published      !== undefined) updateFields.is_published       = is_published
@@ -233,6 +237,20 @@ export async function PUT(
         await supabaseAdmin
           .from('product_tags')
           .insert(tags.map((t: ProductTag) => ({ product_id: id, tag: t })))
+      }
+    }
+
+    if (variants !== undefined) {
+      await supabaseAdmin.from('product_variants').delete().eq('product_id', id)
+      if (variants.length > 0) {
+        await supabaseAdmin
+          .from('product_variants')
+          .insert(variants.map((v: any) => ({
+             product_id: id,
+             color: v.color || '',
+             size: v.size || 0,
+             quantity: v.quantity || 0,
+          })))
       }
     }
 

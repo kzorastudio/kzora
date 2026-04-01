@@ -183,34 +183,45 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
             </div>
           </div>
 
-          {/* Address — Mandatory SELECT */}
+          {/* Address */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
               <MapPin size={14} /> العنوان بالتفصيل <span className="text-error">*</span>
             </label>
-            <div className="relative">
-              <select
+            {formData.customer_governorate === 'حلب' ? (
+              <textarea
+                rows={2}
                 value={formData.customer_address}
                 onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
-                className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container pr-4 pl-10 text-sm font-arabic focus:outline-none focus:border-primary/60 transition appearance-none"
-              >
-                {!formData.customer_governorate ? (
-                  <option value="">يرجى اختيار المحافظة أولاً...</option>
-                ) : availableBranches.length > 0 ? (
-                  <>
-                    <option value="">اختر العنوان بالتفصيل...</option>
-                    {availableBranches.map((branch: string, idx: number) => (
-                      <option key={idx} value={branch}>{branch}</option>
-                    ))}
-                  </>
-                ) : (
-                  <option value="">لا تتوفر فروع حالياً لهده الخصائص</option>
-                )}
-              </select>
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary/40">
-                <ChevronDown size={16} />
+                placeholder="أدخل العنوان بالتفصيل..."
+                className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none"
+              />
+            ) : (
+              <div className="relative">
+                <select
+                  value={formData.customer_address}
+                  onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
+                  className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container pr-4 pl-10 text-sm font-arabic focus:outline-none focus:border-primary/60 transition appearance-none"
+                >
+                  {!formData.customer_governorate ? (
+                    <option value="">يرجى اختيار المحافظة أولاً...</option>
+                  ) : availableBranches.length > 0 ? (
+                    <>
+                      <option value={formData.customer_address}>{formData.customer_address || 'اختر العنوان بالتفصيل...'}</option>
+                      {availableBranches.map((branch: string, idx: number) => {
+                        if (branch === formData.customer_address) return null; // Avoid duplicate
+                        return <option key={idx} value={branch}>{branch}</option>
+                      })}
+                    </>
+                  ) : (
+                    <option value={formData.customer_address}>{formData.customer_address || 'لا تتوفر فروع حالياً لهده الخصائص'}</option>
+                  )}
+                </select>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary/40">
+                  <ChevronDown size={16} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Notes */}

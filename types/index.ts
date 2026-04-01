@@ -33,6 +33,7 @@ export interface Product {
   price_usd: number
   discount_price_syp: number | null
   discount_price_usd: number | null
+  mold_type: 'chinese' | 'normal'
   stock_status: 'in_stock' | 'low_stock' | 'out_of_stock'
   is_featured: boolean
   is_published: boolean
@@ -70,6 +71,14 @@ export interface ProductSize {
   is_available: boolean
 }
 
+export interface ProductVariant {
+  id?: string
+  product_id?: string
+  color: string
+  size: number
+  quantity: number
+}
+
 export type ProductTag = 'new' | 'best_seller' | 'on_sale'
 
 export interface ProductTagRow {
@@ -84,8 +93,11 @@ export interface ProductFull extends Product {
   colors: ProductColor[]
   sizes: { size: number; is_available: boolean }[]
   tags: ProductTag[]
+  variants: ProductVariant[]
   category: Category | null
 }
+
+export type DeliveryType = 'delivery' | 'shipping'
 
 export interface Order {
   id: string
@@ -95,6 +107,9 @@ export interface Order {
   customer_governorate: string
   customer_address: string
   shipping_company: string
+  delivery_type: DeliveryType
+  shipping_fee_syp: number
+  shipping_fee_usd: number
   coupon_code: string | null
   discount_amount_syp: number
   discount_amount_usd: number
@@ -203,6 +218,15 @@ export interface HomepageSettings {
   discount_multi_items_enabled: boolean
   discount_2_items_syp: number
   discount_3_items_plus_syp: number
+  // Delivery & Shipping fees
+  delivery_fee_syp: number
+  delivery_fee_usd: number
+  shipping_fee_1_piece_syp: number
+  shipping_fee_1_piece_usd: number
+  shipping_fee_2_pieces_syp: number
+  shipping_fee_2_pieces_usd: number
+  shipping_fee_3_plus_pieces_syp: number
+  shipping_fee_3_plus_pieces_usd: number
 }
 
 export interface StaticPage {
@@ -223,6 +247,17 @@ export interface Admin {
   created_at: string
 }
 
+export interface ProductReview {
+  id: string
+  product_id: string
+  user_name: string
+  rating: number
+  comment: string | null
+  is_published: boolean
+  created_at: string
+  updated_at: string
+}
+
 // --- Cart Types ---
 
 export interface CartItem {
@@ -238,6 +273,7 @@ export interface CartItem {
   price_usd: number
   discount_price_syp: number | null
   discount_price_usd: number | null
+  mold_type: 'chinese' | 'normal'
 }
 
 // --- Currency ---
@@ -253,6 +289,7 @@ export interface CreateProductPayload {
   price_usd: number
   discount_price_syp?: number | null
   discount_price_usd?: number | null
+  mold_type: 'chinese' | 'normal'
   stock_status: 'in_stock' | 'low_stock' | 'out_of_stock'
   is_featured: boolean
   is_published: boolean
@@ -261,6 +298,7 @@ export interface CreateProductPayload {
   colors: { name_ar: string; hex_code: string; swatch_url?: string; swatch_public_id?: string; is_available: boolean }[]
   sizes: { size: number; is_available: boolean }[]
   tags: ProductTag[]
+  variants: { color: string; size: number; quantity: number }[]
 }
 
 export interface CreateOrderPayload {
@@ -281,6 +319,7 @@ export interface CreateOrderPayload {
     address: string
   }
   shipping_company: string
+  delivery_type: DeliveryType
   payment_method: string
   payment_transaction_id?: string
   coupon_code?: string

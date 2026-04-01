@@ -77,7 +77,7 @@ export function CartItem({ item, className }: CartItemProps) {
           )}
           {item.size && (
             <span className="text-xs font-body text-secondary tabular-nums">
-              مقاس {item.size}
+              مقاس {item.size} {item.mold_type === 'chinese' && <span className="text-[#E65C00] font-arabic font-bold text-[10px] mr-1">(صيني)</span>}
             </span>
           )}
         </div>

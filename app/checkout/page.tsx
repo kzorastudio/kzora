@@ -14,7 +14,7 @@ import { useCurrencyStore } from '@/store/currencyStore'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import { SHIPPING_LABELS } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
-import type { CreateOrderPayload, HomepageSettings } from '@/types'
+import type { CreateOrderPayload, HomepageSettings, DeliveryType } from '@/types'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
@@ -33,6 +33,7 @@ export default function CheckoutPage() {
   const [discountSyp,  setDiscountSyp]  = useState(0)
   const [discountUsd,  setDiscountUsd]  = useState(0)
   const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('shipping')
 
   useEffect(() => {
     fetch('/api/homepage/settings')
@@ -92,6 +93,7 @@ export default function CheckoutPage() {
             address:     formData.address ?? '',
           },
           shipping_company: (formData.shipping_company as string) ?? '',
+          delivery_type:    formData.delivery_type,
           payment_method:   formData.payment_method,
           payment_transaction_id: formData.payment_transaction_id ?? undefined,
           coupon_code:      couponCode,
@@ -119,6 +121,29 @@ export default function CheckoutPage() {
         const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
         const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug] || shippingSlug
 
+        // Calculate shipping fee at submit time based on current delivery type
+        const submitDeliveryType = formData.delivery_type
+        let submitShippingFeeSyp = 0
+        let submitShippingFeeUsd = 0
+        const submitTotalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+        if (settings) {
+          if (submitDeliveryType === 'delivery') {
+            submitShippingFeeSyp = settings.delivery_fee_syp || 0
+            submitShippingFeeUsd = settings.delivery_fee_usd || 0
+          } else {
+            if (submitTotalItems >= 3) {
+              submitShippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+              submitShippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+            } else if (submitTotalItems === 2) {
+              submitShippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
+              submitShippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
+            } else {
+              submitShippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
+              submitShippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
+            }
+          }
+        }
+
         // Build and open WhatsApp URL
         const whatsappUrl = buildWhatsAppUrl({
           orderNumber,
@@ -128,14 +153,17 @@ export default function CheckoutPage() {
           address:         formData.address ?? '',
           shippingCompany: shippingSlug,
           shippingCompanyName,
+          deliveryType:    submitDeliveryType,
           items,
           couponCode,
           discountSyp:     discountSyp || undefined,
           discountUsd:     discountUsd || undefined,
+          shippingFeeSyp:  submitShippingFeeSyp,
+          shippingFeeUsd:  submitShippingFeeUsd,
           subtotalSyp:     subtotalSyp(),
           subtotalUsd:     subtotalUsd(),
-          totalSyp:        Math.max(0, subtotalSyp() - discountSyp),
-          totalUsd:        Math.max(0, subtotalUsd() - discountUsd),
+          totalSyp:        Math.max(0, subtotalSyp() - discountSyp + submitShippingFeeSyp),
+          totalUsd:        Math.max(0, subtotalUsd() - discountUsd + submitShippingFeeUsd),
           currency,
           paymentMethod:   formData.payment_method,
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
@@ -156,7 +184,7 @@ export default function CheckoutPage() {
         setIsSubmitting(false)
       }
     },
-    [items, couponCode, discountSyp, discountUsd, currency, clearCart, router, subtotalSyp, subtotalUsd]
+    [items, couponCode, discountSyp, discountUsd, currency, clearCart, router, subtotalSyp, subtotalUsd, shippingMethods, settings]
   )
 
   // Avoid hydration mismatch — render empty cart check only after mount
@@ -227,6 +255,28 @@ export default function CheckoutPage() {
     }
   }
 
+  // Shipping/Delivery fee calculation
+  let shippingFeeSyp = 0
+  let shippingFeeUsd = 0
+  if (settings) {
+    if (deliveryType === 'delivery') {
+      shippingFeeSyp = settings.delivery_fee_syp || 0
+      shippingFeeUsd = settings.delivery_fee_usd || 0
+    } else {
+      // Shipping — per piece count
+      if (totalItemsCount >= 3) {
+        shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount === 2) {
+        shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
+        shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
+      } else {
+        shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
+        shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
+      }
+    }
+  }
+
   return (
     <>
       <Header />
@@ -248,6 +298,7 @@ export default function CheckoutPage() {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 settings={settings}
+                onDeliveryTypeChange={setDeliveryType}
               />
             </div>
 
@@ -266,6 +317,9 @@ export default function CheckoutPage() {
                   isSubmitting={isSubmitting}
                   multiProductDiscountSyp={multiProductDiscountSyp}
                   multiProductDiscountUsd={multiProductDiscountUsd}
+                  shippingFeeSyp={shippingFeeSyp}
+                  shippingFeeUsd={shippingFeeUsd}
+                  deliveryType={deliveryType}
                 />
 
                 {/* Coupon */}

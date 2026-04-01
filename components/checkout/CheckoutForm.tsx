@@ -7,14 +7,15 @@ import { cn } from '@/lib/utils'
 import { checkoutSchema, type CheckoutFormData } from '@/lib/validators'
 import { ShippingCompanySelector } from '@/components/checkout/ShippingCompanySelector'
 import { GovernorateDropdown } from '@/components/checkout/GovernorateDropdown'
-import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
+import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown, Package } from 'lucide-react'
 
-import type { HomepageSettings } from '@/types'
+import type { HomepageSettings, DeliveryType } from '@/types'
 
 interface Props {
   onSubmit: (data: CheckoutFormData) => Promise<void>
   isSubmitting: boolean
   settings: HomepageSettings | null
+  onDeliveryTypeChange?: (type: DeliveryType) => void
 }
 
 const fieldBase =
@@ -36,7 +37,7 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
   )
 }
 
-export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props) {
+export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliveryTypeChange }: Props) {
   const [shippingMethods, setShippingMethods] = useState<any[]>([])
 
   const {
@@ -50,6 +51,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       shipping_company: undefined,
+      delivery_type: 'shipping',
       governorate: '',
       full_name: '',
       phone: '',
@@ -62,6 +64,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
   })
 
   const shippingCompany = watch('shipping_company')
+  const deliveryType = watch('delivery_type')
   const governorate = watch('governorate')
   const paymentMethod = watch('payment_method')
 
@@ -140,8 +143,73 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
       noValidate
       className="space-y-0"
     >
-      {/* ═══ Section 1: Shipping Company ═══════════════════════════════════ */}
+      {/* ═══ Section 0: Delivery Type ════════════════════════════════════ */}
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
+        <SectionHeading icon={Package} title="طريقة التوصيل" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Regular Delivery */}
+          <label className={cn(
+            "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200",
+            deliveryType === 'delivery'
+              ? "bg-[#E8F5E9] border-[#2E7D32] shadow-sm"
+              : "bg-white border-[#F0EBE3] hover:border-[#E8E3DB]"
+          )}>
+            <input
+              type="radio"
+              value="delivery"
+              className="sr-only"
+              {...register('delivery_type')}
+              onChange={() => {
+                setValue('delivery_type', 'delivery', { shouldValidate: true })
+                onDeliveryTypeChange?.('delivery')
+              }}
+            />
+            <div className={cn(
+              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+              deliveryType === 'delivery' ? "border-[#2E7D32] bg-[#2E7D32]" : "border-[#D1C9BE]"
+            )}>
+              {deliveryType === 'delivery' && <CheckCircle2 size={14} className="text-white" />}
+            </div>
+            <div className="flex-1">
+              <p className="font-arabic font-bold text-sm text-[#1A1A1A]">توصيل عادي</p>
+              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5">توصيل مباشر إلى عنوانك</p>
+            </div>
+          </label>
+
+          {/* Shipping via company */}
+          <label className={cn(
+            "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200",
+            deliveryType === 'shipping'
+              ? "bg-[#E3F2FD] border-[#1565C0] shadow-sm"
+              : "bg-white border-[#F0EBE3] hover:border-[#E8E3DB]"
+          )}>
+            <input
+              type="radio"
+              value="shipping"
+              className="sr-only"
+              {...register('delivery_type')}
+              onChange={() => {
+                setValue('delivery_type', 'shipping', { shouldValidate: true })
+                onDeliveryTypeChange?.('shipping')
+              }}
+            />
+            <div className={cn(
+              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+              deliveryType === 'shipping' ? "border-[#1565C0] bg-[#1565C0]" : "border-[#D1C9BE]"
+            )}>
+              {deliveryType === 'shipping' && <CheckCircle2 size={14} className="text-white" />}
+            </div>
+            <div className="flex-1">
+              <p className="font-arabic font-bold text-sm text-[#1A1A1A]">شحن عبر شركة</p>
+              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5">شحن عبر شركات الشحن المتاحة</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* ═══ Section 1: Shipping Company ═══════════════════════════════════ */}
+      {deliveryType === 'shipping' && (
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
         <SectionHeading icon={Truck} title="شركة الشحن" />
         <ShippingCompanySelector
           companies={shippingMethods}
@@ -152,6 +220,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
           error={errors.shipping_company?.message}
         />
       </div>
+      )}
 
       {/* ═══ Section 2: Shipping Info ══════════════════════════════════════ */}
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
@@ -241,31 +310,41 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings }: Props
               العنوان بالتفصيل <span className="text-[#BA1A1A]">*</span>
             </label>
             
-            <div className="relative">
-              <select
+            {governorate === 'حلب' ? (
+              <textarea
                 id="address"
-                className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                rows={2}
+                placeholder="أدخل عنوانك بالتفصيل (الحي، الشارع، البناية، الطابق)..."
+                className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
                 {...register('address')}
-              >
-                {!governorate ? (
-                  <option value="">يرجى اختيار المحافظة أولاً...</option>
-                ) : selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
-                  <>
-                    <option value="">اختر العنوان بالتفصيل...</option>
-                    {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
-                      <option key={idx} value={branch}>
-                        {branch}
-                      </option>
-                    ))}
-                  </>
-                ) : (
-                  <option value="">لا تتوفر مراكز شحن حالياً في هذه المحافظة</option>
-                )}
-              </select>
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
-                <ChevronDown size={16} />
+              />
+            ) : (
+              <div className="relative">
+                <select
+                  id="address"
+                  className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                  {...register('address')}
+                >
+                  {!governorate ? (
+                    <option value="">يرجى اختيار المحافظة أولاً...</option>
+                  ) : selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
+                    <>
+                      <option value="">اختر أقرب مركز استلام...</option>
+                      {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
+                        <option key={idx} value={branch}>
+                          {branch}
+                        </option>
+                      ))}
+                    </>
+                  ) : (
+                    <option value="">لا تتوفر مراكز شحن حالياً في هذه المحافظة</option>
+                  )}
+                </select>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
+                  <ChevronDown size={16} />
+                </div>
               </div>
-            </div>
+            )}
             {errors.address && <p className={errorBase}>{errors.address.message}</p>}
           </div>
         </div>

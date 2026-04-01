@@ -15,12 +15,24 @@ export const checkoutSchema = z.object({
   address: z
     .string()
     .min(1, 'يرجى اختيار مركز الاستلام أو العنوان'),
-  shipping_company: z.string({ required_error: 'يرجى اختيار شركة الشحن' }).min(1, 'يرجى اختيار شركة الشحن'),
+  shipping_company: z.string().optional().default(''),
+  delivery_type: z.enum(['delivery', 'shipping']).default('shipping'),
   coupon_code: z.string().optional(),
   payment_method: z.enum(['cod', 'sham_cash']).default('cod'),
   payment_transaction_id: z.string().optional(),
   notes: z.string().max(300, 'الملاحظات طويلة جداً').optional(),
 }).refine(
+  (data) => {
+    if (data.delivery_type === 'shipping') {
+      return !!data.shipping_company && data.shipping_company.trim().length > 0
+    }
+    return true
+  },
+  {
+    message: 'يرجى اختيار شركة الشحن',
+    path: ['shipping_company'],
+  }
+).refine(
   (data) => {
     if (data.payment_method === 'sham_cash') {
       return !!data.payment_transaction_id && data.payment_transaction_id.trim().length >= 3
@@ -60,6 +72,7 @@ export const productSchema = z.object({
   price_usd: z.number().positive('السعر بالدولار مطلوب'),
   discount_price_syp: z.number().positive().nullable().optional(),
   discount_price_usd: z.number().positive().nullable().optional(),
+  mold_type: z.enum(['chinese', 'normal']).default('normal'),
   stock_status: z.enum(['in_stock', 'low_stock', 'out_of_stock']),
   is_featured: z.boolean(),
   is_published: z.boolean(),
@@ -76,6 +89,11 @@ export const productSchema = z.object({
     swatch_public_id: z.string().optional(),
     is_available: z.boolean().default(true),
   })),
+  variants: z.array(z.object({
+    color: z.string(),
+    size: z.number(),
+    quantity: z.number().int().min(0, 'الكمية لا يمكن أن تكون سالبة').default(0),
+  })).optional().default([]),
 })
 
 export type ProductFormData = z.infer<typeof productSchema>

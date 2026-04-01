@@ -8,6 +8,7 @@ import { truncate, getDiscountPercent } from '@/lib/utils'
 import type { ProductFull, ProductColor, HomepageSettings } from '@/types'
 import ProductActions from './ProductActions'
 import AccordionItemClient from './AccordionItemClient'
+import ProductReviews from './ProductReviews'
 
 interface Props {
   product: ProductFull
@@ -17,10 +18,19 @@ interface Props {
 
 export default function ProductPageClient({ product, settings, relatedProductsNode }: Props) {
   const [activeColor, setActiveColor] = React.useState<string | null>(null)
+  const [reviewsMetadata, setReviewsMetadata] = useState<{ totalReviews: number; averageRating: number } | null>(null)
 
   React.useEffect(() => {
     // Increment view count
     fetch(`/api/products/${product.id}/view`, { method: 'POST' }).catch(() => {})
+    
+    // Fetch review metadata
+    fetch(`/api/products/${product.id}/reviews`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.metadata) setReviewsMetadata(data.metadata)
+      })
+      .catch(() => {})
   }, [product.id])
 
   const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
@@ -66,6 +76,13 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
               hasDiscount={hasDiscount}
               discountPct={discountPct}
               activeColor={activeColor}
+              onIndexChange={(idx) => {
+                const sortedImages = [...product.images].sort((a,b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+                const img = sortedImages[idx]
+                if (img?.color_variant && img.color_variant !== activeColor) {
+                  setActiveColor(img.color_variant)
+                }
+              }}
             />
           </div>
 
@@ -96,6 +113,27 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
                 )}
               </div>
 
+              {/* Rating Summary */}
+              {reviewsMetadata && (
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <Star 
+                        key={num} 
+                        size={16} 
+                        className={`${reviewsMetadata.averageRating >= num ? 'fill-[#FFD700] text-[#FFD700]' : 'text-[#D1C9BE]'}`} 
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm font-bold text-[#6B655D]">
+                    {reviewsMetadata.totalReviews > 0 
+                      ? `${reviewsMetadata.averageRating} (${reviewsMetadata.totalReviews} تقييم)`
+                      : 'لم يقدم أحد المنتج بعد'
+                    }
+                  </span>
+                </div>
+              )}
+
               {product.category && (
                 <Link href={`/category/${product.category.slug}`} className="text-sm font-arabic text-[#9E9890] hover:text-[#785600] inline-block mt-2">
                   {product.category.name_ar}
@@ -122,7 +160,11 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
             {relatedProductsNode}
           </section>
         )}
+
+        {/* Product Reviews */}
+        <ProductReviews productId={product.id} />
       </div>
     </main>
+
   )
 }

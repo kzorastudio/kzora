@@ -41,6 +41,8 @@ export default function ProductForm({
     handleSubmit,
     watch,
     reset,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -52,6 +54,7 @@ export default function ProductForm({
       price_usd: initialData?.price_usd ?? 0,
       discount_price_syp: initialData?.discount_price_syp ?? null,
       discount_price_usd: initialData?.discount_price_usd ?? null,
+      mold_type: initialData?.mold_type ?? 'normal',
       stock_status: initialData?.stock_status ?? 'in_stock',
       is_featured: initialData?.is_featured ?? false,
       is_published: initialData ? initialData.is_published : true,
@@ -62,9 +65,9 @@ export default function ProductForm({
         name_ar: c.name_ar,
         hex_code: c.hex_code,
         swatch_url: c.swatch_url ?? '',
-        swatch_public_id: c.swatch_public_id ?? '',
         is_available: c.is_available ?? true,
       })) ?? [],
+      variants: initialData?.variants ?? [],
     },
   })
 
@@ -88,6 +91,7 @@ export default function ProductForm({
         price_usd: initialData.price_usd,
         discount_price_syp: initialData.discount_price_syp,
         discount_price_usd: initialData.discount_price_usd,
+        mold_type: initialData.mold_type,
         stock_status: initialData.stock_status,
         is_featured: initialData.is_featured,
         is_published: initialData.is_published,
@@ -98,9 +102,9 @@ export default function ProductForm({
           name_ar: c.name_ar,
           hex_code: c.hex_code,
           swatch_url: c.swatch_url || '',
-          swatch_public_id: c.swatch_public_id || '',
           is_available: c.is_available ?? true,
-        })) || []
+        })) || [],
+        variants: initialData.variants || [],
       })
     }
   }, [initialData, reset])
@@ -111,9 +115,43 @@ export default function ProductForm({
   })
 
   const watchedColors = watch('colors')
+  const watchedSizes = watch('sizes')
+  const watchedVariants = watch('variants') || []
   const colorOptions = watchedColors
     .filter(c => c.name_ar.trim() !== '')
     .map(c => ({ label: c.name_ar, value: c.name_ar }))
+
+  // Sync variants with selected colors and sizes
+  useEffect(() => {
+    const validColors = colorOptions.map(c => c.value)
+    const validSizes = watchedSizes.filter(s => s.is_available).map(s => s.size)
+    const newCombinations: { color: string, size: number, quantity: number }[] = []
+
+    const cList = validColors.length > 0 ? validColors : ['']
+    const sList = validSizes.length > 0 ? validSizes : [0]
+
+    const currentVariants = getValues('variants') || []
+
+    cList.forEach(color => {
+      sList.forEach(size => {
+        // Find existing quantity
+        const existing = currentVariants.find((v: any) => v.color === color && v.size === size)
+        newCombinations.push({
+          color,
+          size,
+          quantity: existing ? existing.quantity : 0
+        })
+      })
+    })
+
+    // Update only if different to prevent infinite loops
+    const differs = newCombinations.length !== currentVariants.length || 
+      newCombinations.some((nc, i) => nc.color !== currentVariants[i]?.color || nc.size !== currentVariants[i]?.size)
+
+    if (differs) {
+      setValue('variants', newCombinations)
+    }
+  }, [JSON.stringify(colorOptions), JSON.stringify(watchedSizes), setValue, getValues])
 
   const handleImageSetMain = useCallback((id: string) => {
     setImages(prev => prev.map(img => ({
@@ -246,6 +284,13 @@ export default function ProductForm({
             </select>
           </div>
           <div>
+            <label className={LABEL_CLASS}>القالب (المقاس)</label>
+            <select {...register('mold_type')} className={FIELD_CLASS}>
+              <option value="normal">طبيعي (نظامي)</option>
+              <option value="chinese">صيني (أصغر)</option>
+            </select>
+          </div>
+          <div>
             <label className={LABEL_CLASS}>السعر (ليرة)</label>
             <input type="number" {...register('price_syp', { valueAsNumber: true })} className={FIELD_CLASS} />
           </div>
@@ -355,6 +400,47 @@ export default function ProductForm({
         />
         {errors.sizes && (
           <p className="text-xs font-arabic text-error">{errors.sizes.message as string}</p>
+        )}
+      </section>
+
+      <section className={SECTION_CLASS}>
+        <h2 className="text-base font-arabic font-semibold">إدارة المخزون (الكميات)</h2>
+        <p className="text-xs font-arabic text-secondary -mt-2">أدخل الكمية المتاحة لكل مقاس ولون. المنتجات ذات الكمية 0 لن تظهر للزبائن.</p>
+        
+        {watchedVariants.length === 0 ? (
+          <p className="text-sm font-arabic text-secondary">يرجى إضافة مقاس أو لون لتحديد الكميات.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm font-arabic text-right">
+              <thead>
+                <tr className="border-b border-outline-variant/30 text-on-surface-variant">
+                  <th className="py-2 px-3">اللون</th>
+                  <th className="py-2 px-3">المقاس</th>
+                  <th className="py-2 px-3">الكمية</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/20">
+                {watchedVariants.map((variant: any, idx: number) => (
+                  <tr key={`${variant.color}-${variant.size}-${idx}`} className="hover:bg-surface-container-high/50 transition-colors">
+                    <td className="py-3 px-3">
+                      {variant.color || <span className="text-secondary/60">أساسي</span>}
+                    </td>
+                    <td className="py-3 px-3">
+                      {variant.size === 0 ? <span className="text-secondary/60">أساسي</span> : variant.size}
+                    </td>
+                    <td className="py-3 px-3">
+                      <input
+                        type="number"
+                        min="0"
+                        {...register(`variants.${idx}.quantity`, { valueAsNumber: true })}
+                        className={cn(FIELD_CLASS, 'max-w-[120px] py-1.5')}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

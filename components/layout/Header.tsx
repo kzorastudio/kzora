@@ -236,14 +236,16 @@ export function Header() {
           {/* Actions — appears on LEFT in RTL */}
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
 
-            {/* Currency pill — desktop only */}
-            <div className="hidden md:flex items-center gap-0.5 bg-[#F0EBE3] rounded-full p-0.5 ml-2">
+            {/* Currency switcher — visible on all screens, small and elegant */}
+            <div className="flex items-center bg-[#F5F1EB] rounded-full p-[2px] border border-[#E8E3DB] shadow-inner ml-1 md:ml-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setCurrency('USD')}
                 className={cn(
-                  'px-3 py-1 rounded-full text-xs font-bold transition-all duration-200',
-                  currency === 'USD' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
+                  'px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-bold transition-all duration-300',
+                  currency === 'USD' 
+                    ? 'bg-gradient-to-r from-[#785600] to-[#B8860B] text-white shadow-md cursor-default' 
+                    : 'text-[#9E9890] hover:text-[#1A1A1A]'
                 )}
               >
                 USD
@@ -252,8 +254,10 @@ export function Header() {
                 type="button"
                 onClick={() => setCurrency('SYP')}
                 className={cn(
-                  'px-3 py-1 rounded-full text-xs font-bold font-arabic transition-all duration-200',
-                  currency === 'SYP' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
+                  'px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-bold font-arabic transition-all duration-300',
+                  currency === 'SYP' 
+                    ? 'bg-gradient-to-r from-[#785600] to-[#B8860B] text-white shadow-md cursor-default' 
+                    : 'text-[#9E9890] hover:text-[#1A1A1A]'
                 )}
               >
                 ل.س
@@ -271,13 +275,13 @@ export function Header() {
               <Search size={20} />
             </button>
             
-            {/* Track Order Icon */}
+            {/* Track Order Icon - Desktop Only */}
             <Link
               href="/track-order"
               aria-label="تتبع الطلب"
               title="تتبع الطلب"
               className={cn(
-                "p-2.5 rounded-xl transition-all duration-150",
+                "hidden md:flex p-2.5 rounded-xl transition-all duration-150",
                 isActive('/track-order') 
                   ? "text-[#B8860B] bg-[#F0EBE3]" 
                   : "text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F0EBE3]"

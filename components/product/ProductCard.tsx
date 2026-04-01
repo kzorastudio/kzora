@@ -92,6 +92,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         price_usd:          product.price_usd,
         discount_price_syp: product.discount_price_syp ?? null,
         discount_price_usd: product.discount_price_usd ?? null,
+        mold_type:          product.mold_type,
       }
       addItem(item)
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
@@ -119,6 +120,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         price_usd:          product.price_usd,
         discount_price_syp: product.discount_price_syp ?? null,
         discount_price_usd: product.discount_price_usd ?? null,
+        mold_type:          product.mold_type,
       }
       addItem(item)
       setShowSizeBar(false)

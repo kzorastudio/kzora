@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderPayload = await request.json()
-    const { items, customer, shipping_company, payment_method, payment_transaction_id, coupon_code, currency_used, notes } = body
+    const { items, customer, shipping_company, delivery_type, payment_method, payment_transaction_id, coupon_code, currency_used, notes } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (!customer?.full_name || !customer?.phone || !customer?.governorate || !customer?.address) {
       return NextResponse.json({ error: 'Missing customer details' }, { status: 400 })
     }
-    if (!shipping_company) {
+    if (delivery_type === 'shipping' && !shipping_company) {
       return NextResponse.json({ error: 'Missing shipping company' }, { status: 400 })
     }
 
@@ -99,7 +99,8 @@ export async function POST(request: NextRequest) {
       .select(`
         id, name, price_syp, price_usd, discount_price_syp, discount_price_usd, stock_status, is_published,
         colors:product_colors(name_ar, is_available),
-        sizes:product_sizes(size, is_available)
+        sizes:product_sizes(size, is_available),
+        variants:product_variants(id, color, size, quantity)
       `)
       .in('id', productIds)
 
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Validate and build sanitized order items with DB prices
-    const sanitizedItems: typeof items = []
+    const sanitizedItems: (typeof items[0] & { variant_id: string | null, available_quantity: number })[] = []
     for (const item of items) {
       const dbProduct = productMap.get(item.product_id)
       if (!dbProduct) {
@@ -150,12 +151,36 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Check variant quantity
+      let variantId = null;
+      let availableQuantity = 999;
+      if (dbProduct.variants && dbProduct.variants.length > 0) {
+        const c = item.color || ''
+        const s = item.size || 0
+        const v = dbProduct.variants.find((v: any) => v.color === c && v.size === s)
+        if (v) {
+           variantId = v.id
+           availableQuantity = v.quantity
+        } else {
+           availableQuantity = 0 // Not defined = 0 stock
+        }
+      }
+
+      if (item.quantity > availableQuantity) {
+         return NextResponse.json(
+            { error: `الكمية المطلوبة من ${item.color || ''} ${item.size || ''} للمنتج "${dbProduct.name}" غير متوفرة. المتاح: ${availableQuantity}` },
+            { status: 400 }
+         )
+      }
+
       // Use effective (discounted if exists) prices from DB
       sanitizedItems.push({
         ...item,
         product_name:  dbProduct.name,
         unit_price_syp: dbProduct.discount_price_syp ?? dbProduct.price_syp,
         unit_price_usd: dbProduct.discount_price_usd ?? dbProduct.price_usd,
+        variant_id: variantId,
+        available_quantity: availableQuantity,
       })
     }
 
@@ -174,7 +199,7 @@ export async function POST(request: NextRequest) {
     // Fetch settings for multi-item discount
     const { data: settings } = await supabaseAdmin
       .from('homepage_settings')
-      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp')
+      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, delivery_fee_syp, delivery_fee_usd, shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd')
       .limit(1)
       .maybeSingle()
 
@@ -200,23 +225,23 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (couponError || !coupon) {
-        return NextResponse.json({ error: 'Ø§Ù„ÙƒÙˆØ¨ÙˆÙ† ØºÙŠØ± ØµØ§Ù„Ø­' }, { status: 400 })
+        return NextResponse.json({ error: 'الكوبون غير صالح' }, { status: 400 })
       }
 
       // Check expiry
       if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-        return NextResponse.json({ error: 'Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø§Ù„ÙƒÙˆØ¨ÙˆÙ†' }, { status: 400 })
+        return NextResponse.json({ error: 'انتهت صلاحية الكوبون' }, { status: 400 })
       }
 
       // Check max uses
       if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
-        return NextResponse.json({ error: 'ØªÙ… Ø§Ø³ØªÙ†ÙØ§Ø¯ Ø§Ø³ØªØ®Ø¯Ø§Ù…Ø§Øª Ø§Ù„ÙƒÙˆØ¨ÙˆÙ†' }, { status: 400 })
+        return NextResponse.json({ error: 'تم استنفاد استخدامات الكوبون' }, { status: 400 })
       }
 
       // Check minimum order
       if (subtotalSyp < coupon.min_order_syp) {
         return NextResponse.json(
-          { error: `Ø§Ù„Ø­Ø¯ Ø§Ù„Ø£Ø¯Ù†Ù‰ Ù„Ù„Ø·Ù„Ø¨ Ù‡Ùˆ ${coupon.min_order_syp.toLocaleString()} Ù„.Ø³` },
+          { error: `الحد الأدنى للطلب هو ${coupon.min_order_syp.toLocaleString()} ل.س` },
           { status: 400 }
         )
       }
@@ -241,14 +266,35 @@ export async function POST(request: NextRequest) {
         .eq('id', coupon.id)
     }
 
+    // ─── Step 2.7: Calculate shipping/delivery fee ───────────────────────
+    let shippingFeeSyp = 0
+    let shippingFeeUsd = 0
+    const effectiveDeliveryType = delivery_type || 'shipping'
+
+    if (effectiveDeliveryType === 'delivery') {
+      shippingFeeSyp = settings?.delivery_fee_syp || 0
+      shippingFeeUsd = settings?.delivery_fee_usd || 0
+    } else {
+      if (totalItemsCount >= 3) {
+        shippingFeeSyp = settings?.shipping_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings?.shipping_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount === 2) {
+        shippingFeeSyp = settings?.shipping_fee_2_pieces_syp || 0
+        shippingFeeUsd = settings?.shipping_fee_2_pieces_usd || 0
+      } else {
+        shippingFeeSyp = settings?.shipping_fee_1_piece_syp || 0
+        shippingFeeUsd = settings?.shipping_fee_1_piece_usd || 0
+      }
+    }
+
     // Combine both discounts
     const finalDiscountSyp = discountSyp + multiProductDiscountSyp
     // Calculate USD equivalent for multi-product discount using current ratio
     const ratio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
     const finalDiscountUsd = parseFloat((discountUsd + (multiProductDiscountSyp * ratio)).toFixed(2))
 
-    const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp)
-    const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd).toFixed(2)))
+    const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shippingFeeSyp)
+    const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shippingFeeUsd).toFixed(2)))
 
     // â”€â”€ Step 5: Generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const orderNumber = await generateOrderNumber()
@@ -262,7 +308,10 @@ export async function POST(request: NextRequest) {
         customer_phone:       customer.phone,
         customer_governorate: customer.governorate,
         customer_address:     customer.address,
-        shipping_company,
+        shipping_company:     shipping_company || '',
+        delivery_type:        effectiveDeliveryType,
+        shipping_fee_syp:     shippingFeeSyp,
+        shipping_fee_usd:     shippingFeeUsd,
         payment_method:       payment_method || 'cod',
         payment_transaction_id: payment_transaction_id || null,
         coupon_code:          appliedCouponCode,
@@ -303,6 +352,31 @@ export async function POST(request: NextRequest) {
 
     if (itemsError) {
       console.error('Order items insert error:', itemsError)
+    }
+
+    // ✨ Decrement variant quantities & handle out_of_stock
+    const productIdsToCheck = new Set<string>()
+    for (const item of sanitizedItems) {
+       if (item.variant_id) {
+          const newQty = Math.max(0, item.available_quantity - item.quantity)
+          await supabaseAdmin
+            .from('product_variants')
+            .update({ quantity: newQty })
+            .eq('id', item.variant_id)
+            
+          productIdsToCheck.add(item.product_id)
+       }
+    }
+
+    // After updating variants, check if any products are now fully out of stock
+    for (const pid of Array.from(productIdsToCheck)) {
+      const { data: variants } = await supabaseAdmin.from('product_variants').select('quantity').eq('product_id', pid);
+      if (variants) {
+         const totalStock = variants.reduce((sum: number, v: any) => sum + v.quantity, 0);
+         if (totalStock <= 0) {
+            await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid);
+         }
+      }
     }
 
     // â”€â”€ Insert initial status history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

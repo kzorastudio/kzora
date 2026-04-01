@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import Providers from '@/components/Providers'
 import ScrollToTop from '@/components/layout/ScrollToTop'
+import VisitTracker from '@/components/analytics/VisitTracker'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl" className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
       <body>
         <Providers>
+          <VisitTracker />
           <ScrollToTop />
           {children}
           <Toaster

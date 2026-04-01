@@ -138,6 +138,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
   const total   = currency === 'SYP' ? order.total_syp   : order.total_usd
   const subtotal = currency === 'SYP' ? order.subtotal_syp : order.subtotal_usd
   const discount = currency === 'SYP' ? order.discount_amount_syp : order.discount_amount_usd
+  const shippingFee = currency === 'SYP' ? (order.shipping_fee_syp || 0) : (order.shipping_fee_usd || 0)
 
   const whatsappFollowUp = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `مرحباً، أريد الاستفسار عن طلبي رقم ${order.order_number}`
@@ -221,9 +222,12 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-arabic text-secondary mb-1">شركة الشحن</p>
+                  <p className="text-xs font-arabic text-secondary mb-1">طريقة التوصيل</p>
                   <p className="font-arabic text-sm font-medium text-on-surface">
-                    {SHIPPING_LABELS[order.shipping_company] ?? order.shipping_company}
+                    {order.delivery_type === 'delivery'
+                      ? 'توصيل عادي'
+                      : (SHIPPING_LABELS[order.shipping_company] ?? order.shipping_company)
+                    }
                   </p>
                 </div>
                 <div className="col-span-2">
@@ -309,6 +313,16 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     </span>
                     <span className="font-body tabular-nums text-[#BA1A1A]" dir="ltr">
                       -{formatPrice(discount, currency)}
+                    </span>
+                  </div>
+                )}
+                {shippingFee > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-arabic text-secondary">
+                      {order.delivery_type === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
+                    </span>
+                    <span className="font-body tabular-nums text-[#2E7D32]" dir="ltr">
+                      +{formatPrice(shippingFee, currency)}
                     </span>
                   </div>
                 )}

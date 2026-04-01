@@ -22,12 +22,34 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
   const { currency, setCurrency } = useCurrencyStore()
   const { addItem, openCart } = useCartStore()
 
-  const [selectedColorId, setSelectedColorId] = useState<string | null>(
-    product.colors.filter(c => c.is_available).length === 1 ? product.colors.find(c => c.is_available)!.id : null
-  )
-  const [selectedSize, setSelectedSize] = useState<number | null>(
-    product.sizes.filter(s => s.is_available).length === 1 ? product.sizes.find(s => s.is_available)!.size : null
-  )
+  const outOfStockGlobal = product.stock_status === 'out_of_stock'
+
+  const isColorInStock = useCallback((colorName: string) => {
+    if (!product.variants || product.variants.length === 0) return true
+    return product.variants.some(v => v.color === colorName && v.quantity > 0)
+  }, [product.variants])
+
+  const isSizeInStockForColor = useCallback((sizeVal: number, colorName: string | null) => {
+    if (!product.variants || product.variants.length === 0) return true
+    const c = colorName || ''
+    return product.variants.some(v => v.color === c && v.size === sizeVal && v.quantity > 0)
+  }, [product.variants])
+
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(() => {
+    const available = product.colors.filter(c => c.is_available && isColorInStock(c.name_ar))
+    return available.length === 1 ? available[0].id : null
+  })
+  
+  const [selectedSize, setSelectedSize] = useState<number | null>(() => {
+    // If only 1 size available at all, auto select it?
+    // Safer to just leave it null unless there's only 1 size in the whole product.
+    // We defer strict checks to the UI.
+    const available = product.sizes.filter(s => {
+       const sz = typeof s === 'number' ? s : s.size
+       return (typeof s === 'number' ? true : s.is_available)
+    })
+    return available.length === 1 ? (typeof available[0] === 'number' ? available[0] : available[0].size) : null
+  })
   const [quantity, setQuantity] = useState(1)
   const [sizeError, setSizeError] = useState(false)
   const [colorError, setColorError] = useState(false)
@@ -41,7 +63,19 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
     onColorChange?.(selectedColor)
   }, [selectedColor, onColorChange])
 
-  const outOfStock = product.stock_status === 'out_of_stock'
+  const currentAvailableStock = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return 999
+    const c = selectedColor?.name_ar || ''
+    const s = selectedSize || 0
+    const v = product.variants.find(v => v.color === c && v.size === s)
+    return v ? v.quantity : 0
+  }, [product.variants, selectedColor, selectedSize])
+
+  const isComboOutOfStock = (product.variants && product.variants.length > 0) 
+    ? (selectedColorId !== null || product.colors.length === 0) && (selectedSize !== null || product.sizes.length === 0) && currentAvailableStock <= 0
+    : false
+
+  const outOfStock = outOfStockGlobal || isComboOutOfStock
 
   const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
   const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
@@ -93,6 +127,7 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
       price_usd:          product.price_usd,
       discount_price_syp: product.discount_price_syp ?? null,
       discount_price_usd: product.discount_price_usd ?? null,
+      mold_type:          product.mold_type,
     }
     addItem(item)
     
@@ -181,30 +216,33 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
             )}
           </div>
           <div className="flex gap-3 flex-wrap">
-            {product.colors.map((color: ProductColor) => (
-              <div key={color.id} className="relative">
-                <button
-                  type="button"
-                  title={color.name_ar}
-                  disabled={!color.is_available}
-                  onClick={() => { setSelectedColorId(color.id); setColorError(false) }}
-                  className={cn(
-                    'w-10 h-10 rounded-full transition-all duration-200 shadow-sm',
-                    'focus-visible:outline-none',
-                    selectedColorId === color.id
-                      ? 'ring-2 ring-[#785600] ring-offset-3'
-                      : 'ring-1 ring-black/40 ring-offset-2 hover:ring-[#785600]',
-                    !color.is_available && 'opacity-25 cursor-not-allowed grayscale scale-90'
+            {product.colors.map((color: ProductColor) => {
+              const available = color.is_available && isColorInStock(color.name_ar)
+              return (
+                <div key={color.id} className="relative">
+                  <button
+                    type="button"
+                    title={color.name_ar}
+                    disabled={!available}
+                    onClick={() => { setSelectedColorId(color.id); setColorError(false) }}
+                    className={cn(
+                      'w-10 h-10 rounded-full transition-all duration-200 shadow-sm',
+                      'focus-visible:outline-none',
+                      selectedColorId === color.id
+                        ? 'ring-2 ring-[#785600] ring-offset-3'
+                        : 'ring-1 ring-black/40 ring-offset-2 hover:ring-[#785600]',
+                      !available && 'opacity-25 cursor-not-allowed grayscale scale-90'
+                    )}
+                    style={{ backgroundColor: color.hex_code }}
+                  />
+                  {!available && (
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="w-[1px] h-full bg-black/60 rotate-45" />
+                    </div>
                   )}
-                  style={{ backgroundColor: color.hex_code }}
-                />
-                {!color.is_available && (
-                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                     <div className="w-[1px] h-full bg-white/60 rotate-45" />
-                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -212,28 +250,40 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
       {/* ── Size selector ── */}
       {product.sizes.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-arabic">
-              <span className={cn(
-                'font-medium transition-colors',
-                sizeError ? 'text-[#BA1A1A]' : 'text-[#6B6560]'
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-sm font-arabic">
+                <span className={cn(
+                  'font-medium transition-colors',
+                  sizeError ? 'text-[#BA1A1A]' : 'text-[#6B6560]'
+                )}>
+                  المقاس:
+                </span>
+                {selectedSize !== null && (
+                  <span className="text-[#1A1A1A] font-bold tabular-nums">
+                    {selectedSize}
+                  </span>
+                )}
+                {sizeError && (
+                  <span className="text-[#BA1A1A] text-xs font-bold animate-pulse">
+                     يرجى اختيار المقاس
+                  </span>
+                )}
+              </div>
+              
+              <div className={cn(
+                "inline-flex w-max items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-arabic font-bold",
+                product.mold_type === 'chinese' 
+                  ? "bg-[#FFF0E6] text-[#E65C00] border border-[#FFD1B3]"
+                  : "bg-[#E6F4EA] text-[#137333] border border-[#BCE3C6]"
               )}>
-                المقاس:
-              </span>
-              {selectedSize !== null && (
-                <span className="text-[#1A1A1A] font-bold tabular-nums">
-                  {selectedSize}
-                </span>
-              )}
-              {sizeError && (
-                <span className="text-[#BA1A1A] text-xs font-bold animate-pulse">
-                   يرجى اختيار المقاس
-                </span>
-              )}
+                {product.mold_type === 'chinese' ? '⚠️ القالب صيني (ننصح بمقاس أكبر)' : '📏 القالب طبيعي (نظامي)'}
+              </div>
             </div>
+            
             <a
               href="#size-guide"
-              className="text-xs font-arabic text-[#785600] hover:underline underline-offset-4 flex items-center gap-1"
+              className="text-xs font-arabic text-[#785600] hover:underline underline-offset-4 flex items-center gap-1 mt-0.5"
             >
               دليل المقاسات
             </a>
@@ -242,7 +292,8 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
             {product.sizes.map((s) => {
               const item = typeof s === 'number' ? { size: s, is_available: true } : s
               const size = item.size
-              const isAvailable = item.is_available && !outOfStock
+              
+              const isAvailable = item.is_available && !outOfStockGlobal && isSizeInStockForColor(size, selectedColor?.name_ar ?? null)
 
               return (
                 <button
@@ -293,12 +344,19 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
             <button
               type="button"
               aria-label="زيادة الكمية"
-              onClick={() => setQuantity(q => Math.min(10, q + 1))}
-              disabled={quantity >= 10}
+              onClick={() => setQuantity(q => {
+                const maxAllowed = product.variants?.length ? Math.min(10, currentAvailableStock) : 10;
+                if (q >= maxAllowed) {
+                  toast.error(`عذراً، أقصى كمية متاحة هي ${maxAllowed}`);
+                  return q;
+                }
+                return q + 1;
+              })}
+              disabled={quantity >= 10 || (product.variants?.length ? quantity >= currentAvailableStock : false)}
               className={cn(
                 'w-11 h-11 flex items-center justify-center transition-colors duration-100',
                 'focus-visible:outline-none',
-                quantity >= 10
+                (quantity >= 10 || (product.variants?.length ? quantity >= currentAvailableStock : false))
                   ? 'text-[#D3C4AF] cursor-not-allowed'
                   : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#EDE8E0]'
               )}
