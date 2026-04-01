@@ -81,6 +81,12 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   shipping_fee_3_plus_pieces_usd: 0,
   delivery_fee_syp: 0,
   delivery_fee_usd: 0,
+  delivery_fee_1_piece_syp: 1000,
+  delivery_fee_1_piece_usd: 0.1,
+  delivery_fee_2_pieces_syp: 1000,
+  delivery_fee_2_pieces_usd: 0.1,
+  delivery_fee_3_plus_pieces_syp: 1000,
+  delivery_fee_3_plus_pieces_usd: 0.1,
 }
 
 export default function HomepagePage() {
@@ -545,35 +551,97 @@ export default function HomepagePage() {
               <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
                 <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
                   <Truck size={16} className="text-[#2E7D32]" />
-                  رسوم التوصيل العادي (Flat Fee)
+                  أجور التوصيل العادي (حسب عدد القطع)
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-arabic font-bold text-secondary">السعر بالليرة السورية (ل.س)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={settings.delivery_fee_syp || 0}
-                      onChange={(e) => { setSettings({ ...settings, delivery_fee_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                    />
+                <div className="space-y-4">
+                  {/* 1 piece */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعة واحدة (1)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_1_piece_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_1_piece_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-arabic font-bold text-secondary">السعر بالدولار ($)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      value={settings.delivery_fee_usd || 0}
-                      onChange={(e) => { setSettings({ ...settings, delivery_fee_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
-                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                    />
+
+                  {/* 2 pieces */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعتين (2)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_2_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_2_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3+ pieces */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">3 قطع فأكثر (+3)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_3_plus_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_3_plus_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Shipping Fee per pieces */}
-              <div>
+              <div className="mt-8 pt-8 border-t border-outline-variant/10">
                 <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
                   <Truck size={16} className="text-[#1565C0]" />
                   أجور الشحن (حسب عدد القطع)

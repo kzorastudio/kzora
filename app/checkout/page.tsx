@@ -259,8 +259,16 @@ export default function CheckoutPage() {
   let shippingFeeUsd = 0
   if (settings) {
     if (deliveryType === 'delivery') {
-      shippingFeeSyp = settings.delivery_fee_syp || 0
-      shippingFeeUsd = settings.delivery_fee_usd || 0
+      if (totalItemsCount >= 3) {
+        shippingFeeSyp = settings.delivery_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings.delivery_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount === 2) {
+        shippingFeeSyp = settings.delivery_fee_2_pieces_syp || 0
+        shippingFeeUsd = settings.delivery_fee_2_pieces_usd || 0
+      } else {
+        shippingFeeSyp = settings.delivery_fee_1_piece_syp || 0
+        shippingFeeUsd = settings.delivery_fee_1_piece_usd || 0
+      }
     } else {
       // Calculate by pieces for shipping
       if (totalItemsCount >= 3) {

@@ -177,10 +177,10 @@ export default function OrderSummaryPanel({
             </div>
           )}
 
-          {shippingFee > 0 && (
+          {(shippingFeeSyp > 0 || shippingFeeUsd > 0) && (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">
-                أجرة الشحن
+                أجرة التوصيل والشحن
               </span>
               <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
                 +{formatPrice(shippingFee, currency)}

@@ -225,9 +225,15 @@ export interface HomepageSettings {
   shipping_fee_2_pieces_usd: number
   shipping_fee_3_plus_pieces_syp: number
   shipping_fee_3_plus_pieces_usd: number
-  // Delivery flat fee
+  // Delivery fees (Flat or Quantity-based if needed)
   delivery_fee_syp: number
   delivery_fee_usd: number
+  delivery_fee_1_piece_syp: number
+  delivery_fee_1_piece_usd: number
+  delivery_fee_2_pieces_syp: number
+  delivery_fee_2_pieces_usd: number
+  delivery_fee_3_plus_pieces_syp: number
+  delivery_fee_3_plus_pieces_usd: number
 }
 
 export interface StaticPage {

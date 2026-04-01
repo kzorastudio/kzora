@@ -75,6 +75,7 @@ export const SHIPPING_LABELS: Record<string, string> = {
   'qadmous': 'قدموس (Qadmous)',
   'masarat': 'مسارات (Masarat)',
   'delivery': '🚀 توصيل عادي',
+  'regular_delivery': '🚀 توصيل عادي',
   'shipping': '📦 شحن للمحافظات',
 }
 

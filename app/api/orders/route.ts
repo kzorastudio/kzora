@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
     // Fetch settings for multi-item discount and shipping fees
     const { data: settings } = await supabaseAdmin
       .from('homepage_settings')
-      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, delivery_fee_syp, delivery_fee_usd')
+      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, delivery_fee_syp, delivery_fee_usd, delivery_fee_1_piece_syp, delivery_fee_1_piece_usd, delivery_fee_2_pieces_syp, delivery_fee_2_pieces_usd, delivery_fee_3_plus_pieces_syp, delivery_fee_3_plus_pieces_usd')
       .limit(1)
       .maybeSingle()
 
@@ -271,8 +271,16 @@ export async function POST(request: NextRequest) {
     let shippingFeeUsd = 0
 
     if (delivery_type === 'delivery') {
-      shippingFeeSyp = settings?.delivery_fee_syp || 0
-      shippingFeeUsd = settings?.delivery_fee_usd || 0
+      if (totalItemsCount >= 3) {
+        shippingFeeSyp = settings?.delivery_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings?.delivery_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount === 2) {
+        shippingFeeSyp = settings?.delivery_fee_2_pieces_syp || 0
+        shippingFeeUsd = settings?.delivery_fee_2_pieces_usd || 0
+      } else {
+        shippingFeeSyp = settings?.delivery_fee_1_piece_syp || 0
+        shippingFeeUsd = settings?.delivery_fee_1_piece_usd || 0
+      }
     } else {
       if (totalItemsCount >= 3) {
         shippingFeeSyp = settings?.shipping_fee_3_plus_pieces_syp || 0
