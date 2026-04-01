@@ -21,7 +21,7 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
     <div className="flex min-h-screen bg-surface" dir="rtl" lang="ar">
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 lg:mr-[280px] bg-surface min-h-screen">
+      <main className="flex-1 lg:mr-[230px] bg-surface min-h-screen">
         {/* Mobile top bar */}
         <div className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white border-b border-outline-variant/20 shadow-sm">
           <button

@@ -11,18 +11,18 @@ export default function VisitTracker() {
       // Don't track admin pages for visitor stats
       if (pathname.startsWith('/admin')) return
 
-      // Simple session ID using session storage
-      let sessionId = sessionStorage.getItem('kzora_session_id')
-      if (!sessionId) {
-        sessionId = crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15)
-        sessionStorage.setItem('kzora_session_id', sessionId)
+      // Use localStorage for a persistent Visitor ID (counts as 1 "person")
+      let visitorId = localStorage.getItem('kzora_visitor_id')
+      if (!visitorId) {
+        visitorId = crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15)
+        localStorage.setItem('kzora_visitor_id', visitorId)
       }
 
       fetch('/api/analytics/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sessionId,
+          sessionId: visitorId, // We'll keep the key name for DB compatibility
           path: pathname
         })
       }).catch(() => {})

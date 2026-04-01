@@ -78,9 +78,9 @@ async function getDashboardStats() {
     deliveredOrders: deliveredOrders ?? 0,
     lowStockProducts: lowStockProducts ?? 0,
     visitorStats: {
-      last24h: unique24h,
-      last7d: unique7d,
-      last30d: unique30d
+      last24h: { unique: unique24h, total: visits24h?.length || 0 },
+      last7d:  { unique: unique7d,  total: visits7d?.length || 0 },
+      last30d: { unique: unique30d, total: visits30d?.length || 0 }
     }
   }
 }
@@ -154,23 +154,32 @@ export default async function AdminDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
               <span className="text-xs font-arabic font-bold text-secondary">آخر ٢٤ ساعة</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last24h}</span>
-                <span className="text-xs font-arabic font-bold text-secondary">زائر</span>
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last24h.unique}</span>
+                  <span className="text-xs font-arabic font-bold text-secondary">زائر فريد (شخص)</span>
+                </div>
+                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الزيارات: {stats.visitorStats.last24h.total}</span>
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
               <span className="text-xs font-arabic font-bold text-secondary">آخر أسبوع</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last7d}</span>
-                <span className="text-xs font-arabic font-bold text-secondary">زائر</span>
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last7d.unique}</span>
+                  <span className="text-xs font-arabic font-bold text-secondary">زائر فريد (شخص)</span>
+                </div>
+                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الزيارات: {stats.visitorStats.last7d.total}</span>
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
               <span className="text-xs font-arabic font-bold text-secondary">آخر شهر</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last30d}</span>
-                <span className="text-xs font-arabic font-bold text-secondary">زائر</span>
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last30d.unique}</span>
+                  <span className="text-xs font-arabic font-bold text-secondary">زائر فريد (شخص)</span>
+                </div>
+                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الزيارات: {stats.visitorStats.last30d.total}</span>
               </div>
             </div>
           </div>

@@ -91,18 +91,42 @@ export default function ProductActions({ product, settings, activeColorName, onC
   }
 
   const currentAvailableStock = useMemo(() => {
-    if (!product.variants || product.variants.length === 0) return 999
-    const c = selectedColor?.name_ar || ''
-    const s = selectedSize || 0
-    const v = product.variants.find(v => v.color === c && v.size === s)
-    return v ? v.quantity : 0
+    // If we have variants, find the specific stock
+    if (product.variants && product.variants.length > 0) {
+      const c = selectedColor?.name_ar || ''
+      const s = selectedSize || 0
+      const v = product.variants.find(v => v.color === c && v.size === s)
+      return v ? (v.quantity ?? 0) : 0
+    }
+    // If no variants, we might use a global quantity if it existed, 
+    // but in this schema we usually use stock_status or variants.
+    return 999 
   }, [product.variants, selectedColor, selectedSize])
 
-  const isComboOutOfStock = (product.variants && product.variants.length > 0) 
-    ? (selectedColorId !== null || product.colors.length === 0) && (selectedSize !== null || product.sizes.length === 0) && currentAvailableStock <= 0
-    : false
+  const isComboOutOfStock = useMemo(() => {
+    // If no selection yet, it's NOT 'out of stock' for the UI, just 'unselected'
+    if (product.variants && product.variants.length > 0) {
+      if (selectedColorId !== null || product.colors.length === 0) {
+        if (selectedSize !== null || product.sizes.length === 0) {
+          return currentAvailableStock <= 0
+        }
+      }
+    }
+    return false
+  }, [product.variants, product.colors.length, product.sizes.length, selectedColorId, selectedSize, currentAvailableStock])
 
-  const outOfStock = outOfStockGlobal || isComboOutOfStock
+  // A product is entirely out of stock if:
+  // 1. Explicitly marked as such
+  // 2. OR it has variants and ALL of them are 0
+  const isEntirelyOutOfStock = useMemo(() => {
+    if (outOfStockGlobal) return true
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.every(v => (v.quantity ?? 0) <= 0)
+    }
+    return false
+  }, [outOfStockGlobal, product.variants])
+
+  const outOfStock = isEntirelyOutOfStock || isComboOutOfStock
 
   const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
   const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
@@ -437,23 +461,43 @@ export default function ProductActions({ product, settings, activeColorName, onC
       </div>
 
       {/* ── Add to cart ── */}
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={outOfStock}
-        className={cn(
-          'w-full py-5 rounded-xl font-arabic font-bold text-xl transition-all duration-200',
-          'flex items-center justify-center gap-3',
-          'focus-visible:outline-none active:scale-[0.98]',
-          outOfStock
-            ? 'bg-[#ECEAE6] text-[#9E9890] cursor-not-allowed'
-            : 'bg-[#B8860B] hover:bg-[#986D00] text-white shadow-lg shadow-[#785600]/20'
+      <div className="pt-4">
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={outOfStock}
+          className={cn(
+            'w-full py-5 rounded-2xl font-arabic font-black text-xl transition-all duration-300',
+            'flex items-center justify-center gap-3',
+            'focus-visible:outline-none active:scale-[0.98] relative overflow-hidden group',
+            outOfStock
+              ? 'bg-[#F5F3F0] text-[#9E9890] cursor-not-allowed border-2 border-[#E8E3DB]'
+              : 'bg-gradient-to-l from-[#785600] to-[#986D00] hover:from-[#986D00] hover:to-[#B8860B] text-white shadow-xl shadow-[#785600]/20'
+          )}
+        >
+          {outOfStock ? (
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#9E9890] shrink-0" />
+              نفذت الكمية حالياً
+            </span>
+          ) : (
+            <>
+              <ShoppingBag size={22} className="group-hover:scale-110 transition-transform duration-300" />
+              <span>إضافة إلى السلة</span>
+            </>
+          )}
+          
+          {!outOfStock && (
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          )}
+        </button>
+        
+        {outOfStock && (
+          <p className="text-center text-[11px] font-arabic text-[#9E9890] mt-3 font-medium">
+            سيتم توفير كميات جديدة قريباً، شكراً لتفهمك.
+          </p>
         )}
-      >
-        <ShoppingBag size={22} />
-        {outOfStock ? 'نفذ من المخزن' : quantity > 1 ? `أضف ${quantity} قطع إلى السلة` : 'أضف إلى السلة'}
-      </button>
+      </div>
     </div>
   )
 }
-

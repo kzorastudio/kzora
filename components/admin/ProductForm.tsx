@@ -124,7 +124,7 @@ export default function ProductForm({
   // Sync variants with selected colors and sizes
   useEffect(() => {
     const validColors = colorOptions.map(c => c.value)
-    const validSizes = watchedSizes.filter(s => s.is_available).map(s => s.size)
+    const validSizes = (watchedSizes || []).map(s => s.size)
     const newCombinations: { color: string, size: number, quantity: number }[] = []
 
     const cList = validColors.length > 0 ? validColors : ['']
@@ -405,43 +405,84 @@ export default function ProductForm({
 
       <section className={SECTION_CLASS}>
         <h2 className="text-base font-arabic font-semibold">إدارة المخزون (الكميات)</h2>
-        <p className="text-xs font-arabic text-secondary -mt-2">أدخل الكمية المتاحة لكل مقاس ولون. المنتجات ذات الكمية 0 لن تظهر للزبائن.</p>
+        <p className="text-xs font-arabic text-secondary -mt-2">أدخل الكمية المتاحة لكل مقاس ولون بدقة.</p>
         
-        {watchedVariants.length === 0 ? (
-          <p className="text-sm font-arabic text-secondary">يرجى إضافة مقاس أو لون لتحديد الكميات.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-arabic text-right">
-              <thead>
-                <tr className="border-b border-outline-variant/30 text-on-surface-variant">
-                  <th className="py-2 px-3">اللون</th>
-                  <th className="py-2 px-3">المقاس</th>
-                  <th className="py-2 px-3">الكمية</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant/20">
-                {watchedVariants.map((variant: any, idx: number) => (
-                  <tr key={`${variant.color}-${variant.size}-${idx}`} className="hover:bg-surface-container-high/50 transition-colors">
-                    <td className="py-3 px-3">
-                      {variant.color || <span className="text-secondary/60">أساسي</span>}
-                    </td>
-                    <td className="py-3 px-3">
-                      {variant.size === 0 ? <span className="text-secondary/60">أساسي</span> : variant.size}
-                    </td>
-                    <td className="py-3 px-3">
-                      <input
-                        type="number"
-                        min="0"
-                        {...register(`variants.${idx}.quantity`, { valueAsNumber: true })}
-                        className={cn(FIELD_CLASS, 'max-w-[120px] py-1.5')}
-                      />
-                    </td>
+        {(() => {
+          const validColors = colorOptions.length > 0 ? colorOptions : [{ label: 'أساسي', value: '' }]
+          const validSizes = (watchedSizes || []).map(s => s.size)
+
+          if (validSizes.length === 0 && validColors[0].value === '') {
+             return <p className="text-sm font-arabic text-secondary py-4">يرجى إضافة مقاس أو لون لتحديد الكميات.</p>
+          }
+
+          return (
+            <div className="overflow-x-auto border border-outline-variant/30 rounded-2xl">
+              <table className="w-full text-sm font-arabic text-right min-w-[500px]">
+                <thead className="bg-surface-container-high/50">
+                  <tr className="text-on-surface-variant border-b border-outline-variant/30">
+                    <th className="py-3 px-4 font-bold border-l border-outline-variant/20 italic opacity-60">اللون \ المقاس</th>
+                    {validSizes.map(size => (
+                      <th key={size} className="py-3 px-4 font-black text-center border-l last:border-l-0 border-outline-variant/20">
+                        {size}
+                      </th>
+                    ))}
+                    {validSizes.length === 0 && (
+                      <th className="py-3 px-4 font-black text-center border-l last:border-l-0 border-outline-variant/20">الكمية</th>
+                    )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-outline-variant/20">
+                  {validColors.map((color) => (
+                    <tr key={color.value} className="hover:bg-surface-container-high/20 transition-colors">
+                      <td className="py-3 px-4 font-bold bg-surface-container-high/10 border-l border-outline-variant/20">
+                        {color.label || <span className="text-secondary/50">--</span>}
+                      </td>
+                      {validSizes.map(size => {
+                        // Find this combination in the flat 'variants' array
+                        const variantIdx = (getValues('variants') || []).findIndex(
+                          (v: any) => v.color === color.value && v.size === size
+                        )
+                        
+                        if (variantIdx === -1) return <td key={size} className="p-2 border-l last:border-l-0 border-outline-variant/20 bg-error/5" />
+
+                        return (
+                          <td key={size} className="p-2 border-l last:border-l-0 border-outline-variant/20">
+                            <input
+                              type="number"
+                              min="0"
+                              {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
+                              className={cn(
+                                'w-full text-center bg-white rounded-lg border border-outline-variant/30 px-2 py-2 text-xs font-bold tabular-nums',
+                                'focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none',
+                                (watch(`variants.${variantIdx}.quantity`) || 0) === 0 ? 'text-secondary/40' : 'text-on-surface'
+                              )}
+                            />
+                          </td>
+                        )
+                      })}
+                      {validSizes.length === 0 && (() => {
+                         const variantIdx = (getValues('variants') || []).findIndex(
+                           (v: any) => v.color === color.value && (v.size === 0 || v.size === null)
+                         )
+                         if (variantIdx === -1) return <td className="p-2" />
+                         return (
+                            <td className="p-2 border-l last:border-l-0 border-outline-variant/20">
+                              <input
+                                type="number"
+                                min="0"
+                                {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
+                                className={cn(FIELD_CLASS, 'text-center font-bold')}
+                              />
+                            </td>
+                         )
+                      })()}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
       </section>
 
       <section className={SECTION_CLASS}>
