@@ -281,6 +281,8 @@ export interface CartItem {
   discount_price_syp: number | null
   discount_price_usd: number | null
   mold_type: 'chinese' | 'normal'
+  color_name?: string | null
+  multi_discount_syp?: number
 }
 
 // --- Currency ---

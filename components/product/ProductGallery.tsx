@@ -260,41 +260,53 @@ export function ProductGallery({
   onIndexChange
 }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0)
+  const [direction, setDirection] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
-  const allSorted = useMemo(() => {
+  const sorted = useMemo(() => {
     return [...(images ?? [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
   }, [images])
 
-  // Show all images but allow jumping to color-specific ones
-  const sorted = allSorted
+  // Sync color selection -> Jump to matching image
+  useEffect(() => {
+    if (!activeColor) return
+    const trimmedActive = activeColor.trim().toLowerCase()
+    
+    // Check if current image matches
+    const currentImg = sorted[activeIndex]
+    if (currentImg?.color_variant?.trim().toLowerCase() === trimmedActive) {
+      return
+    }
 
-  // Handle the active index change with feedback to the parent
+    const colorIndex = sorted.findIndex(img => img.color_variant?.trim().toLowerCase() === trimmedActive)
+    if (colorIndex !== -1) {
+      setDirection(colorIndex > activeIndex ? 1 : -1)
+      setActiveIndex(colorIndex)
+    }
+  }, [activeColor, sorted, activeIndex])
+
   const handleIndexChange = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return
+    setDirection(newIndex > activeIndex ? 1 : -1)
     setActiveIndex(newIndex)
     if (onIndexChange) onIndexChange(newIndex)
   }, [onIndexChange, activeIndex])
 
-  // Sync color selection -> Jump to matching image (only if current image doesn't match)
-  useEffect(() => {
-    if (!activeColor) return
-    
-    const trimmedActive = activeColor.trim()
-    
-    // 1. Check if current image already matches this color
-    const currentImg = sorted[activeIndex]
-    if (currentImg?.color_variant?.trim() === trimmedActive) {
-      return // Already showing this color, don't force a jump (allows swiping through same-color images)
-    }
-
-    // 2. Otherwise, find the first image of this color and jump to it
-    const colorIndex = sorted.findIndex(img => img.color_variant?.trim() === trimmedActive)
-    if (colorIndex !== -1) {
-      setActiveIndex(colorIndex)
-    }
-  }, [activeColor, sorted, activeIndex])
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? '100%' : '-100%',
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? '100%' : '-100%',
+      opacity: 0,
+    }),
+  }
 
   const activeImage = sorted[activeIndex]
 
@@ -308,56 +320,95 @@ export function ProductGallery({
 
   return (
     <>
-      <div dir="rtl" className={cn('flex flex-col gap-4 md:flex-row-reverse', className)}>
-        {/* Main image */}
+      <div dir="rtl" className={cn('flex flex-col gap-4 lg:flex-row-reverse', className)}>
+        {/* Main image container */}
         <div
-          className="relative flex-1 aspect-[4/5] rounded-2xl overflow-hidden bg-[#F5F1EB] cursor-zoom-in group shadow-sm border border-[#E8E3DB]/30"
+          className="relative flex-1 aspect-[4/5] rounded-2xl overflow-hidden bg-[#F5F1EB] group shadow-sm border border-[#E8E3DB]/30"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={() => setLightboxOpen(true)}
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
             {activeImage && (
-              <motion.div 
+              <motion.div
                 key={activeImage.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute inset-0"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: 'spring', stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={1}
+                onDragEnd={(e, { offset, velocity }) => {
+                  const swipe = Math.abs(offset.x) > 50 || Math.abs(velocity.x) > 500
+                  if (swipe) {
+                    if (offset.x > 0) {
+                      handleIndexChange(activeIndex === 0 ? sorted.length - 1 : activeIndex - 1)
+                    } else {
+                      handleIndexChange(activeIndex === sorted.length - 1 ? 0 : activeIndex + 1)
+                    }
+                  }
+                }}
+                className="absolute inset-0 cursor-grab active:cursor-grabbing"
               >
-                <Image
-                  src={activeImage.url}
-                  alt={productName}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 60vw"
-                  priority
-                  className={cn(
-                    'object-cover transition-transform duration-700 ease-out',
-                    isHovered ? 'scale-105' : 'scale-100'
-                  )}
-                />
+                <div 
+                  className="w-full h-full relative"
+                  onClick={(e) => {
+                    // Only trigger lightbox if it wasn't a drag
+                    setLightboxOpen(true)
+                  }}
+                >
+                  <Image
+                    src={activeImage.url}
+                    alt={productName}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                    priority
+                    className={cn(
+                      'object-cover transition-transform duration-700 ease-out select-none',
+                      isHovered ? 'scale-105' : 'scale-100'
+                    )}
+                    draggable={false}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Zoom indicator */}
+          {/* Zoom indicator (desktop only) */}
           <div className={cn(
-            'absolute bottom-4 right-4 z-10 flex items-center gap-1.5 bg-black/50 text-white text-xs font-arabic rounded-full px-3 py-1.5 backdrop-blur-sm transition-opacity duration-200',
+            'hidden md:flex absolute bottom-4 right-4 z-10 items-center gap-1.5 bg-black/50 text-white text-xs font-arabic rounded-full px-3 py-1.5 backdrop-blur-sm transition-opacity duration-200 pointer-events-none',
             isHovered ? 'opacity-100' : 'opacity-0'
           )}>
             <ZoomIn size={14} />
             اضغط للتكبير
           </div>
 
+          {/* Swipe indicator (mobile only) */}
+          <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+            {sorted.map((_, i) => (
+              <div 
+                key={i}
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                  i === activeIndex ? "bg-[#785600] w-4" : "bg-white/40"
+                )}
+              />
+            ))}
+          </div>
+
           {/* Tag badges */}
           {tags.length > 0 && (
-            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10 pointer-events-none">
               {tags.slice(0, 2).map((tag) => (
                 <span
                   key={tag}
                   className={cn(
-                    'px-3 py-1 text-xs font-arabic font-bold rounded-md',
+                    'px-3 py-1 text-xs font-arabic font-bold rounded-md shadow-sm',
                     tag === 'new'         ? 'bg-[#1A1A1A] text-white' :
                     tag === 'on_sale'     ? 'bg-[#BA1A1A] text-white' :
                     tag === 'best_seller' ? 'bg-[#785600] text-white' :
@@ -372,16 +423,16 @@ export function ProductGallery({
 
           {/* Discount badge */}
           {hasDiscount && discountPct > 0 && (
-            <div className="absolute top-4 left-4 z-10">
-              <span className="bg-[#BA1A1A] text-white px-2.5 py-1 text-xs font-bold rounded-md">
+            <div className="absolute top-4 left-4 z-10 pointer-events-none">
+              <span className="bg-[#BA1A1A] text-white px-2.5 py-1 text-xs font-bold rounded-md shadow-sm">
                 خصم {discountPct}%
               </span>
             </div>
           )}
 
-          {/* Prev/Next arrows */}
+          {/* Controls - PC style */}
           {sorted.length > 1 && (
-            <>
+            <div className="hidden md:block">
               <button
                 type="button"
                 aria-label="الصورة السابقة"
@@ -398,20 +449,13 @@ export function ProductGallery({
               >
                 <ChevronLeft size={24} />
               </button>
-            </>
-          )}
-
-          {/* Counter */}
-          {sorted.length > 1 && (
-            <div className="absolute bottom-3 left-3 bg-black/60 text-white text-xs font-arabic rounded-full px-3 py-1.5 backdrop-blur-sm z-10">
-              {activeIndex + 1} / {sorted.length}
             </div>
           )}
         </div>
 
         {/* Thumbnail strip */}
         {sorted.length > 1 && (
-          <div className="flex flex-row gap-3 overflow-x-auto md:flex-col md:overflow-y-auto md:max-h-[560px] md:w-20 shrink-0 no-scrollbar pb-2">
+          <div className="flex flex-row gap-3 overflow-x-auto md:flex-col md:overflow-y-auto md:max-h-[560px] md:w-20 shrink-0 no-scrollbar py-1">
             {sorted.map((img, i) => (
               <button
                 key={img.id}
@@ -420,7 +464,7 @@ export function ProductGallery({
                 onClick={() => handleIndexChange(i)}
                 className={cn(
                   'relative shrink-0 rounded-xl overflow-hidden transition-all duration-200',
-                  'w-[72px] h-20 md:w-full md:aspect-[4/5]',
+                  'w-16 h-20 md:w-full md:aspect-[4/5]',
                   'focus-visible:outline-none',
                   i === activeIndex
                     ? 'ring-2 ring-[#785600] ring-offset-2 scale-95 opacity-100 shadow-sm'

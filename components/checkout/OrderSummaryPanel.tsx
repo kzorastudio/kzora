@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import Image from 'next/image'
 import { cn, formatPrice } from '@/lib/utils'
 import { Trash2, Plus, Minus } from 'lucide-react'
@@ -19,6 +20,7 @@ interface Props {
   multiProductDiscountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
+  deliveryType?: 'delivery' | 'shipping'
 }
 
 export default function OrderSummaryPanel({
@@ -34,6 +36,7 @@ export default function OrderSummaryPanel({
   multiProductDiscountUsd = 0,
   shippingFeeSyp = 0,
   shippingFeeUsd = 0,
+  deliveryType = 'delivery',
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
@@ -66,7 +69,10 @@ export default function OrderSummaryPanel({
             return (
               <li key={`${item.id}-${item.color ?? ''}-${item.size ?? ''}`} className="flex gap-3 items-center group">
                 {/* Thumbnail — right side */}
-                <div className="relative w-[50px] h-[55px] rounded-lg bg-[#F5F1EB] overflow-hidden shrink-0">
+                <Link 
+                  href={`/product/${item.slug}`}
+                  className="relative w-[50px] h-[55px] rounded-lg bg-[#F5F1EB] overflow-hidden shrink-0 hover:opacity-80 transition-opacity"
+                >
                   {item.image ? (
                     <Image
                       src={item.image}
@@ -78,14 +84,17 @@ export default function OrderSummaryPanel({
                   ) : (
                     <div className="w-full h-full bg-[#E8E3DB]" />
                   )}
-                </div>
+                </Link>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0 flex flex-col py-0.5">
                   <div className="flex items-start justify-between gap-1">
-                    <p className="text-sm font-arabic font-medium text-[#1A1A1A] line-clamp-1 leading-snug">
+                    <Link 
+                      href={`/product/${item.slug}`}
+                      className="text-sm font-arabic font-medium text-[#1A1A1A] line-clamp-1 leading-snug hover:text-[#785600] transition-colors"
+                    >
                       {item.name}
-                    </p>
+                    </Link>
                     <button
                       onClick={() => removeItem(item.id, item.color, item.size)}
                       className="text-[#9E9890] hover:text-[#BA1A1A] transition-colors"
@@ -180,7 +189,7 @@ export default function OrderSummaryPanel({
           {(shippingFeeSyp > 0 || shippingFeeUsd > 0) && (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">
-                أجرة التوصيل والشحن
+                {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
               </span>
               <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
                 +{formatPrice(shippingFee, currency)}

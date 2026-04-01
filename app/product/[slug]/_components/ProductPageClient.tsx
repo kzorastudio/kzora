@@ -79,8 +79,12 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
               onIndexChange={(idx) => {
                 const sortedImages = [...product.images].sort((a,b) => (a.display_order ?? 0) - (b.display_order ?? 0))
                 const img = sortedImages[idx]
-                if (img?.color_variant && img.color_variant !== activeColor) {
-                  setActiveColor(img.color_variant)
+                // Only sync if the image HAS a color variant; if it's general, maybe keep current or clear?
+                // Clear feels more "synced" with what is actually on screen.
+                if (img?.color_variant) {
+                  if (img.color_variant !== activeColor) setActiveColor(img.color_variant)
+                } else if (activeColor !== null) {
+                  setActiveColor(null)
                 }
               }}
             />

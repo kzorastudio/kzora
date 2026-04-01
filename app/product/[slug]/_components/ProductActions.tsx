@@ -67,14 +67,21 @@ export default function ProductActions({ product, settings, activeColorName, onC
 
   // Sync color from parent (e.g. from gallery swiping)
   useEffect(() => {
-    if (activeColorName && (!selectedColor || selectedColor.name_ar !== activeColorName)) {
-      const parentColorObj = product.colors.find(c => c.name_ar === activeColorName)
-      if (parentColorObj) {
-        setSelectedColorId(parentColorObj.id)
-        setColorError(false)
+    if (activeColorName) {
+      if (!selectedColor || selectedColor.name_ar !== activeColorName) {
+        const parentColorObj = product.colors.find(c => c.name_ar === activeColorName)
+        if (parentColorObj) {
+          setSelectedColorId(parentColorObj.id)
+          setColorError(false)
+        }
+      }
+    } else if (activeColorName === null && selectedColorId !== null) {
+      // Only deselect if there is more than 1 color (if only 1, it's often auto-selected)
+      if (product.colors.length > 1) {
+        setSelectedColorId(null)
       }
     }
-  }, [activeColorName, product.colors, selectedColor])
+  }, [activeColorName, product.colors, selectedColor, selectedColorId])
 
   const currentAvailableStock = useMemo(() => {
     if (!product.variants || product.variants.length === 0) return 999
@@ -113,7 +120,20 @@ export default function ProductActions({ product, settings, activeColorName, onC
   }, [multiDiscSyp, product.price_syp, product.price_usd])
 
   const currentMultiDisc = currency === 'SYP' ? multiDiscSyp : multiDiscUsd
-  const totalPrice = (displayPrice * quantity) - currentMultiDisc
+  
+  // Calculate delivery/shipping fee for total price display (1 piece vs multiple)
+  let currentFee = 0
+  if (settings) {
+    if (quantity >= 3) {
+      currentFee = currency === 'SYP' ? (settings.delivery_fee_3_plus_pieces_syp || 0) : (settings.delivery_fee_3_plus_pieces_usd || 0)
+    } else if (quantity === 2) {
+      currentFee = currency === 'SYP' ? (settings.delivery_fee_2_pieces_syp || 0) : (settings.delivery_fee_2_pieces_usd || 0)
+    } else {
+      currentFee = currency === 'SYP' ? (settings.delivery_fee_1_piece_syp || 0) : (settings.delivery_fee_1_piece_usd || 0)
+    }
+  }
+
+  const totalPrice = (displayPrice * quantity) - currentMultiDisc + currentFee
 
   const handleAddToCart = useCallback(() => {
     if (outOfStock) return
@@ -141,6 +161,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
       discount_price_syp: product.discount_price_syp ?? null,
       discount_price_usd: product.discount_price_usd ?? null,
       mold_type:          product.mold_type,
+      multi_discount_syp: multiDiscSyp,
     }
     addItem(item)
     

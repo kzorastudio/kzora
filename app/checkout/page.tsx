@@ -125,10 +125,19 @@ export default function CheckoutPage() {
         let submitShippingFeeSyp = 0
         let submitShippingFeeUsd = 0
         const submitTotalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+        
         if (settings) {
           if (deliveryType === 'delivery') {
-            submitShippingFeeSyp = settings.delivery_fee_syp || 0
-            submitShippingFeeUsd = settings.delivery_fee_usd || 0
+            if (submitTotalItems >= 3) {
+              submitShippingFeeSyp = settings.delivery_fee_3_plus_pieces_syp || 0
+              submitShippingFeeUsd = settings.delivery_fee_3_plus_pieces_usd || 0
+            } else if (submitTotalItems === 2) {
+              submitShippingFeeSyp = settings.delivery_fee_2_pieces_syp || 0
+              submitShippingFeeUsd = settings.delivery_fee_2_pieces_usd || 0
+            } else {
+              submitShippingFeeSyp = settings.delivery_fee_1_piece_syp || 0
+              submitShippingFeeUsd = settings.delivery_fee_1_piece_usd || 0
+            }
           } else {
             if (submitTotalItems >= 3) {
               submitShippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
@@ -159,10 +168,10 @@ export default function CheckoutPage() {
           discountUsd:     discountUsd || undefined,
           shippingFeeSyp:  submitShippingFeeSyp,
           shippingFeeUsd:  submitShippingFeeUsd,
-          subtotalSyp:     subtotalSyp(),
-          subtotalUsd:     subtotalUsd(),
-          totalSyp:        Math.max(0, subtotalSyp() - discountSyp + submitShippingFeeSyp),
-          totalUsd:        Math.max(0, subtotalUsd() - discountUsd + submitShippingFeeUsd),
+          subtotalSyp:     sub_syp,
+          subtotalUsd:     sub_usd,
+          totalSyp:        Math.max(0, sub_syp - discountSyp - multiProductDiscountSyp + submitShippingFeeSyp),
+          totalUsd:        Math.max(0, sub_usd - discountUsd - multiProductDiscountUsd + submitShippingFeeUsd),
           currency,
           paymentMethod:   formData.payment_method,
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
@@ -326,6 +335,7 @@ export default function CheckoutPage() {
                   multiProductDiscountUsd={multiProductDiscountUsd}
                   shippingFeeSyp={shippingFeeSyp}
                   shippingFeeUsd={shippingFeeUsd}
+                  deliveryType={deliveryType}
                 />
 
                 {/* Coupon */}

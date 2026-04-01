@@ -173,7 +173,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliv
               description: 'توصيل لباب المنزل عبر مندوب كزورا.',
               badge: 'الأسرع'
             },
-            ...shippingMethods
+            ...shippingMethods.filter(m => m.slug !== 'delivery' && m.slug !== 'توصيل عادي')
           ]}
           selected={shippingCompany ?? ''}
           onChange={(id) => {
