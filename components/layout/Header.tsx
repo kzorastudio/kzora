@@ -236,13 +236,13 @@ export function Header() {
           {/* Actions — appears on LEFT in RTL */}
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
 
-            {/* Currency switcher — even smaller and more elegant */}
-            <div className="flex items-center bg-black/5 backdrop-blur-sm rounded-full p-[1.5px] border border-[#E8E3DB]/40 ml-1 md:ml-2 transition-all shrink-0">
+            {/* Currency switcher — Desktop: Pill, Mobile: Circular Toggle */}
+            <div className="hidden md:flex items-center bg-black/5 backdrop-blur-sm rounded-full p-[1.5px] border border-[#E8E3DB]/40 ml-2 transition-all shrink-0">
               <button
                 type="button"
                 onClick={() => setCurrency('USD')}
                 className={cn(
-                  'px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full text-[9px] md:text-[11px] font-bold transition-all duration-300',
+                  'px-2.5 py-1 rounded-full text-[11px] font-bold transition-all duration-300',
                   currency === 'USD' 
                     ? 'bg-white text-[#785600] shadow-sm cursor-default' 
                     : 'text-[#9E9890] hover:text-[#1A1A1A]'
@@ -254,7 +254,7 @@ export function Header() {
                 type="button"
                 onClick={() => setCurrency('SYP')}
                 className={cn(
-                  'px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full text-[9px] md:text-[11px] font-bold font-arabic transition-all duration-300',
+                  'px-2.5 py-1 rounded-full text-[11px] font-bold font-arabic transition-all duration-300',
                   currency === 'SYP' 
                     ? 'bg-white text-[#785600] shadow-sm cursor-default' 
                     : 'text-[#9E9890] hover:text-[#1A1A1A]'
@@ -263,6 +263,15 @@ export function Header() {
                 ل.س
               </button>
             </div>
+
+            {/* Mobile Currency Toggle — Small circle */}
+            <button
+              type="button"
+              onClick={() => setCurrency(currency === 'USD' ? 'SYP' : 'USD')}
+              className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-surface-container/50 border border-outline-variant/30 text-[10px] font-bold font-arabic text-on-surface hover:bg-surface-container transition-all active:scale-95 ml-1"
+            >
+              {currency === 'USD' ? '$' : 'ل.س'}
+            </button>
 
             {/* Search */}
             <button
