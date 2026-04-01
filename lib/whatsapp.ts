@@ -44,8 +44,8 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     `- *العنوان:* ${order.address}`,
     ``,
     `🚚 *تفاصيل الشحن:*`,
-    `- *طريقة التوصيل:* ${order.deliveryType === 'delivery' ? 'توصيل عادي (دمشق وريفها)' : 'شحن ضمن المحافظات'}`,
-    order.deliveryType === 'shipping' ? `- *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany] || order.shippingCompany}` : ``,
+    `- *طريقة التوصيل:* ${order.deliveryType === 'delivery' ? '🚀 توصيل عادي (دمشق وريفها)' : '📦 شحن ضمن المحافظات'}`,
+    order.deliveryType === 'shipping' ? `- *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}` : ``,
     ``,
     `📦 *المنتجات المطلوبة:*`,
   ]

@@ -46,7 +46,7 @@ async function getShippingMethodName(slug: string): Promise<string> {
     .select('name')
     .eq('slug', slug)
     .maybeSingle()
-  return data?.name || SHIPPING_LABELS[slug] || slug
+  return data?.name || SHIPPING_LABELS[slug || ''] || slug
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {

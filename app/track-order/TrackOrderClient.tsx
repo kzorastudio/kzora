@@ -271,9 +271,13 @@ function OrderCard({ order }: { order: OrderFull }) {
             <div className="flex items-start gap-3 bg-[#FAF8F5] rounded-xl px-4 py-3">
               <Truck size={16} className="text-[#785600] mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-arabic text-[#9E9890] mb-0.5">شركة الشحن</p>
+                <p className="text-xs font-arabic text-[#9E9890] mb-0.5">
+                  {(order as any).delivery_type === 'delivery' ? 'نوع التوصيل' : 'شركة الشحن'}
+                </p>
                 <p className="text-sm font-arabic font-medium text-[#1A1A1A]">
-                  {SHIPPING_LABELS[order.shipping_company] ?? order.shipping_company}
+                  {(order as any).delivery_type === 'delivery' 
+                    ? '🚀 توصيل عادي' 
+                    : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
                 </p>
               </div>
             </div>

@@ -119,7 +119,7 @@ export default function CheckoutPage() {
         // Find shipping company display name dynamically
         const shippingSlug = (formData.shipping_company as string) ?? ''
         const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
-        const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug] || shippingSlug
+        const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug
 
         // Calculate shipping fee at submit time
         let submitShippingFeeSyp = 0
