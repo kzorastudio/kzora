@@ -30,6 +30,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const [showSizeBar, setShowSizeBar] = useState(false)
   const [hoveredColor, setHoveredColor] = useState<string | null>(null)
 
+  const isEntirelyOutOfStock = product.stock_status === 'out_of_stock' || 
+    (product.variants && product.variants.length > 0 && product.variants.every(v => (v.quantity ?? 0) <= 0))
+
+  const isActuallyOutOfStock = isEntirelyOutOfStock
+
   const mainImage = product.images?.find(img => img.is_main) || product.images?.[0]
   const defaultImageUrl = mainImage?.url ?? '/placeholder-shoe.jpg'
 
@@ -63,22 +68,34 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const handleQuickAdd = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
+      if (isActuallyOutOfStock) return
+
       const hasMultipleColors = (product.colors ?? []).length > 1
       const hasMultipleSizes = (product.sizes ?? []).length > 1
 
       if (hasMultipleColors) {
-        // If there are multiple colors, they MUST go to the product page to choose one
         router.push(`/product/${product.slug}`)
         return
       }
 
+      // If there are variants, we must find which ones are actually in stock
+      const getInStockSize = () => {
+        if (!product.variants || product.variants.length === 0) {
+          return product.sizes.find(s => (typeof s === 'number' ? true : s.is_available))?.size ?? null
+        }
+        // If only one color, check sizes for that color
+        const colorName = product.colors?.[0]?.name_ar || ''
+        return product.variants.find(v => (colorName === '' || v.color === colorName) && (v.quantity ?? 0) > 0)?.size ?? null
+      }
+
       if (hasMultipleSizes) {
-        // Only sizes to pick
         setShowSizeBar(true)
         return
       }
 
-      // Only one color, one (or no) size - add immediately
+      const selectedSize = getInStockSize()
+
+      // Add immediately
       const item: CartItem = {
         id:                 product.id,
         slug:               product.slug,
@@ -86,7 +103,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         image:              imageUrl,
         color:              product.colors?.[0]?.name_ar ?? null,
         color_hex:          product.colors?.[0]?.hex_code ?? null,
-        size:               product.sizes.find(s => s.is_available)?.size ?? null,
+        size:               selectedSize,
         quantity:           1,
         price_syp:          product.price_syp,
         price_usd:          product.price_usd,
@@ -102,7 +119,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         openCart()
       }
     },
-    [product, imageUrl, addItem, openCart, router]
+    [product, imageUrl, addItem, openCart, router, isActuallyOutOfStock]
   )
 
   const handleAddWithSize = useCallback(
@@ -143,7 +160,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       className={cn(
         'group relative cursor-pointer flex flex-col h-full',
         'rounded-2xl transition-all duration-300',
-        product.stock_status === 'out_of_stock' 
+        isActuallyOutOfStock 
           ? 'bg-[#F9F9F9] opacity-80 hover:opacity-100 grayscale-[0.2] shadow-none border border-transparent hover:border-[#E8E3DB]' 
           : 'bg-white shadow-sm hover:shadow-md',
         className
@@ -165,8 +182,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={cn(
               'object-cover transition-transform duration-700 ease-out',
-              isHovered && product.stock_status !== 'out_of_stock' ? 'scale-[1.04]' : 'scale-100',
-              product.stock_status === 'out_of_stock' && 'opacity-90'
+              isHovered && !isActuallyOutOfStock ? 'scale-[1.04]' : 'scale-100',
+              isActuallyOutOfStock && 'opacity-90'
             )}
             priority={false}
           />
@@ -178,7 +195,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         )}
 
         {/* Tag badge */}
-        {priorityTag && product.stock_status !== 'out_of_stock' && (
+        {priorityTag && !isActuallyOutOfStock && (
           <div className="absolute top-3 right-3 z-0">
             <span
               className={cn(
@@ -196,7 +213,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         )}
 
         {/* Out of Stock subtle badge */}
-        {product.stock_status === 'out_of_stock' && (
+        {isActuallyOutOfStock && (
           <div className="absolute top-3 right-3 z-0">
             <span className="text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full bg-[#E8E4DE] text-[#6B6560] shadow-sm">
               نفدت الكمية
@@ -214,7 +231,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         )}
 
         {/* Discount % badge */}
-        {hasDiscount && discountPct > 0 && product.stock_status !== 'out_of_stock' && (
+        {hasDiscount && discountPct > 0 && !isActuallyOutOfStock && (
           <div className="absolute top-3 left-3 z-0">
             <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#BA1A1A] text-white shadow-sm">
               -{discountPct}%
@@ -223,7 +240,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         )}
 
         {/* Quick add — appears on hover (only if in stock) */}
-        {!showSizeBar && product.stock_status !== 'out_of_stock' && (
+        {!showSizeBar && !isActuallyOutOfStock && (
           <div
             className={cn(
               'absolute bottom-0 left-0 right-0 px-3 pb-3 z-20',
@@ -270,7 +287,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
             <div className="flex flex-wrap gap-1.5">
               {(product.sizes || []).map((s) => {
                 const size = s.size
-                const isAvailable = s.is_available
+                const colorName = product.colors?.[0]?.name_ar || ''
+                const variant = product.variants?.find(v => (colorName === '' || v.color === colorName) && v.size === size)
+                const hasStock = variant ? (variant.quantity ?? 0) > 0 : true
+                const isAvailable = s.is_available && hasStock
 
                 return (
                   <button
@@ -340,7 +360,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         <div className="mt-auto flex items-center gap-2 pt-1" dir="ltr">
           <span className={cn(
             "font-arabic font-semibold text-sm tabular-nums",
-            product.stock_status === 'out_of_stock' ? 'text-[#9E9890]' : 'text-[#1A1A1A]'
+            isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#1A1A1A]'
           )}>
             {formatPrice(displayPrice, currency)}
           </span>

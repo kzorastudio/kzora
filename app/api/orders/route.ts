@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
+import { revalidatePath } from 'next/cache'
 
 // â”€â”€â”€ Helper: generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function generateOrderNumber(): Promise<string> {
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
 
       // Check variant quantity
       let variantId = null;
-      let availableQuantity = 999;
+      let availableQuantity = 0; // Default to 0 for strict inventory management
       if (dbProduct.variants && dbProduct.variants.length > 0) {
         const c = item.color || ''
         const s = item.size || 0
@@ -382,6 +383,9 @@ export async function POST(request: NextRequest) {
          const totalStock = variants.reduce((sum: number, v: any) => sum + v.quantity, 0);
          if (totalStock <= 0) {
             await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid);
+            // Revalidate frontend
+            revalidatePath('/')
+            revalidatePath('/products')
          }
       }
     }

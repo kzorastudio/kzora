@@ -98,9 +98,10 @@ export default function ProductActions({ product, settings, activeColorName, onC
       const v = product.variants.find(v => v.color === c && v.size === s)
       return v ? (v.quantity ?? 0) : 0
     }
-    // If no variants, we might use a global quantity if it existed, 
-    // but in this schema we usually use stock_status or variants.
-    return 999 
+    // If no variants, we must treat it as OUT OF STOCK by default 
+    // unless the admin explicitly marked it as 'in_stock' without variants (old system).
+    // But for Kzora, we use variants for everything.
+    return 0 
   }, [product.variants, selectedColor, selectedSize])
 
   const isComboOutOfStock = useMemo(() => {

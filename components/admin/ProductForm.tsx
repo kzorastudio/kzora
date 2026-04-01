@@ -251,24 +251,26 @@ export default function ProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} dir="rtl" className="flex flex-col gap-5">
-      <section className={SECTION_CLASS}>
+    <form onSubmit={handleSubmit(onSubmit)} dir="rtl" className="flex flex-col gap-5 pb-24 md:pb-5">
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <h2 className="text-base font-arabic font-semibold">المعلومات الأساسية</h2>
-        <div>
-          <label className={LABEL_CLASS}>اسم المنتج *</label>
-          <input type="text" {...register('name')} className={FIELD_CLASS} />
-          {errors.name && <p className="mt-1 text-xs text-error">{errors.name.message}</p>}
-        </div>
-        <div>
-          <label className={LABEL_CLASS}>الوصف *</label>
-          <textarea rows={4} {...register('description')} className={cn(FIELD_CLASS, 'resize-y')} />
+        <div className="space-y-4">
+          <div>
+            <label className={LABEL_CLASS}>اسم المنتج *</label>
+            <input type="text" {...register('name')} className={FIELD_CLASS} />
+            {errors.name && <p className="mt-1 text-xs text-error">{errors.name.message}</p>}
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>الوصف *</label>
+            <textarea rows={4} {...register('description')} className={cn(FIELD_CLASS, 'resize-y')} />
+          </div>
         </div>
       </section>
 
-      <section className={SECTION_CLASS}>
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <h2 className="text-base font-arabic font-semibold">القسم والأسعار</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="xs:col-span-2 md:col-span-1">
             <label className={LABEL_CLASS}>القسم</label>
             <select {...register('category_id')} className={FIELD_CLASS}>
               <option value="">— بدون قسم —</option>
@@ -292,64 +294,79 @@ export default function ProductForm({
           </div>
           <div>
             <label className={LABEL_CLASS}>السعر (ليرة)</label>
-            <input type="number" {...register('price_syp', { valueAsNumber: true })} className={FIELD_CLASS} />
+            <input type="number" {...register('price_syp', { valueAsNumber: true })} className={cn(FIELD_CLASS, 'font-bold tabular-nums')} />
           </div>
           <div>
             <label className={LABEL_CLASS}>السعر ($)</label>
-            <input type="number" step="0.01" {...register('price_usd', { valueAsNumber: true })} className={FIELD_CLASS} />
+            <input type="number" step="0.01" {...register('price_usd', { valueAsNumber: true })} className={cn(FIELD_CLASS, 'font-bold tabular-nums')} />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>الترتيب (Sort)</label>
+            <input type="number" {...register('sort_order', { valueAsNumber: true })} className={FIELD_CLASS} />
           </div>
         </div>
       </section>
 
-      <section className={SECTION_CLASS}>
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-arabic font-semibold">الألوان المتاحة</h2>
-          <button type="button" onClick={() => appendColor({ name_ar: '', hex_code: '#000000', swatch_url: '', swatch_public_id: '', is_available: true })} className="text-primary text-sm flex items-center gap-1">
+          <button type="button" onClick={() => appendColor({ name_ar: '', hex_code: '#000000', swatch_url: '', swatch_public_id: '', is_available: true })} className="text-primary text-sm flex items-center gap-1 font-bold">
             <Plus size={16} /> إضافة لون
           </button>
         </div>
-        {colorFields.map((field, index) => (
-          <div key={field.id} className="flex flex-col gap-2 p-3 rounded-xl bg-surface-container">
-            <div className="flex gap-3 items-center">
-              <input type="text" placeholder="اسم اللون" {...register(`colors.${index}.name_ar`)} className={FIELD_CLASS} />
-              <Controller control={control} name={`colors.${index}.hex_code`} render={({ field: f }) => (
-                <input type="color" {...f} className="h-10 w-12 rounded-lg cursor-pointer" />
-              )} />
-              <button type="button" onClick={() => removeColor(index)} className="text-error"><Trash2 size={18} /></button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {colorFields.map((field, index) => (
+            <div key={field.id} className="flex flex-col gap-2 p-3 rounded-2xl bg-surface-container border border-outline-variant/30">
+              <div className="flex gap-3 items-center">
+                <input type="text" placeholder="اسم اللون" {...register(`colors.${index}.name_ar`)} className={FIELD_CLASS} />
+                <Controller control={control} name={`colors.${index}.hex_code`} render={({ field: f }) => (
+                  <div className="relative h-10 w-12 shrink-0 rounded-xl overflow-hidden border border-outline-variant/30">
+                    <input type="color" {...f} className="absolute inset-0 h-[150%] w-[150%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" />
+                  </div>
+                )} />
+                <button type="button" onClick={() => removeColor(index)} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-error/10 text-error hover:bg-error/20 transition-colors">
+                  <Trash2 size={18} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-arabic text-secondary font-medium">متوفر حالياً؟</span>
+                <Controller
+                  control={control}
+                  name={`colors.${index}.is_available`}
+                  render={({ field: f }) => (
+                    <button
+                      type="button"
+                      onClick={() => f.onChange(!f.value)}
+                      className={cn(
+                        'relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200',
+                        f.value ? 'bg-primary' : 'bg-surface-container-high'
+                      )}
+                    >
+                      <span className={cn(
+                        'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200',
+                        f.value ? 'translate-x-5' : 'translate-x-0.5'
+                      )} />
+                    </button>
+                  )}
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-arabic text-secondary">متوفر حالياً؟</span>
-              <Controller
-                control={control}
-                name={`colors.${index}.is_available`}
-                render={({ field: f }) => (
-                  <button
-                    type="button"
-                    onClick={() => f.onChange(!f.value)}
-                    className={cn(
-                      'relative h-5 w-10 shrink-0 rounded-full transition-colors duration-200',
-                      f.value ? 'bg-primary' : 'bg-surface-container-high'
-                    )}
-                  >
-                    <span className={cn(
-                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200',
-                      f.value ? 'translate-x-5' : 'translate-x-0.5'
-                    )} />
-                  </button>
-                )}
-              />
+          ))}
+          {colorFields.length === 0 && (
+            <div className="col-span-full py-6 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl">
+              <p className="text-sm font-arabic text-secondary">لا توجد ألوان مضافة حالياً</p>
             </div>
-          </div>
-        ))}
+          )}
+        </div>
       </section>
 
-      <section className={SECTION_CLASS}>
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <h2 className="text-base font-arabic font-semibold">المقاسات المتاحة *</h2>
         <Controller
           control={control}
           name="sizes"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 lg:grid-cols-11 gap-2">
               {AVAILABLE_SIZES.map(size => {
                 const selected = field.value?.some((s: any) => s.size === size)
                 return (
@@ -367,15 +384,15 @@ export default function ProductForm({
                         }
                       }}
                       className={cn(
-                        'min-w-[2.75rem] h-10 px-3 rounded-xl text-sm font-arabic font-medium transition-all border-2',
-                        field.value?.some((s: any) => s.size === size)
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-surface-container text-secondary border-outline-variant/40 hover:border-primary/40 hover:text-on-surface'
+                        'w-full h-11 rounded-xl text-sm font-arabic font-bold transition-all border-2 tabular-nums',
+                        selected
+                          ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                          : 'bg-surface-container text-secondary border-outline-variant/30 hover:border-primary/30'
                       )}
                     >
                       {size}
                     </button>
-                    {field.value?.some((s: any) => s.size === size) && (
+                    {selected && (
                       <button
                         type="button"
                         onClick={() => {
@@ -383,7 +400,7 @@ export default function ProductForm({
                           field.onChange(current.map((s: any) => s.size === size ? { ...s, is_available: !s.is_available } : s))
                         }}
                         className={cn(
-                          'px-2 py-0.5 rounded-full text-[10px] font-arabic border transition-colors',
+                          'px-2 py-0.5 rounded-full text-[9px] font-arabic font-bold border transition-colors truncate w-full text-center',
                           field.value?.find((s: any) => s.size === size)?.is_available
                             ? 'bg-success/10 text-success border-success/20'
                             : 'bg-error/10 text-error border-error/20'
@@ -399,93 +416,92 @@ export default function ProductForm({
           )}
         />
         {errors.sizes && (
-          <p className="text-xs font-arabic text-error">{errors.sizes.message as string}</p>
+          <p className="text-xs font-arabic text-error mt-2">{errors.sizes.message as string}</p>
         )}
       </section>
 
-      <section className={SECTION_CLASS}>
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <h2 className="text-base font-arabic font-semibold">إدارة المخزون (الكميات)</h2>
-        <p className="text-xs font-arabic text-secondary -mt-2">أدخل الكمية المتاحة لكل مقاس ولون بدقة.</p>
+        <p className="text-xs font-arabic text-secondary -mt-1 mb-2">أدخل الكمية المتاحة لكل مقاس ولون بدقة.</p>
         
         {(() => {
           const validColors = colorOptions.length > 0 ? colorOptions : [{ label: 'أساسي', value: '' }]
           const validSizes = (watchedSizes || []).map(s => s.size)
 
           if (validSizes.length === 0 && validColors[0].value === '') {
-             return <p className="text-sm font-arabic text-secondary py-4">يرجى إضافة مقاس أو لون لتحديد الكميات.</p>
+             return (
+               <div className="py-8 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl">
+                 <p className="text-sm font-arabic text-secondary italic">يرجى إضافة مقاس أو لون أولاً لتتمكن من تحديد الكميات.</p>
+               </div>
+             )
           }
 
           return (
-            <div className="overflow-x-auto border border-outline-variant/30 rounded-2xl">
-              <table className="w-full text-sm font-arabic text-right min-w-[500px]">
-                <thead className="bg-surface-container-high/50">
-                  <tr className="text-on-surface-variant border-b border-outline-variant/30">
-                    <th className="py-3 px-4 font-bold border-l border-outline-variant/20 italic opacity-60">اللون \ المقاس</th>
-                    {validSizes.map(size => (
-                      <th key={size} className="py-3 px-4 font-black text-center border-l last:border-l-0 border-outline-variant/20">
-                        {size}
-                      </th>
-                    ))}
-                    {validSizes.length === 0 && (
-                      <th className="py-3 px-4 font-black text-center border-l last:border-l-0 border-outline-variant/20">الكمية</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/20">
-                  {validColors.map((color) => (
-                    <tr key={color.value} className="hover:bg-surface-container-high/20 transition-colors">
-                      <td className="py-3 px-4 font-bold bg-surface-container-high/10 border-l border-outline-variant/20">
-                        {color.label || <span className="text-secondary/50">--</span>}
-                      </td>
-                      {validSizes.map(size => {
-                        // Find this combination in the flat 'variants' array
-                        const variantIdx = (getValues('variants') || []).findIndex(
-                          (v: any) => v.color === color.value && v.size === size
-                        )
-                        
-                        if (variantIdx === -1) return <td key={size} className="p-2 border-l last:border-l-0 border-outline-variant/20 bg-error/5" />
+            <div className="flex flex-col gap-6">
+              {validColors.map((color) => (
+                <div key={color.value} className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="w-1.5 h-4 bg-primary rounded-full" />
+                    <h3 className="text-sm font-arabic font-bold text-on-surface">
+                      اللون: {color.label || <span className="text-secondary/40 italic">أساسي</span>}
+                    </h3>
+                  </div>
+                  
+                  {/* Sizes Grid */}
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {validSizes.map(size => {
+                      const variantIdx = (getValues('variants') || []).findIndex(
+                        (v: any) => v.color === color.value && v.size === size
+                      )
+                      
+                      if (variantIdx === -1) return null
 
-                        return (
-                          <td key={size} className="p-2 border-l last:border-l-0 border-outline-variant/20">
+                      return (
+                        <div key={size} className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-arabic font-bold text-secondary/70 px-1">المقاس {size}</label>
+                          <div className="relative">
                             <input
                               type="number"
                               min="0"
                               {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
                               className={cn(
-                                'w-full text-center bg-white rounded-lg border border-outline-variant/30 px-2 py-2 text-xs font-bold tabular-nums',
-                                'focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none',
-                                (watch(`variants.${variantIdx}.quantity`) || 0) === 0 ? 'text-secondary/40' : 'text-on-surface'
+                                'w-full bg-white rounded-xl border border-outline-variant/40 px-3 py-3 text-sm font-bold tabular-nums shadow-sm',
+                                'focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none',
+                                (watch(`variants.${variantIdx}.quantity`) || 0) === 0 ? 'text-secondary/40 bg-surface-container-lowest' : 'text-on-surface'
                               )}
                             />
-                          </td>
-                        )
-                      })}
-                      {validSizes.length === 0 && (() => {
-                         const variantIdx = (getValues('variants') || []).findIndex(
-                           (v: any) => v.color === color.value && (v.size === 0 || v.size === null)
-                         )
-                         if (variantIdx === -1) return <td className="p-2" />
-                         return (
-                            <td className="p-2 border-l last:border-l-0 border-outline-variant/20">
-                              <input
-                                type="number"
-                                min="0"
-                                {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
-                                className={cn(FIELD_CLASS, 'text-center font-bold')}
-                              />
-                            </td>
-                         )
-                      })()}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-arabic font-medium text-secondary/30 pointer-events-none">قطعة</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    
+                    {validSizes.length === 0 && (() => {
+                       const variantIdx = (getValues('variants') || []).findIndex(
+                         (v: any) => v.color === color.value && (v.size === 0 || v.size === null)
+                       )
+                       if (variantIdx === -1) return null
+                       return (
+                          <div className="col-span-full">
+                            <label className="text-sm font-arabic font-bold text-secondary mb-1.5 block">الكمية الإجمالية لهذا اللون</label>
+                            <input
+                              type="number"
+                              min="0"
+                              {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
+                              className={cn(FIELD_CLASS, 'text-center font-bold text-lg h-14 bg-white')}
+                            />
+                          </div>
+                       )
+                    })()}
+                  </div>
+                </div>
+              ))}
             </div>
           )
         })()}
       </section>
 
-      <section className={SECTION_CLASS}>
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <h2 className="text-base font-arabic font-semibold">صور المنتج</h2>
         <ImageUploader
           images={images}
@@ -497,99 +513,112 @@ export default function ProductForm({
         />
       </section>
 
-      <section className={SECTION_CLASS}>
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
         <h2 className="text-base font-arabic font-semibold">إعدادات العرض</h2>
 
-        {/* Tags — homepage sections */}
-        <div>
-          <p className={LABEL_CLASS}>الأقسام التي يظهر فيها في الصفحة الرئيسية</p>
-          <Controller
-            control={control}
-            name="tags"
-            render={({ field }) => (
-              <div className="flex flex-wrap gap-3">
-                {([
-                  { value: 'new',         label: 'وصل حديثاً',    color: 'bg-blue-50 border-blue-300 text-blue-700 data-[on=true]:bg-blue-500 data-[on=true]:text-white data-[on=true]:border-blue-500' },
-                  { value: 'best_seller', label: 'الأكثر مبيعاً', color: 'bg-amber-50 border-amber-300 text-amber-700 data-[on=true]:bg-amber-500 data-[on=true]:text-white data-[on=true]:border-amber-500' },
-                  { value: 'on_sale',     label: 'عروض حصرية',    color: 'bg-red-50 border-red-300 text-red-700 data-[on=true]:bg-red-500 data-[on=true]:text-white data-[on=true]:border-red-500' },
-                ] as const).map(tag => {
-                  const active = field.value?.includes(tag.value)
-                  return (
-                    <button
-                      key={tag.value}
-                      type="button"
-                      data-on={active}
-                      onClick={() => {
-                        if (active) {
-                          field.onChange(field.value.filter((t: string) => t !== tag.value))
-                        } else {
-                          field.onChange([...(field.value ?? []), tag.value])
-                        }
-                      }}
-                      className={cn('px-4 py-2 rounded-xl text-sm font-arabic font-medium border-2 transition-all', tag.color)}
-                    >
-                      {tag.label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          />
-          <p className="text-xs font-arabic text-secondary mt-2">اختر قسماً أو أكثر لإظهار المنتج في الصفحة الرئيسية. يمكن تفعيل أكثر من قسم في نفس الوقت.</p>
-        </div>
+        <div className="space-y-6">
+          {/* Tags — homepage sections */}
+          <div>
+            <p className={cn(LABEL_CLASS, 'mb-3')}>الأقسام التي يظهر فيها في الصفحة الرئيسية</p>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {([
+                    { value: 'new',         label: 'وصل حديثاً',    color: 'bg-blue-50 border-blue-300 text-blue-700 data-[on=true]:bg-blue-600 data-[on=true]:text-white data-[on=true]:border-blue-600' },
+                    { value: 'best_seller', label: 'الأكثر مبيعاً', color: 'bg-amber-50 border-amber-300 text-amber-700 data-[on=true]:bg-amber-600 data-[on=true]:text-white data-[on=true]:border-amber-600' },
+                    { value: 'on_sale',     label: 'عروض حصرية',    color: 'bg-red-50 border-red-300 text-red-700 data-[on=true]:bg-red-600 data-[on=true]:text-white data-[on=true]:border-red-600' },
+                  ] as const).map(tag => {
+                    const active = field.value?.includes(tag.value)
+                    return (
+                      <button
+                        key={tag.value}
+                        type="button"
+                        data-on={active}
+                        onClick={() => {
+                          const current = field.value ?? []
+                          if (active) {
+                            field.onChange(current.filter((t: string) => t !== tag.value))
+                          } else {
+                            field.onChange([...current, tag.value])
+                          }
+                        }}
+                        className={cn('h-12 px-4 rounded-2xl text-sm font-arabic font-bold border-2 transition-all shadow-sm', tag.color)}
+                      >
+                        {tag.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            />
+          </div>
 
-        {/* is_featured + is_published */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-          <Controller
-            control={control}
-            name="is_featured"
-            render={({ field }) => (
-              <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container cursor-pointer border border-transparent hover:border-outline-variant/30 transition-colors">
-                <div>
-                  <p className="text-sm font-arabic font-bold text-on-surface">منتج مميز</p>
-                  <p className="text-xs font-arabic text-secondary mt-0.5">يظهر في أبرز مواقع العرض</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={field.value}
-                  onClick={() => field.onChange(!field.value)}
-                  className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-primary' : 'bg-surface-container-high')}
-                >
-                  <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-5' : 'translate-x-0.5')} />
-                </button>
-              </label>
-            )}
-          />
-          <Controller
-            control={control}
-            name="is_published"
-            render={({ field }) => (
-              <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container cursor-pointer border border-transparent hover:border-outline-variant/30 transition-colors">
-                <div>
-                  <p className="text-sm font-arabic font-bold text-on-surface">منشور</p>
-                  <p className="text-xs font-arabic text-secondary mt-0.5">مرئي للزبائن في المتجر</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={field.value}
-                  onClick={() => field.onChange(!field.value)}
-                  className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-primary' : 'bg-surface-container-high')}
-                >
-                  <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-5' : 'translate-x-0.5')} />
-                </button>
-              </label>
-            )}
-          />
+          {/* is_featured + is_published */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Controller
+              control={control}
+              name="is_featured"
+              render={({ field }) => (
+                <label className="flex items-center justify-between p-4 rounded-2xl bg-surface-container cursor-pointer border border-outline-variant/30 hover:border-primary/30 transition-all shadow-sm">
+                  <div>
+                    <p className="text-sm font-arabic font-bold text-on-surface">منتج مميز</p>
+                    <p className="text-[10px] font-arabic text-secondary mt-0.5">يظهر في أبرز مواقع العرض</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={field.value}
+                    onClick={() => field.onChange(!field.value)}
+                    className={cn('relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-primary' : 'bg-outline-variant')}
+                  >
+                    <span className={cn('absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-6' : 'translate-x-1')} />
+                  </button>
+                </label>
+              )}
+            />
+            <Controller
+              control={control}
+              name="is_published"
+              render={({ field }) => (
+                <label className="flex items-center justify-between p-4 rounded-2xl bg-surface-container cursor-pointer border border-outline-variant/30 hover:border-primary/30 transition-all shadow-sm">
+                  <div>
+                    <p className="text-sm font-arabic font-bold text-on-surface">منشور</p>
+                    <p className="text-[10px] font-arabic text-secondary mt-0.5">مرئي للزبائن في المتجر</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={field.value}
+                    onClick={() => field.onChange(!field.value)}
+                    className={cn('relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-primary' : 'bg-outline-variant')}
+                  >
+                    <span className={cn('absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-6' : 'translate-x-1')} />
+                  </button>
+                </label>
+              )}
+            />
+          </div>
         </div>
       </section>
 
-      <div className="flex justify-end gap-3">
-        <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-8 py-2.5 rounded-xl font-arabic flex items-center gap-2">
-          {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-          {isEdit ? 'حفظ التعديلات' : 'إضافة المنتج'}
-        </button>
+      {/* Action Bar - Sticky on mobile */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-lg border-t border-outline-variant/30 md:static md:bg-transparent md:border-none md:p-0 z-50">
+        <div className="max-w-4xl mx-auto flex justify-end">
+          <button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className={cn(
+              "bg-primary text-white px-10 py-4 rounded-2xl font-arabic font-bold flex items-center justify-center gap-3 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95",
+              "max-md:w-full max-sm:h-14",
+              isSubmitting && "opacity-80 cursor-not-allowed"
+            )}
+          >
+            {isSubmitting && <Loader2 size={20} className="animate-spin" />}
+            {isEdit ? 'حفظ التعديلات' : 'إضافة المنتج'}
+          </button>
+        </div>
       </div>
     </form>
   )
