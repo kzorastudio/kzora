@@ -61,9 +61,10 @@ export default function StatsSection({ settings }: StatsSectionProps) {
               direction="up" 
               delay={idx * 0.1} 
               duration={0.8}
+              className="h-full"
             >
               <div className={cn(
-                "group relative flex flex-col items-center text-center p-8 md:p-10 rounded-[2.5rem] bg-white border border-[#E8E3DB]/60 transition-all duration-500",
+                "group relative flex flex-col items-center text-center p-8 md:p-10 rounded-[2.5rem] bg-white border border-[#E8E3DB]/60 transition-all duration-500 h-full",
                 "hover:shadow-[0_20px_50px_-15px_rgba(120,86,0,0.12)] hover:-translate-y-2",
                 item.borderColor
               )}>

@@ -31,7 +31,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const [hoveredColor, setHoveredColor] = useState<string | null>(null)
 
   const isEntirelyOutOfStock = product.stock_status === 'out_of_stock' || 
-    (product.variants && product.variants.length > 0 && product.variants.every(v => (v.quantity ?? 0) <= 0))
+    (product.variants && product.variants.length > 0 
+      ? product.variants.every(v => (v.quantity ?? 0) <= 0) 
+      : (product.colors.length > 0 || product.sizes.length > 0))
 
   const isActuallyOutOfStock = isEntirelyOutOfStock
 

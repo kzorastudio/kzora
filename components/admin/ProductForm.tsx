@@ -224,8 +224,23 @@ export default function ProductForm({
 
 
 
+      // Automatically set status to out_of_stock if all variant quantities are 0
+      const variants = data.variants || []
+      let finalStockStatus = data.stock_status
+      
+      const hasVariants = variants.length > 0
+      const allZero = hasVariants && variants.every(v => (v.quantity ?? 0) <= 0)
+      
+      if (allZero) {
+        finalStockStatus = 'out_of_stock'
+      } else if (hasVariants && variants.some(v => (v.quantity ?? 0) > 0) && data.stock_status === 'out_of_stock') {
+        // Automatically set back to in_stock if it was out_of_stock but now has items
+        finalStockStatus = 'in_stock'
+      }
+
       const payload = {
         ...data,
+        stock_status: finalStockStatus,
         category_id: data.category_id === '' ? null : data.category_id,
         images: updatedImages.map((img: UploadedImage, idx: number) => ({
           url: img.url,

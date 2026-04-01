@@ -26,12 +26,12 @@ export default function ProductActions({ product, settings, activeColorName, onC
   const outOfStockGlobal = product.stock_status === 'out_of_stock'
 
   const isColorInStock = useCallback((colorName: string) => {
-    if (!product.variants || product.variants.length === 0) return true
+    if (!product.variants || product.variants.length === 0) return false
     return product.variants.some(v => v.color === colorName && v.quantity > 0)
   }, [product.variants])
 
   const isSizeInStockForColor = useCallback((sizeVal: number, colorName: string | null) => {
-    if (!product.variants || product.variants.length === 0) return true
+    if (!product.variants || product.variants.length === 0) return false
     const c = colorName || ''
     return product.variants.some(v => v.color === c && v.size === sizeVal && v.quantity > 0)
   }, [product.variants])
@@ -124,8 +124,10 @@ export default function ProductActions({ product, settings, activeColorName, onC
     if (product.variants && product.variants.length > 0) {
       return product.variants.every(v => (v.quantity ?? 0) <= 0)
     }
+    // If it has colors or sizes but NO variants recorded, it's out of stock
+    if (product.colors.length > 0 || product.sizes.length > 0) return true
     return false
-  }, [outOfStockGlobal, product.variants])
+  }, [outOfStockGlobal, product.variants, product.colors.length, product.sizes.length])
 
   const outOfStock = isEntirelyOutOfStock || isComboOutOfStock
 
@@ -429,9 +431,16 @@ export default function ProductActions({ product, settings, activeColorName, onC
               type="button"
               aria-label="زيادة الكمية"
               onClick={() => setQuantity(q => {
-                const maxAllowed = product.variants?.length ? Math.min(10, currentAvailableStock) : 10;
+                const maxAllowed = (product.variants && product.variants.length > 0) 
+                  ? Math.min(10, currentAvailableStock) 
+                  : (product.colors.length > 0 || product.sizes.length > 0 ? 0 : 10);
+                
                 if (q >= maxAllowed) {
-                  toast.error(`عذراً، أقصى كمية متاحة هي ${maxAllowed}`);
+                  if (maxAllowed === 0) {
+                    toast.error("عذراً، المنتج غير متوفر حالياً");
+                  } else {
+                    toast.error(`عذراً، أقصى كمية متاحة هي ${maxAllowed}`);
+                  }
                   return q;
                 }
                 return q + 1;
