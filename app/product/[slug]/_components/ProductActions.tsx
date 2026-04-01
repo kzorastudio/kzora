@@ -14,10 +14,11 @@ import { useRouter } from 'next/navigation'
 interface Props {
   product: ProductFull
   settings: HomepageSettings | null
+  activeColorName?: string | null
   onColorChange?: (color: ProductColor | null) => void
 }
 
-export default function ProductActions({ product, settings, onColorChange }: Props) {
+export default function ProductActions({ product, settings, activeColorName, onColorChange }: Props) {
   const router = useRouter()
   const { currency, setCurrency } = useCurrencyStore()
   const { addItem, openCart } = useCartStore()
@@ -59,9 +60,21 @@ export default function ProductActions({ product, settings, onColorChange }: Pro
     [product.colors, selectedColorId]
   )
 
+  // Sync color selection to parent
   useEffect(() => {
     onColorChange?.(selectedColor)
   }, [selectedColor, onColorChange])
+
+  // Sync color from parent (e.g. from gallery swiping)
+  useEffect(() => {
+    if (activeColorName && (!selectedColor || selectedColor.name_ar !== activeColorName)) {
+      const parentColorObj = product.colors.find(c => c.name_ar === activeColorName)
+      if (parentColorObj) {
+        setSelectedColorId(parentColorObj.id)
+        setColorError(false)
+      }
+    }
+  }, [activeColorName, product.colors, selectedColor])
 
   const currentAvailableStock = useMemo(() => {
     if (!product.variants || product.variants.length === 0) return 999

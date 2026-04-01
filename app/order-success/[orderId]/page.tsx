@@ -222,9 +222,13 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-arabic text-secondary mb-1">شركة الشحن</p>
+                  <p className="text-xs font-arabic text-secondary mb-1">
+                    {(order as any).delivery_type === 'delivery' ? 'نوع التوصيل' : 'شركة الشحن'}
+                  </p>
                   <p className="font-arabic text-sm font-medium text-on-surface">
-                    {SHIPPING_LABELS[order.shipping_company] ?? order.shipping_company}
+                    {(order as any).delivery_type === 'delivery' 
+                      ? '🚀 توصيل عادي' 
+                      : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
                   </p>
                 </div>
                 <div className="col-span-2">

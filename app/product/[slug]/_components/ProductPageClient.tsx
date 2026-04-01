@@ -141,7 +141,16 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
               )}
             </div>
             
-            <ProductActions product={product} settings={settings} onColorChange={(c: ProductColor | null) => setActiveColor(c?.name_ar ?? null)} />
+            <ProductActions 
+              product={product} 
+              settings={settings} 
+              activeColorName={activeColor}
+              onColorChange={(c: ProductColor | null) => {
+                if (c?.name_ar && c.name_ar !== activeColor) {
+                  setActiveColor(c.name_ar)
+                }
+              }} 
+            />
 
             <div className="border-t border-[#E8E3DB] mt-2">
               {accordionContent.map((item) => (

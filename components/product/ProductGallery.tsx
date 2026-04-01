@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
 import type { ProductImage } from '@/types'
@@ -29,13 +30,19 @@ function Lightbox({
   initialIndex,
   productName,
   onClose,
+  onChange,
 }: {
   images: ProductImage[]
   initialIndex: number
   productName: string
   onClose: () => void
+  onChange: (index: number) => void
 }) {
   const [index, setIndex] = useState(initialIndex)
+  
+  useEffect(() => {
+    onChange(index)
+  }, [index, onChange])
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -263,26 +270,31 @@ export function ProductGallery({
   // Show all images but allow jumping to color-specific ones
   const sorted = allSorted
 
-  // Jump to first image of that color when color selection changes in parent
-  useEffect(() => {
-    if (activeColor) {
-      const trimmedActive = activeColor.trim()
-      const colorIndex = sorted.findIndex(img => img.color_variant?.trim() === trimmedActive)
-      if (colorIndex !== -1) {
-        setActiveIndex(colorIndex)
-      }
-    }
-  }, [activeColor, sorted])
-
+  // Handle the active index change with feedback to the parent
   const handleIndexChange = useCallback((newIndex: number) => {
+    if (newIndex === activeIndex) return
     setActiveIndex(newIndex)
     if (onIndexChange) onIndexChange(newIndex)
-  }, [onIndexChange])
+  }, [onIndexChange, activeIndex])
 
-  // Reset to first image when color changes
+  // Sync color selection -> Jump to matching image (only if current image doesn't match)
   useEffect(() => {
-    handleIndexChange(0)
-  }, [activeColor, handleIndexChange])
+    if (!activeColor) return
+    
+    const trimmedActive = activeColor.trim()
+    
+    // 1. Check if current image already matches this color
+    const currentImg = sorted[activeIndex]
+    if (currentImg?.color_variant?.trim() === trimmedActive) {
+      return // Already showing this color, don't force a jump (allows swiping through same-color images)
+    }
+
+    // 2. Otherwise, find the first image of this color and jump to it
+    const colorIndex = sorted.findIndex(img => img.color_variant?.trim() === trimmedActive)
+    if (colorIndex !== -1) {
+      setActiveIndex(colorIndex)
+    }
+  }, [activeColor, sorted, activeIndex])
 
   const activeImage = sorted[activeIndex]
 
@@ -297,29 +309,37 @@ export function ProductGallery({
   return (
     <>
       <div dir="rtl" className={cn('flex flex-col gap-4 md:flex-row-reverse', className)}>
-
         {/* Main image */}
         <div
-          className="relative flex-1 aspect-[4/5] rounded-2xl overflow-hidden bg-[#F5F1EB] cursor-zoom-in group"
+          className="relative flex-1 aspect-[4/5] rounded-2xl overflow-hidden bg-[#F5F1EB] cursor-zoom-in group shadow-sm border border-[#E8E3DB]/30"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => setLightboxOpen(true)}
         >
-          {activeImage && (
-            <div className="absolute inset-0 transition-opacity duration-500 ease-in-out" key={activeImage.id}>
-              <Image
-                src={activeImage.url}
-                alt={productName}
-                fill
-                sizes="(max-width: 768px) 100vw, 60vw"
-                priority
-                className={cn(
-                  'object-cover transition-transform duration-700 ease-out',
-                  isHovered ? 'scale-105' : 'scale-100'
-                )}
-              />
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {activeImage && (
+              <motion.div 
+                key={activeImage.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={activeImage.url}
+                  alt={productName}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 60vw"
+                  priority
+                  className={cn(
+                    'object-cover transition-transform duration-700 ease-out',
+                    isHovered ? 'scale-105' : 'scale-100'
+                  )}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Zoom indicator */}
           <div className={cn(
@@ -427,6 +447,7 @@ export function ProductGallery({
           initialIndex={activeIndex}
           productName={productName}
           onClose={() => setLightboxOpen(false)}
+          onChange={handleIndexChange}
         />
       )}
     </>
