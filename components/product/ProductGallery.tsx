@@ -268,23 +268,24 @@ export function ProductGallery({
     return [...(images ?? [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
   }, [images])
 
-  // Sync color selection -> Jump to matching image
-  useEffect(() => {
-    if (!activeColor) return
-    const trimmedActive = activeColor.trim().toLowerCase()
-    
-    // Check if current image matches
-    const currentImg = sorted[activeIndex]
-    if (currentImg?.color_variant?.trim().toLowerCase() === trimmedActive) {
-      return
+  // Optimization: Detect color prop change during render to avoid useEffect delay
+  const [prevColor, setPrevColor] = useState<string | null>(null)
+  
+  if (activeColor !== prevColor) {
+    setPrevColor(activeColor)
+    if (activeColor) {
+      const trimmedActive = activeColor.trim().toLowerCase()
+      // Check if current image matches
+      const currentImg = sorted[activeIndex]
+      if (currentImg?.color_variant?.trim().toLowerCase() !== trimmedActive) {
+        const colorIndex = sorted.findIndex(img => img.color_variant?.trim().toLowerCase() === trimmedActive)
+        if (colorIndex !== -1) {
+          setDirection(colorIndex > activeIndex ? 1 : -1)
+          setActiveIndex(colorIndex)
+        }
+      }
     }
-
-    const colorIndex = sorted.findIndex(img => img.color_variant?.trim().toLowerCase() === trimmedActive)
-    if (colorIndex !== -1) {
-      setDirection(colorIndex > activeIndex ? 1 : -1)
-      setActiveIndex(colorIndex)
-    }
-  }, [activeColor, sorted, activeIndex])
+  }
 
   const handleIndexChange = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return
@@ -295,7 +296,7 @@ export function ProductGallery({
 
   const slideVariants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? '100%' : '-100%',
+      x: direction > 0 ? '10%' : '-10%',
       opacity: 0,
     }),
     center: {
@@ -303,7 +304,7 @@ export function ProductGallery({
       opacity: 1,
     },
     exit: (direction: number) => ({
-      x: direction < 0 ? '100%' : '-100%',
+      x: direction < 0 ? '10%' : '-10%',
       opacity: 0,
     }),
   }
@@ -327,7 +328,7 @@ export function ProductGallery({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <AnimatePresence initial={false} custom={direction} mode="popLayout">
+          <AnimatePresence initial={false} custom={direction} mode="wait">
             {activeImage && (
               <motion.div
                 key={activeImage.id}
@@ -337,12 +338,12 @@ export function ProductGallery({
                 animate="center"
                 exit="exit"
                 transition={{
-                  x: { type: 'spring', stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
+                  x: { type: 'tween', duration: 0.2, ease: 'easeOut' },
+                  opacity: { duration: 0.15 },
                 }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={1}
+                dragElastic={0.6}
                 onDragEnd={(e, { offset, velocity }) => {
                   const swipe = Math.abs(offset.x) > 50 || Math.abs(velocity.x) > 500
                   if (swipe) {
@@ -353,12 +354,12 @@ export function ProductGallery({
                     }
                   }
                 }}
-                className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                className="absolute inset-0 cursor-grab active:cursor-grabbing w-full h-full"
               >
                 <div 
                   className="w-full h-full relative"
                   onClick={(e) => {
-                    // Only trigger lightbox if it wasn't a drag
+                    // Only trigger lightbox if it wasn't a significant drag
                     setLightboxOpen(true)
                   }}
                 >
@@ -369,7 +370,7 @@ export function ProductGallery({
                     sizes="(max-width: 768px) 100vw, 60vw"
                     priority
                     className={cn(
-                      'object-cover transition-transform duration-700 ease-out select-none',
+                      'object-cover transition-transform duration-500 ease-out select-none',
                       isHovered ? 'scale-105' : 'scale-100'
                     )}
                     draggable={false}
@@ -378,6 +379,7 @@ export function ProductGallery({
               </motion.div>
             )}
           </AnimatePresence>
+
 
           {/* Zoom indicator (desktop only) */}
           <div className={cn(
