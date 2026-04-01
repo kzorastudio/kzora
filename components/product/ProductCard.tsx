@@ -40,7 +40,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   // When hovering a color, show the first image matching that color_variant
   const imageUrl = hoveredColor
-    ? product.images?.find(img => img.color_variant === hoveredColor)?.url ?? defaultImageUrl
+    ? product.images?.find(img => img.color_variant?.trim() === hoveredColor.trim())?.url ?? defaultImageUrl
     : defaultImageUrl
 
   const currentPriceSyp = product.discount_price_syp ?? product.price_syp
