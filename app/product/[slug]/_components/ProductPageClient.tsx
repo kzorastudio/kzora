@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ProductGallery } from '@/components/product/ProductGallery'
 import { Star } from 'lucide-react'
@@ -76,17 +76,15 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
               hasDiscount={hasDiscount}
               discountPct={discountPct}
               activeColor={activeColor}
-              onIndexChange={(idx) => {
+              onIndexChange={useCallback((idx: number) => {
                 const sortedImages = [...product.images].sort((a,b) => (a.display_order ?? 0) - (b.display_order ?? 0))
                 const img = sortedImages[idx]
-                // Only sync if the image HAS a color variant; if it's general, maybe keep current or clear?
-                // Clear feels more "synced" with what is actually on screen.
                 if (img?.color_variant) {
                   if (img.color_variant !== activeColor) setActiveColor(img.color_variant)
                 } else if (activeColor !== null) {
                   setActiveColor(null)
                 }
-              }}
+              }, [activeColor, product.images])}
             />
           </div>
 
@@ -149,11 +147,13 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
               product={product} 
               settings={settings} 
               activeColorName={activeColor}
-              onColorChange={(c: ProductColor | null) => {
-                if (c?.name_ar && c.name_ar !== activeColor) {
-                  setActiveColor(c.name_ar)
+              onColorChange={useCallback((c: ProductColor | null) => {
+                if (c?.name_ar) {
+                  if (c.name_ar !== activeColor) setActiveColor(c.name_ar)
+                } else if (activeColor !== null) {
+                  setActiveColor(null)
                 }
-              }} 
+              }, [activeColor])} 
             />
 
             <div className="border-t border-[#E8E3DB] mt-2">
