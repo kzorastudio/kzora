@@ -59,7 +59,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     lines.push(`${i + 1}. *${item.name}*`)
     if (item.color) lines.push(`   🎨 *اللون:* ${item.color_name || item.color}`)
     if (item.size) {
-      const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ''
+      const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ' (قالب نظامي)'
       lines.push(`   📏 *المقاس:* ${item.size}${moldNotice}`)
     }
     lines.push(`   🔢 *الكمية:* ${item.quantity} × ${price}`)

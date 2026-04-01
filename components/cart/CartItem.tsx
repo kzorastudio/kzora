@@ -76,8 +76,12 @@ export function CartItem({ item, className }: CartItemProps) {
             </span>
           )}
           {item.size && (
-            <span className="text-xs font-body text-secondary tabular-nums">
-              مقاس {item.size} {item.mold_type === 'chinese' && <span className="text-[#E65C00] font-arabic font-bold text-[10px] mr-1">(صيني)</span>}
+            <span className="text-xs font-arabic text-secondary tabular-nums flex items-center gap-1.5">
+              <span>مقاس {item.size}</span>
+              <span className="w-1 h-1 rounded-full bg-secondary/30" />
+              <span className={cn(item.mold_type === 'chinese' ? "text-[#E65C00] font-bold" : "text-secondary/70")}>
+                {item.mold_type === 'chinese' ? 'قالب صيني' : 'قالب نظامي'}
+              </span>
             </span>
           )}
         </div>

@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
         images:product_images(id, url, public_id, color_variant, display_order, is_main),
         colors:product_colors(id, name_ar, hex_code, swatch_url, swatch_public_id, is_available),
         sizes:product_sizes(size, is_available),
-        tags:product_tags(tag)
+        tags:product_tags(tag),
+        variants:product_variants(id, color, size, quantity)
         `,
         { count: 'exact' }
       )

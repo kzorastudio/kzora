@@ -358,6 +358,19 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <span>{product.name}</span>
         </h3>
 
+        {/* Mold Type Badge */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={cn(
+            "text-[9px] font-arabic font-bold px-1.5 py-0.5 rounded-md border",
+            product.mold_type === 'chinese' 
+              ? "bg-[#E65C00]/5 text-[#E65C00] border-[#E65C00]/20" 
+              : "bg-[#F5F1EB] text-[#6B6560] border-[#E8E3DB]"
+          )}>
+            {product.mold_type === 'chinese' ? 'قالب صيني' : 'قالب نظامي'}
+          </span>
+          {/* We can add more subtle badges here if needed */}
+        </div>
+
         {/* Price */}
         <div className="mt-auto flex items-center gap-2 pt-1" dir="ltr">
           <span className={cn(

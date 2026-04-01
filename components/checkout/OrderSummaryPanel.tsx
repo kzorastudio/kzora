@@ -117,8 +117,10 @@ export default function OrderSummaryPanel({
                       </span>
                     )}
                     {item.size && (
-                      <span className="text-[10px] font-arabic text-[#6B6560]">
-                        | {item.size} {item.mold_type === 'chinese' && <span className="text-[#E65C00] font-bold">(صيني)</span>}
+                      <span className="text-[10px] font-arabic text-[#6B6560] flex items-center gap-1">
+                        | مقاس {item.size} • <span className={item.mold_type === 'chinese' ? "text-[#E65C00] font-bold" : ""}>
+                          {item.mold_type === 'chinese' ? 'قالب صيني' : 'قالب نظامي'}
+                        </span>
                       </span>
                     )}
                   </div>
