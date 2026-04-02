@@ -18,6 +18,7 @@ interface OrderForWhatsApp {
   discountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
+  shippingFeeDetermined?: boolean
   subtotalSyp: number
   subtotalUsd: number
   totalSyp: number
@@ -84,10 +85,15 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   // Note: we might need a better way to check multiDiscount from the order object
   // But for now, let's stick to the labels request.
 
-  const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
-  if (shippingFee > 0) {
+  if (order.shippingFeeDetermined) {
     const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
-    lines.push(`🚛 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
+    lines.push(`🚛 *${feeLabel}:* (يتم تحدد السعر مع البائع في الواتس اب)`)
+  } else {
+    const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
+    if (shippingFee > 0) {
+      const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
+      lines.push(`🚛 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
+    }
   }
 
   const total = currency === 'SYP'

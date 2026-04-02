@@ -110,6 +110,7 @@ export interface Order {
   shipping_company: string | null
   shipping_fee_syp: number
   shipping_fee_usd: number
+  shipping_fee_determined: boolean
   coupon_code: string | null
   discount_amount_syp: number
   discount_amount_usd: number
@@ -331,6 +332,7 @@ export interface CreateOrderPayload {
   shipping_company?: string | null
   payment_method: string
   payment_transaction_id?: string
+  shipping_fee_determined?: boolean
   coupon_code?: string
   currency_used: Currency
   notes?: string

@@ -75,6 +75,10 @@ export default function CheckoutPage() {
       setIsSubmitting(true)
 
       try {
+        // Calculate shipping fee determined status early for the payload
+        const submitTotalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+        const submitShippingFeeDetermined = deliveryType === 'shipping' && submitTotalItems > 3
+
         const payload: CreateOrderPayload = {
           items: items.map((item) => ({
             product_id:    item.id,
@@ -96,10 +100,12 @@ export default function CheckoutPage() {
           shipping_company: (formData.shipping_company as string) ?? null,
           payment_method:   formData.payment_method,
           payment_transaction_id: formData.payment_transaction_id ?? undefined,
+          shipping_fee_determined: submitShippingFeeDetermined,
           coupon_code:      couponCode,
           currency_used:    currency,
           notes:            formData.notes ?? undefined,
         }
+
 
         const res  = await fetch('/api/orders', {
           method:  'POST',
@@ -124,33 +130,30 @@ export default function CheckoutPage() {
         // Calculate shipping fee at submit time
         let submitShippingFeeSyp = 0
         let submitShippingFeeUsd = 0
-        const submitTotalItems = items.reduce((acc, item) => acc + item.quantity, 0)
         
         if (settings) {
           if (deliveryType === 'delivery') {
-            if (submitTotalItems >= 3) {
-              submitShippingFeeSyp = settings.delivery_fee_3_plus_pieces_syp || 0
-              submitShippingFeeUsd = settings.delivery_fee_3_plus_pieces_usd || 0
-            } else if (submitTotalItems === 2) {
-              submitShippingFeeSyp = settings.delivery_fee_2_pieces_syp || 0
-              submitShippingFeeUsd = settings.delivery_fee_2_pieces_usd || 0
-            } else {
-              submitShippingFeeSyp = settings.delivery_fee_1_piece_syp || 0
-              submitShippingFeeUsd = settings.delivery_fee_1_piece_usd || 0
-            }
+            submitShippingFeeSyp = settings.delivery_fee_syp || 0
+            submitShippingFeeUsd = settings.delivery_fee_usd || 0
           } else {
-            if (submitTotalItems >= 3) {
-              submitShippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
-              submitShippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+            if (submitTotalItems === 1) {
+              submitShippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
+              submitShippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
             } else if (submitTotalItems === 2) {
               submitShippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
               submitShippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
+            } else if (submitTotalItems === 3) {
+              submitShippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+              submitShippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
             } else {
-              submitShippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
-              submitShippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
+              // More than 3: determined with seller
+              submitShippingFeeSyp = 0
+              submitShippingFeeUsd = 0
             }
           }
         }
+
+        // Note: submitShippingFeeDetermined has been hoisted up for the payload
 
         // Build and open WhatsApp URL
         const whatsappUrl = buildWhatsAppUrl({
@@ -168,6 +171,7 @@ export default function CheckoutPage() {
           discountUsd:     discountUsd || undefined,
           shippingFeeSyp:  submitShippingFeeSyp,
           shippingFeeUsd:  submitShippingFeeUsd,
+          shippingFeeDetermined: submitShippingFeeDetermined,
           subtotalSyp:     sub_syp,
           subtotalUsd:     sub_usd,
           totalSyp:        Math.max(0, sub_syp - discountSyp - multiProductDiscountSyp + submitShippingFeeSyp),
@@ -266,29 +270,29 @@ export default function CheckoutPage() {
   // Shipping fee calculation
   let shippingFeeSyp = 0
   let shippingFeeUsd = 0
+  let shippingFeeDetermined = false
+
   if (settings) {
     if (deliveryType === 'delivery') {
-      if (totalItemsCount >= 3) {
-        shippingFeeSyp = settings.delivery_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings.delivery_fee_3_plus_pieces_usd || 0
-      } else if (totalItemsCount === 2) {
-        shippingFeeSyp = settings.delivery_fee_2_pieces_syp || 0
-        shippingFeeUsd = settings.delivery_fee_2_pieces_usd || 0
-      } else {
-        shippingFeeSyp = settings.delivery_fee_1_piece_syp || 0
-        shippingFeeUsd = settings.delivery_fee_1_piece_usd || 0
-      }
+      // Delivery fee is fixed regardless of quantity
+      shippingFeeSyp = settings.delivery_fee_syp || 0
+      shippingFeeUsd = settings.delivery_fee_usd || 0
     } else {
-      // Calculate by pieces for shipping
-      if (totalItemsCount >= 3) {
-        shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+      // Shipping fee depends on quantity
+      if (totalItemsCount === 1) {
+        shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
+        shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
       } else if (totalItemsCount === 2) {
         shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
         shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
-      } else {
-        shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
-        shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
+      } else if (totalItemsCount === 3) {
+        shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount > 3) {
+        // More than 3 items: determined with seller
+        shippingFeeDetermined = true
+        shippingFeeSyp = 0
+        shippingFeeUsd = 0
       }
     }
   }
@@ -335,6 +339,7 @@ export default function CheckoutPage() {
                   multiProductDiscountUsd={multiProductDiscountUsd}
                   shippingFeeSyp={shippingFeeSyp}
                   shippingFeeUsd={shippingFeeUsd}
+                  shippingFeeDetermined={shippingFeeDetermined}
                   deliveryType={deliveryType}
                 />
 

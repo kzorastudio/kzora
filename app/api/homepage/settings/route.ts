@@ -58,6 +58,8 @@ export async function GET(_request: NextRequest) {
           shipping_fee_2_pieces_usd: 0,
           shipping_fee_3_plus_pieces_syp: 0,
           shipping_fee_3_plus_pieces_usd: 0,
+          delivery_fee_syp: 0,
+          delivery_fee_usd: 0,
         },
       })
     }
@@ -116,6 +118,8 @@ export async function PUT(request: NextRequest) {
       'shipping_fee_2_pieces_usd',
       'shipping_fee_3_plus_pieces_syp',
       'shipping_fee_3_plus_pieces_usd',
+      'delivery_fee_syp',
+      'delivery_fee_usd',
     ]
 
     const updateFields: Record<string, unknown> = {}

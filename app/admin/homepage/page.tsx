@@ -551,105 +551,48 @@ export default function HomepagePage() {
               <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
                 <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
                   <Truck size={16} className="text-[#2E7D32]" />
-                  أجور التوصيل العادي (حسب عدد القطع)
+                  أجرة التوصيل العادي (حلب فقط - سعر ثابت)
                 </h3>
-                <div className="space-y-4">
-                  {/* 1 piece */}
-                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعة واحدة (1)</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={settings.delivery_fee_1_piece_syp || 0}
-                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">$</label>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          value={settings.delivery_fee_1_piece_usd || 0}
-                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
-                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                        />
-                      </div>
+                <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-arabic text-secondary">السعر بالليرة السورية (ل.س)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={settings.delivery_fee_syp || 0}
+                        onChange={(e) => { setSettings({ ...settings, delivery_fee_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-arabic text-secondary">السعر بالدولار ($)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={settings.delivery_fee_usd || 0}
+                        onChange={(e) => { setSettings({ ...settings, delivery_fee_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                      />
                     </div>
                   </div>
-
-                  {/* 2 pieces */}
-                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعتين (2)</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={settings.delivery_fee_2_pieces_syp || 0}
-                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">$</label>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          value={settings.delivery_fee_2_pieces_usd || 0}
-                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
-                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3+ pieces */}
-                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">3 قطع فأكثر (+3)</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={settings.delivery_fee_3_plus_pieces_syp || 0}
-                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">$</label>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          value={settings.delivery_fee_3_plus_pieces_usd || 0}
-                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
-                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-[10px] font-arabic text-secondary/60 mt-3">هذا السعر ثابت مهما زاد عدد المنتجات في السلة عند اختيار التوصيل داخل حلب.</p>
                 </div>
               </div>
 
               {/* Shipping Fee per pieces */}
               <div className="mt-8 pt-8 border-t border-outline-variant/10">
-                <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-arabic font-bold text-on-surface mb-2 flex items-center gap-2">
                   <Truck size={16} className="text-[#1565C0]" />
-                  أجور الشحن (حسب عدد القطع)
+                  أجور الشحن للمحافظات (حسب عدد القطع)
                 </h3>
+                <p className="text-xs font-arabic text-secondary mb-4">يتم حساب تكلفة الشحن بناءً على إجمالي عدد القطع في سلة المشتريات.</p>
+                
                 <div className="space-y-4">
                   {/* 1 piece */}
                   <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعة واحدة (1)</p>
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعة واحدة (1)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[11px] font-arabic text-secondary">ل.س</label>
@@ -676,7 +619,7 @@ export default function HomepagePage() {
                   </div>
                   {/* 2 pieces */}
                   <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">قطعتان (2)</p>
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعتين (2)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[11px] font-arabic text-secondary">ل.س</label>
@@ -701,9 +644,9 @@ export default function HomepagePage() {
                       </div>
                     </div>
                   </div>
-                  {/* 3+ pieces */}
+                  {/* 3 pieces */}
                   <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">3 قطع فأكثر (3+)</p>
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود 3 قطع فقط</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[11px] font-arabic text-secondary">ل.س</label>
@@ -727,6 +670,14 @@ export default function HomepagePage() {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Note for more than 3 */}
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+                    <p className="text-xs font-arabic font-bold text-amber-800 mb-1">أكثر من 3 قطع:</p>
+                    <p className="text-[11px] font-arabic text-amber-700 leading-relaxed">
+                      تلقائياً، عند زيادة عدد القطع في السلة عن 3 قطع، سيظهر للزبون رسالة "يتم تحدد السعر مع البائع في الواتس اب" ولن يتم إضافة أي مبلغ شحن للإجمالي بانتظار الاتفاق اليدوي.
+                    </p>
                   </div>
                 </div>
               </div>

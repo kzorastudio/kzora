@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderPayload = await request.json()
-    const { items, customer, delivery_type, shipping_company, payment_method, payment_transaction_id, coupon_code, currency_used, notes } = body
+    const { items, customer, delivery_type, shipping_company, payment_method, payment_transaction_id, shipping_fee_determined, coupon_code, currency_used, notes } = body
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -272,26 +272,21 @@ export async function POST(request: NextRequest) {
     let shippingFeeUsd = 0
 
     if (delivery_type === 'delivery') {
-      if (totalItemsCount >= 3) {
-        shippingFeeSyp = settings?.delivery_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings?.delivery_fee_3_plus_pieces_usd || 0
-      } else if (totalItemsCount === 2) {
-        shippingFeeSyp = settings?.delivery_fee_2_pieces_syp || 0
-        shippingFeeUsd = settings?.delivery_fee_2_pieces_usd || 0
-      } else {
-        shippingFeeSyp = settings?.delivery_fee_1_piece_syp || 0
-        shippingFeeUsd = settings?.delivery_fee_1_piece_usd || 0
-      }
+      shippingFeeSyp = settings?.delivery_fee_syp || 0
+      shippingFeeUsd = settings?.delivery_fee_usd || 0
     } else {
-      if (totalItemsCount >= 3) {
-        shippingFeeSyp = settings?.shipping_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings?.shipping_fee_3_plus_pieces_usd || 0
+      if (totalItemsCount === 1) {
+        shippingFeeSyp = settings?.shipping_fee_1_piece_syp || 0
+        shippingFeeUsd = settings?.shipping_fee_1_piece_usd || 0
       } else if (totalItemsCount === 2) {
         shippingFeeSyp = settings?.shipping_fee_2_pieces_syp || 0
         shippingFeeUsd = settings?.shipping_fee_2_pieces_usd || 0
-      } else {
-        shippingFeeSyp = settings?.shipping_fee_1_piece_syp || 0
-        shippingFeeUsd = settings?.shipping_fee_1_piece_usd || 0
+      } else if (totalItemsCount === 3) {
+        shippingFeeSyp = settings?.shipping_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings?.shipping_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount > 3) {
+        shippingFeeSyp = 0
+        shippingFeeUsd = 0
       }
     }
 
@@ -322,6 +317,7 @@ export async function POST(request: NextRequest) {
         shipping_fee_usd:     shippingFeeUsd,
         payment_method:       payment_method || 'cod',
         payment_transaction_id: payment_transaction_id || null,
+        shipping_fee_determined: shipping_fee_determined || false,
         coupon_code:          appliedCouponCode,
         discount_amount_syp:  finalDiscountSyp,
         discount_amount_usd:  finalDiscountUsd,

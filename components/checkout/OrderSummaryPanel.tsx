@@ -20,6 +20,7 @@ interface Props {
   multiProductDiscountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
+  shippingFeeDetermined?: boolean
   deliveryType?: 'delivery' | 'shipping'
 }
 
@@ -36,6 +37,7 @@ export default function OrderSummaryPanel({
   multiProductDiscountUsd = 0,
   shippingFeeSyp = 0,
   shippingFeeUsd = 0,
+  shippingFeeDetermined = false,
   deliveryType = 'delivery',
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
@@ -188,15 +190,27 @@ export default function OrderSummaryPanel({
             </div>
           )}
 
-          {(shippingFeeSyp > 0 || shippingFeeUsd > 0) && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-arabic text-[#6B6560]">
-                {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
-              </span>
-              <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
-                +{formatPrice(shippingFee, currency)}
-              </span>
+          {shippingFeeDetermined ? (
+            <div className="flex flex-col gap-1 py-1 px-3 bg-[#FFF3E0] rounded-lg border border-[#FFB74D]/20">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-arabic text-[#6B6560]">أجرة الشحن</span>
+                <span className="font-arabic text-[#E65100] font-bold text-[11px]">يتحدد لاحقاً مع البائع</span>
+              </div>
+              <p className="text-[10px] font-arabic text-[#E65100]/80 leading-tight">
+                سيتم التواصل معك عبر الواتساب لتحديد تكلفة الشحن حسب منطقتك.
+              </p>
             </div>
+          ) : (
+            (shippingFeeSyp > 0 || shippingFeeUsd > 0) && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-arabic text-[#6B6560]">
+                  {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
+                </span>
+                <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
+                  +{formatPrice(shippingFee, currency)}
+                </span>
+              </div>
+            )
           )}
 
           <div className="border-t border-[#F0EBE3] pt-3 flex items-center justify-between">

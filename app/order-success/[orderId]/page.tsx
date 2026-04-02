@@ -317,7 +317,14 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     </span>
                   </div>
                 )}
-                {shippingFee > 0 && (
+                {order.shipping_fee_determined ? (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-arabic text-secondary">أجرة الشحن</span>
+                    <span className="font-arabic text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                      يتم تحديد السعر مع البائع 
+                    </span>
+                  </div>
+                ) : shippingFee > 0 ? (
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-arabic text-secondary">
                       أجرة الشحن
@@ -326,7 +333,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                       +{formatPrice(shippingFee, currency)}
                     </span>
                   </div>
-                )}
+                ) : null}
                 <div className="flex items-center justify-between pt-2 border-t border-surface-container-high">
                   <span className="font-arabic font-bold text-on-surface">الإجمالي</span>
                   <span className="font-body font-bold text-lg text-primary tabular-nums" dir="ltr">
