@@ -284,6 +284,7 @@ export interface CartItem {
   mold_type: 'chinese' | 'normal'
   color_name?: string | null
   multi_discount_syp?: number
+  max_stock?: number     // available stock for this color+size variant
 }
 
 // --- Currency ---

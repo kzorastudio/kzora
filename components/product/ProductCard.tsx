@@ -98,6 +98,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
       const selectedSize = getInStockSize()
 
       // Add immediately
+      const colorName = product.colors?.[0]?.name_ar ?? ''
+      const variantStock = product.variants?.find(v => v.color === colorName && v.size === selectedSize)?.quantity ?? 0
       const item: CartItem = {
         id:                 product.id,
         slug:               product.slug,
@@ -112,6 +114,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         discount_price_syp: product.discount_price_syp ?? null,
         discount_price_usd: product.discount_price_usd ?? null,
         mold_type:          product.mold_type,
+        max_stock:          variantStock,
       }
       addItem(item)
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
@@ -126,6 +129,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   const handleAddWithSize = useCallback(
     (size: number) => {
+      const colorName = product.colors?.[0]?.name_ar ?? ''
+      const variantStock = product.variants?.find(v => v.color === colorName && v.size === size)?.quantity ?? 0
       const item: CartItem = {
         id:                 product.id,
         slug:               product.slug,
@@ -140,6 +145,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         discount_price_syp: product.discount_price_syp ?? null,
         discount_price_usd: product.discount_price_usd ?? null,
         mold_type:          product.mold_type,
+        max_stock:          variantStock,
       }
       addItem(item)
       setShowSizeBar(false)

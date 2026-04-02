@@ -44,17 +44,18 @@ export const useCartStore = create<CartStore>()(
         const existing = items.find(
           i => itemKey(i.id, i.color, i.size) === key
         )
+        const maxStock = newItem.max_stock ?? Infinity
 
         if (existing) {
           set({
             items: items.map(i =>
               itemKey(i.id, i.color, i.size) === key
-                ? { ...i, quantity: i.quantity + newItem.quantity }
+                ? { ...i, quantity: Math.min(i.quantity + newItem.quantity, maxStock), max_stock: maxStock }
                 : i
             ),
           })
         } else {
-          set({ items: [...items, newItem] })
+          set({ items: [...items, { ...newItem, quantity: Math.min(newItem.quantity, maxStock) }] })
         }
       },
 
@@ -69,9 +70,11 @@ export const useCartStore = create<CartStore>()(
           set({ items: get().items.filter(i => itemKey(i.id, i.color, i.size) !== key) })
         } else {
           set({
-            items: get().items.map(i =>
-              itemKey(i.id, i.color, i.size) === key ? { ...i, quantity: qty } : i
-            ),
+            items: get().items.map(i => {
+              if (itemKey(i.id, i.color, i.size) !== key) return i
+              const max = i.max_stock ?? Infinity
+              return { ...i, quantity: Math.min(qty, max) }
+            }),
           })
         }
       },

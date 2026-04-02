@@ -7,6 +7,7 @@ import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/store/cartStore'
 import { useCurrencyStore } from '@/store/currencyStore'
 import type { CartItem as CartItemType } from '@/types'
+import toast from 'react-hot-toast'
 
 interface CartItemProps {
   item: CartItemType
@@ -22,10 +23,17 @@ export function CartItem({ item, className }: CartItemProps) {
   const unitPrice = currency === 'SYP' ? effectivePriceSyp : effectivePriceUsd
   const lineTotal = unitPrice * item.quantity
 
+  const maxStock = item.max_stock ?? Infinity
+  const atMax = item.quantity >= maxStock
+
   const handleDecrement = () => {
     updateQuantity(item.id, item.color, item.size, item.quantity - 1)
   }
   const handleIncrement = () => {
+    if (atMax) {
+      toast.error(`عذراً، الكمية المتوفرة ${maxStock} فقط`)
+      return
+    }
     updateQuantity(item.id, item.color, item.size, item.quantity + 1)
   }
   const handleRemove = () => {
@@ -114,17 +122,27 @@ export function CartItem({ item, className }: CartItemProps) {
               type="button"
               aria-label="زيادة الكمية"
               onClick={handleIncrement}
+              disabled={atMax}
               className={cn(
                 'w-9 h-9 flex items-center justify-center',
-                'text-secondary hover:text-on-surface hover:bg-surface-container-high',
                 'transition-all duration-150',
-                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary'
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary',
+                atMax
+                  ? 'text-secondary/30 cursor-not-allowed'
+                  : 'text-secondary hover:text-on-surface hover:bg-surface-container-high'
               )}
             >
               <Plus size={15} />
             </button>
           </div>
  
+          {/* Low stock warning */}
+          {maxStock <= 3 && maxStock !== Infinity && (
+            <span className="text-[10px] font-arabic text-[#BA1A1A] font-bold">
+              متبقي {maxStock} فقط
+            </span>
+          )}
+
           {/* Line total */}
           <div className="text-left">
             <span className="block text-[10px] font-arabic text-secondary mb-0.5">الإجمالي</span>

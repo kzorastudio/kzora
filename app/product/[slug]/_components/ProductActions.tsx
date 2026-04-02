@@ -21,7 +21,7 @@ interface Props {
 export default function ProductActions({ product, settings, activeColorName, onColorChange }: Props) {
   const router = useRouter()
   const { currency, setCurrency } = useCurrencyStore()
-  const { addItem, openCart } = useCartStore()
+  const { addItem, openCart, items: cartItems } = useCartStore()
 
   const outOfStockGlobal = product.stock_status === 'out_of_stock'
 
@@ -104,6 +104,24 @@ export default function ProductActions({ product, settings, activeColorName, onC
     return 0 
   }, [product.variants, selectedColor, selectedSize])
 
+  // How many of this exact variant are already in the cart?
+  const alreadyInCart = useMemo(() => {
+    const c = selectedColor?.name_ar ?? null
+    const s = selectedSize ?? null
+    const found = cartItems.find(
+      i => i.id === product.id && i.color === c && (i.size ?? null) === s
+    )
+    return found ? found.quantity : 0
+  }, [cartItems, product.id, selectedColor, selectedSize])
+
+  // Effective max the user can pick on this page (stock minus what's already in cart)
+  const effectiveMax = useMemo(() => {
+    const raw = (product.variants && product.variants.length > 0)
+      ? Math.min(10, currentAvailableStock)
+      : (product.colors.length > 0 || product.sizes.length > 0 ? 0 : 10)
+    return Math.max(0, raw - alreadyInCart)
+  }, [currentAvailableStock, alreadyInCart, product.variants, product.colors.length, product.sizes.length])
+
   const isComboOutOfStock = useMemo(() => {
     // If no selection yet, it's NOT 'out of stock' for the UI, just 'unselected'
     if (product.variants && product.variants.length > 0) {
@@ -130,6 +148,13 @@ export default function ProductActions({ product, settings, activeColorName, onC
   }, [outOfStockGlobal, product.variants, product.colors.length, product.sizes.length])
 
   const outOfStock = isEntirelyOutOfStock || isComboOutOfStock
+
+  // Reset quantity when variant changes and current qty exceeds available stock
+  useEffect(() => {
+    if (effectiveMax > 0 && quantity > effectiveMax) {
+      setQuantity(effectiveMax)
+    }
+  }, [effectiveMax])
 
   const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
   const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
@@ -196,6 +221,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
       discount_price_usd: product.discount_price_usd ?? null,
       mold_type:          product.mold_type,
       multi_discount_syp: multiDiscSyp,
+      max_stock:          currentAvailableStock,
     }
     addItem(item)
     
@@ -431,25 +457,21 @@ export default function ProductActions({ product, settings, activeColorName, onC
               type="button"
               aria-label="زيادة الكمية"
               onClick={() => setQuantity(q => {
-                const maxAllowed = (product.variants && product.variants.length > 0) 
-                  ? Math.min(10, currentAvailableStock) 
-                  : (product.colors.length > 0 || product.sizes.length > 0 ? 0 : 10);
-                
-                if (q >= maxAllowed) {
-                  if (maxAllowed === 0) {
-                    toast.error("عذراً، المنتج غير متوفر حالياً");
+                if (q >= effectiveMax) {
+                  if (effectiveMax === 0) {
+                    toast.error(alreadyInCart > 0 ? "الكمية المتاحة موجودة بالكامل في السلة" : "عذراً، المنتج غير متوفر حالياً");
                   } else {
-                    toast.error(`عذراً، أقصى كمية متاحة هي ${maxAllowed}`);
+                    toast.error(`عذراً، أقصى كمية متاحة هي ${effectiveMax}${alreadyInCart > 0 ? ` (لديك ${alreadyInCart} في السلة)` : ''}`);
                   }
                   return q;
                 }
                 return q + 1;
               })}
-              disabled={quantity >= 10 || (product.variants?.length ? quantity >= currentAvailableStock : false)}
+              disabled={quantity >= effectiveMax}
               className={cn(
                 'w-11 h-11 flex items-center justify-center transition-colors duration-100',
                 'focus-visible:outline-none',
-                (quantity >= 10 || (product.variants?.length ? quantity >= currentAvailableStock : false))
+                quantity >= effectiveMax
                   ? 'text-[#D3C4AF] cursor-not-allowed'
                   : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#EDE8E0]'
               )}

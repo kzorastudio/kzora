@@ -6,6 +6,7 @@ import { cn, formatPrice } from '@/lib/utils'
 import { Trash2, Plus, Minus } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import type { CartItem, Currency } from '@/types'
+import toast from 'react-hot-toast'
 
 interface Props {
   items: CartItem[]
@@ -138,8 +139,21 @@ export default function OrderSummaryPanel({
                       </button>
                       <span className="w-6 text-center text-[11px] font-bold tabular-nums">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.color, item.size, item.quantity + 1)}
-                        className="w-6 h-6 flex items-center justify-center text-[#1A1A1A] hover:bg-[#E8E3DB] transition-colors"
+                        onClick={() => {
+                          const max = item.max_stock ?? Infinity
+                          if (item.quantity >= max) {
+                            toast.error(`عذراً، الكمية المتوفرة ${max} فقط`)
+                            return
+                          }
+                          updateQuantity(item.id, item.color, item.size, item.quantity + 1)
+                        }}
+                        disabled={item.quantity >= (item.max_stock ?? Infinity)}
+                        className={cn(
+                          "w-6 h-6 flex items-center justify-center transition-colors",
+                          item.quantity >= (item.max_stock ?? Infinity)
+                            ? "text-[#D3C4AF] cursor-not-allowed"
+                            : "text-[#1A1A1A] hover:bg-[#E8E3DB]"
+                        )}
                       >
                         <Plus size={10} />
                       </button>
