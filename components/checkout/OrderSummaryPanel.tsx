@@ -201,16 +201,17 @@ export default function OrderSummaryPanel({
               </p>
             </div>
           ) : (
-            (shippingFeeSyp > 0 || shippingFeeUsd > 0) && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-arabic text-[#6B6560]">
-                  {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
-                </span>
-                <span className="font-body tabular-nums text-[#2E7D32] font-semibold" dir="ltr">
-                  +{formatPrice(shippingFee, currency)}
-                </span>
-              </div>
-            )
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-arabic text-[#6B6560]">
+                {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
+              </span>
+              <span className={cn(
+                "font-body tabular-nums font-semibold",
+                shippingFee > 0 ? "text-[#2E7D32]" : "text-[#785600] font-arabic"
+              )} dir="ltr">
+                {shippingFee > 0 ? `+${formatPrice(shippingFee, currency)}` : 'مجاني'}
+              </span>
+            </div>
           )}
 
           <div className="border-t border-[#F0EBE3] pt-3 flex items-center justify-between">
