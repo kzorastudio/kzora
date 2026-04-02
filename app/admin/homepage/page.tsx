@@ -516,7 +516,7 @@ export default function HomepagePage() {
               {settings.discount_multi_items_enabled && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="space-y-2">
-                    <label className="text-sm font-arabic font-bold text-secondary">خصم منتجين (ل.س)</label>
+                    <label className="text-sm font-arabic font-bold text-secondary">خصم منتجين (ل.س.ج)</label>
                     <input
                       type="number"
                       value={settings.discount_2_items_syp || 0}
@@ -525,7 +525,7 @@ export default function HomepagePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-arabic font-bold text-secondary">خصم 3 منتجات فأكثر (ل.س)</label>
+                    <label className="text-sm font-arabic font-bold text-secondary">خصم 3 منتجات فأكثر (ل.س.ج)</label>
                     <input
                       type="number"
                       value={settings.discount_3_items_plus_syp || 0}
@@ -556,7 +556,7 @@ export default function HomepagePage() {
                 <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-arabic text-secondary">السعر بالليرة السورية (ل.س)</label>
+                      <label className="text-[11px] font-arabic text-secondary">السعر بالليرة السورية الجديدة (ل.س.ج)</label>
                       <input
                         type="number"
                         min={0}
@@ -595,7 +595,7 @@ export default function HomepagePage() {
                     <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعة واحدة (1)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <label className="text-[11px] font-arabic text-secondary">ل.س.ج</label>
                         <input
                           type="number"
                           min={0}
@@ -622,7 +622,7 @@ export default function HomepagePage() {
                     <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعتين (2)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <label className="text-[11px] font-arabic text-secondary">ل.س.ج</label>
                         <input
                           type="number"
                           min={0}
@@ -649,7 +649,7 @@ export default function HomepagePage() {
                     <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود 3 قطع فقط</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <label className="text-[11px] font-arabic text-secondary">ل.س.ج</label>
                         <input
                           type="number"
                           min={0}

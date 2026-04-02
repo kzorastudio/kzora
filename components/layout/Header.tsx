@@ -260,7 +260,7 @@ export function Header() {
                     : 'text-[#9E9890] hover:text-[#1A1A1A]'
                 )}
               >
-                ل.س
+                ل.س.ج
               </button>
             </div>
 
@@ -270,7 +270,7 @@ export function Header() {
               onClick={() => setCurrency(currency === 'USD' ? 'SYP' : 'USD')}
               className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-surface-container/50 border border-outline-variant/30 text-[10px] font-bold font-arabic text-on-surface hover:bg-surface-container transition-all active:scale-95 ml-1"
             >
-              {currency === 'USD' ? '$' : 'ل.س'}
+              {currency === 'USD' ? '$' : 'ل.س.ج'}
             </button>
 
             {/* Search */}

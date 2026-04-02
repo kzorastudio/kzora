@@ -276,7 +276,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
               currency === 'SYP' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
             )}
           >
-            ل.س
+            ل.س.ج
           </button>
         </div>
       </div>

@@ -115,8 +115,8 @@ export default function CouponsPage() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-arabic text-secondary mb-3">
-                  <span>{TYPE_LABEL[coupon.type] ?? coupon.type} — <span className="font-semibold text-on-surface">{coupon.type === 'percentage' ? `${coupon.value}%` : `${coupon.value.toLocaleString('ar-SY')} ل.س`}</span></span>
-                  {coupon.min_order_syp > 0 && <span>حد أدنى: {coupon.min_order_syp.toLocaleString('ar-SY')} ل.س</span>}
+                  <span>{TYPE_LABEL[coupon.type] ?? coupon.type} — <span className="font-semibold text-on-surface">{coupon.type === 'percentage' ? `${coupon.value}%` : `${coupon.value.toLocaleString('ar-SY')} ل.س.ج`}</span></span>
+                  {coupon.min_order_syp > 0 && <span>حد أدنى: {coupon.min_order_syp.toLocaleString('ar-SY')} ل.س.ج</span>}
                   <span>استخدم: {coupon.used_count}{coupon.max_uses !== null && ` / ${coupon.max_uses}`}</span>
                   {coupon.expires_at && <span className={isExpired ? 'text-error font-medium' : ''}>{isExpired ? '⚠ ' : ''}{formatDate(coupon.expires_at)}</span>}
                 </div>
@@ -204,13 +204,13 @@ export default function CouponsPage() {
                         <td className="px-4 py-3 text-sm font-label font-semibold text-on-surface whitespace-nowrap">
                           {coupon.type === 'percentage'
                             ? `${coupon.value}%`
-                            : `${coupon.value.toLocaleString('ar-SY')} ل.س`}
+                            : `${coupon.value.toLocaleString('ar-SY')} ل.س.ج`}
                         </td>
 
                         {/* Min order */}
                         <td className="px-4 py-3 text-sm font-label text-on-surface-variant whitespace-nowrap">
                           {coupon.min_order_syp > 0
-                            ? `${coupon.min_order_syp.toLocaleString('ar-SY')} ل.س`
+                            ? `${coupon.min_order_syp.toLocaleString('ar-SY')} ل.س.ج`
                             : '—'}
                         </td>
 

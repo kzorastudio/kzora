@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (orderSyp < coupon.min_order_syp) {
       return NextResponse.json({
         valid: false,
-        message: `الحد الأدنى للطلب لاستخدام هذا الكوبون هو ${coupon.min_order_syp.toLocaleString('ar-SY')} ل.س`,
+        message: `الحد الأدنى للطلب لاستخدام هذا الكوبون هو ${coupon.min_order_syp.toLocaleString('ar-SY')} ل.س.ج`,
       })
     }
 

@@ -17,7 +17,7 @@ export function formatPrice(amount: number, currency: Currency): string {
   }
   return new Intl.NumberFormat('ar-SY', {
     maximumFractionDigits: 0,
-  }).format(amount) + ' ل.س'
+  }).format(amount) + ' ل.س.ج'
 }
 
 // Generate slug from Arabic text using transliteration

@@ -180,7 +180,7 @@ export default function CategoryProductsClient({ products }: Props) {
       {/* Price range */}
       <div>
         <h3 className="font-brand font-semibold text-on-surface text-sm mb-2">
-          نطاق السعر ({currency === 'SYP' ? 'ل.س' : 'دولار'})
+          نطاق السعر ({currency === 'SYP' ? 'ل.س.ج' : 'دولار'})
         </h3>
         <div className="flex items-center gap-2">
           <input

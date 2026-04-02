@@ -119,7 +119,7 @@ export default function CouponForm({ initialData, onSuccess }: Props) {
           {(
             [
               { value: 'percentage', label: 'نسبة مئوية (%)' },
-              { value: 'fixed_amount', label: 'مبلغ ثابت (ل.س)' },
+              { value: 'fixed_amount', label: 'مبلغ ثابت (ل.س.ج)' },
             ] as const
           ).map((opt) => (
             <label
@@ -147,7 +147,7 @@ export default function CouponForm({ initialData, onSuccess }: Props) {
       {/* Value */}
       <div>
         <label htmlFor="coupon-value" className={labelBase}>
-          {couponType === 'percentage' ? 'نسبة الخصم (%)' : 'مبلغ الخصم (ل.س)'}
+          {couponType === 'percentage' ? 'نسبة الخصم (%)' : 'مبلغ الخصم (ل.س.ج)'}
           <span className="text-[#BA1A1A] mr-0.5">*</span>
         </label>
         <input
@@ -165,7 +165,7 @@ export default function CouponForm({ initialData, onSuccess }: Props) {
       {/* Min order */}
       <div>
         <label htmlFor="min-order" className={labelBase}>
-          الحد الأدنى للطلب (ل.س)
+          الحد الأدنى للطلب (ل.س.ج)
         </label>
         <input
           id="min-order"

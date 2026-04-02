@@ -75,7 +75,7 @@ function formatPrice(amount: number, currency: 'SYP' | 'USD'): string {
       maximumFractionDigits: 2,
     }).format(amount)
   }
-  return new Intl.NumberFormat('ar-SY', { maximumFractionDigits: 0 }).format(amount) + ' ل.س'
+  return new Intl.NumberFormat('ar-SY', { maximumFractionDigits: 0 }).format(amount) + ' ل.س.ج'
 }
 
 // ─── Status progress bar ──────────────────────────────────────────────────────

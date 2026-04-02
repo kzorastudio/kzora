@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
       // Check minimum order
       if (subtotalSyp < coupon.min_order_syp) {
         return NextResponse.json(
-          { error: `الحد الأدنى للطلب هو ${coupon.min_order_syp.toLocaleString()} ل.س` },
+          { error: `الحد الأدنى للطلب هو ${coupon.min_order_syp.toLocaleString()} ل.س.ج` },
           { status: 400 }
         )
       }
