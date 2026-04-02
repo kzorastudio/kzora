@@ -676,7 +676,7 @@ export default function HomepagePage() {
                   <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
                     <p className="text-xs font-arabic font-bold text-amber-800 mb-1">أكثر من 3 قطع:</p>
                     <p className="text-[11px] font-arabic text-amber-700 leading-relaxed">
-                      تلقائياً، عند زيادة عدد القطع في السلة عن 3 قطع، سيظهر للزبون رسالة "يتم تحدد السعر مع البائع في الواتس اب" ولن يتم إضافة أي مبلغ شحن للإجمالي بانتظار الاتفاق اليدوي.
+                      عند طلب أكثر من 3 قطع، لا يتم احتساب رسوم الشحن تلقائياً، وستظهر للزبون رسالة تُفيد بأن تكلفة الشحن تُحدَّد بالتواصل المباشر عبر واتساب، ليتم الاتفاق على السعر المناسب حسب حجم الطلب ووجهة الشحن.
                     </p>
                   </div>
                 </div>
