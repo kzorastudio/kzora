@@ -31,6 +31,26 @@ export const metadata: Metadata = {
   title: 'كزورا — أناقة تبدأ من خطوتك',
   description: 'متجر الأحذية الفاخرة في سوريا. تشكيلة واسعة من الأحذية الكلاسيكية والعصرية.',
   keywords: 'أحذية, كزورا, سوريا, حلب, أحذية فاخرة',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
+  openGraph: {
+    title: 'كزورا — أناقة تبدأ من خطوتك',
+    description: 'متجر الأحذية الفاخرة في سوريا. تشكيلة واسعة من الأحذية الكلاسيكية والعصرية.',
+    images: [
+      {
+        url: '/logo.png',
+        width: 800,
+        height: 600,
+        alt: 'لوغو متجر كزورا',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/logo.png'],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
