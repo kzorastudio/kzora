@@ -219,7 +219,7 @@ export function Header() {
                 alt="كزورا Kzora"
                 width={140}
                 height={84}
-                className="h-16 w-auto object-contain scale-[1.7] origin-right"
+                className="h-16 w-auto object-contain scale-[1.7] origin-right -translate-y-2"
                 priority
               />
             </Link>
