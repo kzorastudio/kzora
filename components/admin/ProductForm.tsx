@@ -119,7 +119,7 @@ export default function ProductForm({
   const watchedVariants = watch('variants') || []
   const colorOptions = watchedColors
     .filter(c => c.name_ar.trim() !== '')
-    .map(c => ({ label: c.name_ar, value: c.name_ar }))
+    .map(c => ({ label: c.name_ar.trim(), value: c.name_ar.trim() }))
 
   // Sync variants with selected colors and sizes
   useEffect(() => {
@@ -135,11 +135,11 @@ export default function ProductForm({
     cList.forEach(color => {
       sList.forEach(size => {
         // Find existing quantity
-        const existing = currentVariants.find((v: any) => v.color === color && v.size === size)
+        const existing = currentVariants.find((v: any) => v.color?.trim() === color?.trim() && v.size === size)
         newCombinations.push({
-          color,
+          color: color.trim(),
           size,
-          quantity: existing ? existing.quantity : 0
+          quantity: existing ? (existing.quantity ?? 0) : 0
         })
       })
     })
@@ -238,15 +238,17 @@ export default function ProductForm({
         finalStockStatus = 'in_stock'
       }
 
-      const payload = {
+    const payload = {
         ...data,
+        colors: (data.colors || []).map(c => ({ ...c, name_ar: c.name_ar.trim() })),
+        variants: (data.variants || []).map(v => ({ ...v, color: v.color?.trim() })),
         stock_status: finalStockStatus,
         category_id: data.category_id === '' ? null : data.category_id,
         images: updatedImages.map((img: UploadedImage, idx: number) => ({
           url: img.url,
           public_id: img.public_id,
           display_order: idx,
-          color_variant: img.color_variant || null,
+          color_variant: img.color_variant ? img.color_variant.trim() : null,
           is_main: img.is_main
         })),
       }
