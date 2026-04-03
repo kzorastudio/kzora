@@ -296,51 +296,53 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
 
       {/* Category tabs */}
       {initialCategories.length > 0 && (
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2 bg-white border border-[#F0EBE3] rounded-2xl p-1.5 shadow-sm flex-wrap justify-center">
-            {/* All */}
-            <button
-              type="button"
-              onClick={() => { setSelectedCategories([]); setPage(1) }}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200',
-                selectedCategories.length === 0
-                  ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
-                  : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
-              )}
-            >
-              <LayoutGrid size={15} />
-              الكل
-            </button>
+        <div className="w-full overflow-x-auto no-scrollbar mb-8 -mx-4 px-4 md:mx-0 md:px-0 pb-1">
+          <div className="flex sm:justify-center w-max min-w-full sm:min-w-0 sm:w-auto">
+            <div className="flex items-center gap-2 bg-white border border-[#F0EBE3] rounded-2xl p-1.5 shadow-sm">
+              {/* All */}
+              <button
+                type="button"
+                onClick={() => { setSelectedCategories([]); setPage(1) }}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
+                  selectedCategories.length === 0
+                    ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
+                    : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
+                )}
+              >
+                <LayoutGrid size={15} />
+                الكل
+              </button>
 
-            {initialCategories.map((cat) => {
-              const isActive = selectedCategories.length === 1 && selectedCategories[0] === cat.slug
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => { setSelectedCategories([cat.slug]); setPage(1) }}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200',
-                    isActive
-                      ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
-                      : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
-                  )}
-                >
-                  {cat.image_url && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
-                      <Image src={cat.image_url} alt={cat.name_ar} width={20} height={20} className="object-cover w-full h-full" />
-                    </div>
-                  )}
-                  {cat.name_ar}
-                </button>
-              )
-            })}
+              {initialCategories.map((cat) => {
+                const isActive = selectedCategories.length === 1 && selectedCategories[0] === cat.slug
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => { setSelectedCategories([cat.slug]); setPage(1) }}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
+                      isActive
+                        ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
+                        : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
+                    )}
+                  >
+                    {cat.image_url && (
+                      <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
+                        <Image src={cat.image_url} alt={cat.name_ar} width={20} height={20} className="object-cover w-full h-full" />
+                      </div>
+                    )}
+                    {cat.name_ar}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       )}
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
 
         {/* Desktop sidebar */}
         <aside className="hidden lg:block w-[18rem] shrink-0">
