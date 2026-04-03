@@ -76,7 +76,7 @@ export const productSchema = z.object({
   stock_status: z.enum(['in_stock', 'low_stock', 'out_of_stock']),
   is_featured: z.boolean(),
   is_published: z.boolean(),
-  sort_order: z.number().min(0),
+  sort_order: z.number().min(0).optional().default(0),
   sizes: z.array(z.object({
     size:         z.number(),
     is_available: z.boolean(),

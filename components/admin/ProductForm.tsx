@@ -315,10 +315,6 @@ export default function ProductForm({
             <label className={LABEL_CLASS}>السعر ($)</label>
             <input type="number" step="0.01" {...register('price_usd', { valueAsNumber: true })} className={cn(FIELD_CLASS, 'font-bold tabular-nums')} />
           </div>
-          <div>
-            <label className={LABEL_CLASS}>الترتيب (Sort)</label>
-            <input type="number" {...register('sort_order', { valueAsNumber: true })} className={FIELD_CLASS} />
-          </div>
         </div>
       </section>
 
