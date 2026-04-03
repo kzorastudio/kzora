@@ -688,13 +688,13 @@ export default function HomepagePage() {
 
       {/* شريط الحفظ العائم */}
       <div className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 transform",
+        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] sm:w-auto transition-all duration-300 transform",
         dirty ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
       )}>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-3 px-8 py-4 rounded-full bg-primary text-white shadow-2xl hover:scale-105 transition-transform"
+          className="flex w-full sm:w-auto justify-center items-center gap-3 px-8 py-4 rounded-full bg-primary text-white shadow-2xl hover:scale-105 transition-transform whitespace-nowrap"
         >
           {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
           <span className="font-arabic font-bold">حفظ كل التغييرات</span>

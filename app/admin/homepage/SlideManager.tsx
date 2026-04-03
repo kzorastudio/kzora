@@ -263,7 +263,7 @@ export default function SlideManager() {
               <div
                 key={slide.id}
                 className={cn(
-                  'flex items-center gap-4 p-4 rounded-xl border transition-colors',
+                  'flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 rounded-xl border transition-colors',
                   slide.is_active
                     ? 'border-outline-variant/40 bg-surface-container-low'
                     : 'border-outline-variant/20 bg-surface-container/50 opacity-70'
@@ -298,29 +298,35 @@ export default function SlideManager() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => handleToggleActive(slide)}
-                    disabled={togglingId === slide.id}
-                    title={slide.is_active ? 'إخفاء' : 'إظهار'}
-                    className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {togglingId === slide.id ? (
-                      <Loader2 size={16} className="animate-spin text-secondary" />
-                    ) : slide.is_active ? (
-                      <ToggleRight size={20} className="text-primary" />
-                    ) : (
-                      <ToggleLeft size={20} className="text-secondary" />
-                    )}
-                  </button>
+                <div className="flex items-center justify-between sm:justify-start gap-1 w-full sm:w-auto shrink-0 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-outline-variant/30">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleActive(slide)}
+                      disabled={togglingId === slide.id}
+                      title={slide.is_active ? 'إخفاء' : 'إظهار'}
+                      className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {togglingId === slide.id ? (
+                        <Loader2 size={16} className="animate-spin text-secondary" />
+                      ) : slide.is_active ? (
+                        <ToggleRight size={20} className="text-primary" />
+                      ) : (
+                        <ToggleLeft size={20} className="text-secondary" />
+                      )}
+                    </button>
+                    <span className="text-xs font-arabic text-secondary sm:hidden">
+                      {slide.is_active ? 'نشط' : 'مخفي'}
+                    </span>
+                  </div>
 
-                  <button
-                    onClick={() => openEditModal(slide)}
-                    title="تعديل"
-                    className="h-8 w-8 flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-primary-fixed/30 transition-colors"
-                  >
-                    <Pencil size={15} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditModal(slide)}
+                      title="تعديل"
+                      className="h-8 w-8 flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-primary-fixed/30 transition-colors"
+                    >
+                      <Pencil size={15} />
+                    </button>
 
                   <button
                     onClick={() => handleDelete(slide)}
@@ -333,7 +339,8 @@ export default function SlideManager() {
                     ) : (
                       <Trash2 size={15} />
                     )}
-                  </button>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -506,8 +513,8 @@ export default function SlideManager() {
               </div>
 
               {/* Sort + Status */}
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="w-full">
                   <label className={LABEL_CLASS}>ترتيب العرض</label>
                   <select
                     value={form.sort_order}
@@ -519,11 +526,11 @@ export default function SlideManager() {
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col justify-end pb-1">
+                <div className="flex flex-col w-full pb-1">
                    <label className={LABEL_CLASS}>الحالة</label>
                    <button
                      onClick={() => setForm({...form, is_active: !form.is_active})}
-                     className={cn("h-10 px-4 rounded-xl font-arabic text-sm font-bold flex items-center gap-2 transition-colors", form.is_active ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary")}
+                     className={cn("h-[42px] px-4 rounded-xl font-arabic text-sm font-bold flex items-center justify-center gap-2 transition-colors", form.is_active ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary")}
                    >
                      {form.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                      {form.is_active ? "نشط" : "مخفي"}
