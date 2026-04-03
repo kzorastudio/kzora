@@ -40,6 +40,15 @@ async function getOrder(id: string): Promise<OrderFull | null> {
   return data as OrderFull
 }
 
+async function getCustomerLoyalty(phone: string) {
+  const { data } = await supabaseAdmin
+    .from('loyalty_points')
+    .select('*')
+    .eq('phone', phone)
+    .maybeSingle()
+  return data
+}
+
 async function getShippingMethodName(slug: string): Promise<string> {
   const { data } = await supabaseAdmin
     .from('shipping_methods')
@@ -55,6 +64,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
   const deliveryType = (order as any).delivery_type || 'shipping'
   const shippingName = deliveryType === 'delivery' ? 'توصيل عادي' : (await getShippingMethodName(order.shipping_company || ''))
+  const loyalty = await getCustomerLoyalty(order.customer_phone)
 
   const subtotal = order.currency_used === 'USD'
     ? formatPrice(order.subtotal_usd, 'USD')
@@ -234,6 +244,31 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               </div>
             </div>
 
+            {/* Loyalty info */}
+            <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-secondary" />
+                <h3 className="text-sm font-arabic font-semibold text-on-surface">نقاط الولاء للعميل</h3>
+              </div>
+              <div className="flex flex-col gap-2 text-sm font-arabic text-on-surface">
+                <div className="flex justify-between items-center">
+                  <span className="text-secondary">الطلبات المؤكدة</span>
+                  <span className="text-[#006E1C] font-bold">{loyalty?.confirmed_orders_count || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-secondary">الطلبات القيد الانتظار</span>
+                  <span className="text-amber-700 font-bold">{loyalty?.pending_orders_count || 0}</span>
+                </div>
+                <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-[11px] rounded-xl border border-blue-100 flex items-start gap-1.5 leading-relaxed">
+                  <span className="text-lg">💡</span>
+                  <span className="flex-1 font-arabic">
+                    تزداد النقاط المؤكدة تلقائياً عند تغيير حالة الطلب إلى "شحن" أو "تم التوصيل". 
+                    عند وصول العدد لـ 3، يحصل العميل على خصم بقيمة 1000 ل.س في طلبه القادم.
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Shipping info */}
             <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
               <div className="flex items-center gap-2">
@@ -279,6 +314,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   <div className="flex justify-between">
                     <span className="text-secondary">كوبون ({order.coupon_code})</span>
                     <span className="text-tertiary font-medium">- {discount}</span>
+                  </div>
+                )}
+                {(order.loyalty_discount_syp > 0 || order.loyalty_discount_usd > 0) && (
+                  <div className="flex justify-between">
+                    <span className="text-secondary">خصم الولاء 🎁</span>
+                    <span className="text-[#BA1A1A] font-medium">
+                      - {order.currency_used === 'USD' ? formatPrice(order.loyalty_discount_usd, 'USD') : formatPrice(order.loyalty_discount_syp, 'SYP')}
+                    </span>
                   </div>
                 )}
                 {order.shipping_fee_determined ? (

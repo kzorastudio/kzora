@@ -16,6 +16,7 @@ interface Props {
   isSubmitting: boolean
   settings: HomepageSettings | null
   onDeliveryTypeChange?: (type: 'delivery' | 'shipping') => void
+  onPhoneChange?: (phone: string) => void
 }
 
 const fieldBase =
@@ -37,7 +38,7 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
   )
 }
 
-export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliveryTypeChange }: Props) {
+export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliveryTypeChange, onPhoneChange }: Props) {
   const [shippingMethods, setShippingMethods] = useState<any[]>([])
 
   const {
@@ -267,7 +268,10 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliv
                 placeholder="9xx xxx xxx"
                 className="flex-1 min-w-0 bg-transparent px-3 py-3 text-sm font-body text-[#1A1A1A] text-right focus:outline-none placeholder:text-[#9E9890]"
                 {...register('phone')}
-                onBlur={() => trigger('phone')}
+                onBlur={(e) => {
+                  trigger('phone')
+                  if (onPhoneChange) onPhoneChange(e.target.value)
+                }}
               />
             </div>
             <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E8F5E9]/60 border border-[#4CAF50]/20 rounded-lg w-fit">

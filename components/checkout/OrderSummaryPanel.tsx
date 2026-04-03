@@ -23,6 +23,8 @@ interface Props {
   shippingFeeUsd?: number
   shippingFeeDetermined?: boolean
   deliveryType?: 'delivery' | 'shipping'
+  loyaltyDiscountSyp?: number
+  loyaltyDiscountUsd?: number
 }
 
 export default function OrderSummaryPanel({
@@ -40,13 +42,16 @@ export default function OrderSummaryPanel({
   shippingFeeUsd = 0,
   shippingFeeDetermined = false,
   deliveryType = 'delivery',
+  loyaltyDiscountSyp = 0,
+  loyaltyDiscountUsd = 0,
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
   const discount = currency === 'SYP' ? (discountSyp ?? 0) : (discountUsd ?? 0)
   const multiDiscount = currency === 'SYP' ? (multiProductDiscountSyp ?? 0) : (multiProductDiscountUsd ?? 0)
+  const loyaltyDiscount = currency === 'SYP' ? (loyaltyDiscountSyp ?? 0) : (loyaltyDiscountUsd ?? 0)
   const shippingFee = currency === 'SYP' ? (shippingFeeSyp ?? 0) : (shippingFeeUsd ?? 0)
-  const total = subtotal - discount - multiDiscount + shippingFee
+  const total = subtotal - discount - multiDiscount - loyaltyDiscount + shippingFee
 
   const hasDiscount = discount > 0
 
@@ -194,12 +199,20 @@ export default function OrderSummaryPanel({
               </span>
             </div>
           )}
-
           {multiDiscount > 0 && (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">خصم تعدد المنتجات</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="ltr">
                 -{formatPrice(multiDiscount, currency)}
+              </span>
+            </div>
+          )}
+
+          {(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0)) > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-arabic text-[#6B6560]">خصم الولاء 🎁</span>
+              <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="ltr">
+                -{formatPrice(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0), currency)}
               </span>
             </div>
           )}

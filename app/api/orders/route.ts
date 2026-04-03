@@ -290,11 +290,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Combine both discounts
-    const finalDiscountSyp = discountSyp + multiProductDiscountSyp
-    // Calculate USD equivalent for multi-product discount using current ratio
-    const ratio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
-    const finalDiscountUsd = parseFloat((discountUsd + (multiProductDiscountSyp * ratio)).toFixed(2))
+    // ─── Step 4.5: Calculate Loyalty Discount ──────────────────────────────
+    let loyaltyDiscountSyp = 0
+    let loyaltyDiscountUsd = 0
+    let loyaltyPointsToUpdate: string[] = []
+
+    const { data: loyaltyPoints } = await supabaseAdmin
+      .from('loyalty_points')
+      .select('id')
+      .eq('customer_phone', customer.phone)
+      .eq('status', 'confirmed')
+      .eq('cycle_used', false)
+      .order('created_at', { ascending: true })
+
+    if (loyaltyPoints && loyaltyPoints.length >= 3) {
+      loyaltyDiscountSyp = 1000
+      const orderRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
+      loyaltyDiscountUsd = parseFloat((1000 * orderRatio).toFixed(2))
+      loyaltyPointsToUpdate = loyaltyPoints.slice(0, 3).map((p: any) => p.id)
+    }
+
+    // Combine all discounts
+    const finalDiscountSyp = discountSyp + multiProductDiscountSyp + loyaltyDiscountSyp
+    // Calculate USD equivalent using current ratio
+    const currentRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
+    const finalDiscountUsd = parseFloat((discountUsd + ((multiProductDiscountSyp + loyaltyDiscountSyp) * currentRatio)).toFixed(2))
 
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shippingFeeSyp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shippingFeeUsd).toFixed(2)))
@@ -318,6 +338,8 @@ export async function POST(request: NextRequest) {
         payment_method:       payment_method || 'cod',
         payment_transaction_id: payment_transaction_id || null,
         shipping_fee_determined: shipping_fee_determined || false,
+        loyalty_discount_syp: loyaltyDiscountSyp,
+        loyalty_discount_usd: loyaltyDiscountUsd,
         coupon_code:          appliedCouponCode,
         discount_amount_syp:  finalDiscountSyp,
         discount_amount_usd:  finalDiscountUsd,
@@ -386,40 +408,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // â”€â”€ Insert initial status history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Insert initial status history ───────────────────────────────────────
     await supabaseAdmin.from('order_status_history').insert({
       order_id:   order.id,
       status:     'pending',
       changed_at: new Date().toISOString(),
     })
 
-    // â”€â”€ Step 7: Loyalty coupon check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Count delivered orders with the same phone number
-    const { count: deliveredCount } = await supabaseAdmin
-      .from('orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('customer_phone', customer.phone)
-      .eq('status', 'delivered')
+    // ─── Step 7: Loyalty Points Management ────────────────────────────────────
+    
+    // 1. Insert a new pending loyalty point for this specific order
+    await supabaseAdmin.from('loyalty_points').insert({
+      customer_phone: customer.phone,
+      order_id:       order.id,
+      status:         'pending',
+      cycle_used:     false,
+    })
 
-    if (deliveredCount !== null && deliveredCount > 0 && deliveredCount % 3 === 0) {
-      // Auto-generate a loyalty coupon for this customer
-      const loyaltyCode =
-        'LOYAL-' +
-        customer.phone.replace(/\D/g, '').slice(-4) +
-        '-' +
-        Date.now().toString().slice(-4)
-
-      await supabaseAdmin.from('coupons').insert({
-        code:            loyaltyCode,
-        type:            'percentage',
-        value:           10,               // 10% loyalty discount
-        min_order_syp:   0,
-        max_uses:        1,
-        used_count:      0,
-        expires_at:      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-        is_active:       true,
-        auto_generated:  true,
-      })
+    // 2. If a loyalty discount was applied, mark the 3 oldest points as used
+    if (loyaltyPointsToUpdate.length === 3) {
+      await supabaseAdmin
+        .from('loyalty_points')
+        .update({ cycle_used: true })
+        .in('id', loyaltyPointsToUpdate)
     }
 
     return NextResponse.json(

@@ -122,6 +122,8 @@ export interface Order {
   payment_method: string
   payment_transaction_id: string | null
   status: OrderStatus
+  loyalty_discount_syp: number
+  loyalty_discount_usd: number
   notes: string | null
   created_at: string
   updated_at: string

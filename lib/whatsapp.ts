@@ -16,6 +16,8 @@ interface OrderForWhatsApp {
   couponCode?: string
   discountSyp?: number
   discountUsd?: number
+  loyaltyDiscountSyp?: number
+  loyaltyDiscountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
   shippingFeeDetermined?: boolean
@@ -79,6 +81,13 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
       ? formatPrice(order.discountSyp!, 'SYP')
       : formatPrice(order.discountUsd!, 'USD')
     lines.push(`*خصم (${order.couponCode}):* -${discount}`)
+  }
+
+  if (order.loyaltyDiscountSyp || order.loyaltyDiscountUsd) {
+    const loyaltyDisc = currency === 'SYP'
+      ? formatPrice(order.loyaltyDiscountSyp!, 'SYP')
+      : formatPrice(order.loyaltyDiscountUsd!, 'USD')
+    lines.push(`*خصم الولاء 🎁:* -${loyaltyDisc}`)
   }
 
   const multiDiscountSyp = order.items.reduce((acc, item) => acc + (item.multi_discount_syp || 0), 0);

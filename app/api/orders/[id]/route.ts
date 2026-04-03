@@ -77,7 +77,7 @@ export async function PUT(
     // ─── Fetch current order to check status change ───────────────────────
     const { data: currentOrder, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('status')
+      .select('status, loyalty_discount_syp, customer_phone')
       .eq('id', id)
       .single()
 
@@ -128,6 +128,37 @@ export async function PUT(
           status,
           changed_at: new Date().toISOString(),
         })
+
+      // ─── Handle Loyalty Point Updates ────────────────────────────────────
+      const isConfirmedState = ['confirmed', 'shipped', 'delivered'].includes(status)
+      const isCancelledState = status === 'cancelled'
+
+      if (isConfirmedState || isCancelledState) {
+        // 1. Update the loyalty point specifically for this order
+        await supabaseAdmin
+          .from('loyalty_points')
+          .update({ status: isConfirmedState ? 'confirmed' : 'cancelled' })
+          .eq('order_id', id)
+
+        // 2. If cancelled AND this order used a loyalty discount, revert the 3 points
+        if (isCancelledState && currentOrder.loyalty_discount_syp > 0) {
+          // Find the 3 most recently used points for this customer
+          const { data: recentUsedPoints } = await supabaseAdmin
+            .from('loyalty_points')
+            .select('id')
+            .eq('customer_phone', currentOrder.customer_phone)
+            .eq('cycle_used', true)
+            .order('created_at', { ascending: false })
+            .limit(3)
+          
+          if (recentUsedPoints && recentUsedPoints.length > 0) {
+            await supabaseAdmin
+              .from('loyalty_points')
+              .update({ cycle_used: false })
+              .in('id', recentUsedPoints.map(p => p.id))
+          }
+        }
+      }
     }
 
     return NextResponse.json({ order })

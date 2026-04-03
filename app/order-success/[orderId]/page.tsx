@@ -138,6 +138,10 @@ export default async function OrderSuccessPage({ params }: PageProps) {
   const total   = currency === 'SYP' ? order.total_syp   : order.total_usd
   const subtotal = currency === 'SYP' ? order.subtotal_syp : order.subtotal_usd
   const discount = currency === 'SYP' ? order.discount_amount_syp : order.discount_amount_usd
+  const loyaltyDiscount = currency === 'SYP' ? order.loyalty_discount_syp : order.loyalty_discount_usd
+  // The base discount (coupons/multi-item) is total discount minus loyalty discount
+  const baseDiscount = discount - loyaltyDiscount
+
   const shippingFee = currency === 'SYP' ? (order.shipping_fee_syp || 0) : (order.shipping_fee_usd || 0)
 
   const whatsappFollowUp = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
@@ -304,16 +308,26 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     {formatPrice(subtotal, currency)}
                   </span>
                 </div>
-                {discount > 0 && (
+                {baseDiscount > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-arabic text-secondary">
-                      خصم
+                      خصم التوفير
                       {order.coupon_code && (
                         <span className="font-body text-primary mr-1">({order.coupon_code})</span>
                       )}
                     </span>
                     <span className="font-body tabular-nums text-[#BA1A1A]" dir="ltr">
-                      -{formatPrice(discount, currency)}
+                      -{formatPrice(baseDiscount, currency)}
+                    </span>
+                  </div>
+                )}
+                {loyaltyDiscount > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-arabic text-[#006E1C] font-semibold">
+                      خصم الولاء 🎁
+                    </span>
+                    <span className="font-body tabular-nums text-[#006E1C] font-bold" dir="ltr">
+                      -{formatPrice(loyaltyDiscount, currency)}
                     </span>
                   </div>
                 )}

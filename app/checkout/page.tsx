@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { CouponInput } from '@/components/cart/CouponInput'
+import { LoyaltyStatus } from '@/components/checkout/LoyaltyStatus'
 import CheckoutForm from '@/components/checkout/CheckoutForm'
 import OrderSummaryPanel from '@/components/checkout/OrderSummaryPanel'
 import { useCartStore } from '@/store/cartStore'
@@ -34,6 +35,38 @@ export default function CheckoutPage() {
   const [discountUsd,  setDiscountUsd]  = useState(0)
   const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('delivery')
+
+  // Loyalty state
+  const [phone, setPhone] = useState('')
+  const [loyaltyInfo, setLoyaltyInfo] = useState<{ confirmedCount: number; pendingCount: number; hasDiscount: boolean; discountAmount: number } | null>(null)
+
+  useEffect(() => {
+    if (phone.length < 9) {
+      setLoyaltyInfo(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/loyalty?phone=${encodeURIComponent(phone)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setLoyaltyInfo({
+            confirmedCount: data.confirmed_count,
+            pendingCount: data.pending_count,
+            hasDiscount: data.has_discount,
+            discountAmount: data.discount_amount, // 1000 SYP
+          })
+        }
+      } catch (err) {}
+    }, 800)
+
+    return () => clearTimeout(timer)
+  }, [phone])
+
+  const handlePhoneChange = useCallback((newPhone: string) => {
+    setPhone(newPhone)
+  }, [])
 
   useEffect(() => {
     fetch('/api/homepage/settings')
@@ -65,6 +98,62 @@ export default function CheckoutPage() {
     setDiscountUsd(0)
   }, [])
 
+  const sub_syp = subtotalSyp()
+  const sub_usd = subtotalUsd()
+
+  // Multi-product discount calculation
+  let multiProductDiscountSyp = 0
+  let multiProductDiscountUsd = 0
+  const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0)
+
+  if (settings?.discount_multi_items_enabled) {
+    if (totalItemsCount >= 3) {
+      multiProductDiscountSyp = settings.discount_3_items_plus_syp
+    } else if (totalItemsCount >= 2) {
+      multiProductDiscountSyp = settings.discount_2_items_syp
+    }
+
+    if (multiProductDiscountSyp > 0) {
+      const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
+      multiProductDiscountUsd = parseFloat((multiProductDiscountSyp * ratio).toFixed(2))
+    }
+  }
+
+  // Shipping fee calculation for both display and submission
+  let shippingFeeSyp = 0
+  let shippingFeeUsd = 0
+  let shippingFeeDetermined = false
+
+  if (settings) {
+    if (deliveryType === 'delivery') {
+      shippingFeeSyp = settings.delivery_fee_syp || 0
+      shippingFeeUsd = settings.delivery_fee_usd || 0
+    } else {
+      if (totalItemsCount === 1) {
+        shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
+        shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
+      } else if (totalItemsCount === 2) {
+        shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
+        shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
+      } else if (totalItemsCount === 3) {
+        shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+      } else if (totalItemsCount > 3) {
+        shippingFeeDetermined = true
+        shippingFeeSyp = 0
+        shippingFeeUsd = 0
+      }
+    }
+  }
+
+  // Loyalty calculations
+  let loyaltyDiscountSyp = loyaltyInfo?.hasDiscount ? 1000 : 0
+  let loyaltyDiscountUsd = 0
+  if (loyaltyDiscountSyp > 0) {
+    const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
+    loyaltyDiscountUsd = parseFloat((loyaltyDiscountSyp * ratio).toFixed(2))
+  }
+
   const handleSubmit = useCallback(
     async (formData: CheckoutFormData) => {
       if (items.length === 0) {
@@ -75,10 +164,6 @@ export default function CheckoutPage() {
       setIsSubmitting(true)
 
       try {
-        // Calculate shipping fee determined status early for the payload
-        const submitTotalItems = items.reduce((acc, item) => acc + item.quantity, 0)
-        const submitShippingFeeDetermined = deliveryType === 'shipping' && submitTotalItems > 3
-
         const payload: CreateOrderPayload = {
           items: items.map((item) => ({
             product_id:    item.id,
@@ -100,7 +185,7 @@ export default function CheckoutPage() {
           shipping_company: (formData.shipping_company as string) ?? null,
           payment_method:   formData.payment_method,
           payment_transaction_id: formData.payment_transaction_id ?? undefined,
-          shipping_fee_determined: submitShippingFeeDetermined,
+          shipping_fee_determined: shippingFeeDetermined,
           coupon_code:      couponCode,
           currency_used:    currency,
           notes:            formData.notes ?? undefined,
@@ -127,35 +212,7 @@ export default function CheckoutPage() {
         const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
         const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug
 
-        // Calculate shipping fee at submit time
-        let submitShippingFeeSyp = 0
-        let submitShippingFeeUsd = 0
-        
-        if (settings) {
-          if (deliveryType === 'delivery') {
-            submitShippingFeeSyp = settings.delivery_fee_syp || 0
-            submitShippingFeeUsd = settings.delivery_fee_usd || 0
-          } else {
-            if (submitTotalItems === 1) {
-              submitShippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
-              submitShippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
-            } else if (submitTotalItems === 2) {
-              submitShippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
-              submitShippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
-            } else if (submitTotalItems === 3) {
-              submitShippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
-              submitShippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
-            } else {
-              // More than 3: determined with seller
-              submitShippingFeeSyp = 0
-              submitShippingFeeUsd = 0
-            }
-          }
-        }
-
-        // Note: submitShippingFeeDetermined has been hoisted up for the payload
-
-        // Build and open WhatsApp URL
+        // WhatsApp URL
         const whatsappUrl = buildWhatsAppUrl({
           orderNumber,
           customerName:    formData.full_name,
@@ -167,15 +224,16 @@ export default function CheckoutPage() {
           shippingCompanyName,
           items,
           couponCode,
-          discountSyp:     discountSyp || undefined,
           discountUsd:     discountUsd || undefined,
-          shippingFeeSyp:  submitShippingFeeSyp,
-          shippingFeeUsd:  submitShippingFeeUsd,
-          shippingFeeDetermined: submitShippingFeeDetermined,
+          loyaltyDiscountSyp,
+          loyaltyDiscountUsd,
+          shippingFeeSyp,
+          shippingFeeUsd,
+          shippingFeeDetermined,
           subtotalSyp:     sub_syp,
           subtotalUsd:     sub_usd,
-          totalSyp:        Math.max(0, sub_syp - discountSyp - multiProductDiscountSyp + submitShippingFeeSyp),
-          totalUsd:        Math.max(0, sub_usd - discountUsd - multiProductDiscountUsd + submitShippingFeeUsd),
+          totalSyp:        Math.max(0, sub_syp - discountSyp - multiProductDiscountSyp - loyaltyDiscountSyp + shippingFeeSyp),
+          totalUsd:        Math.max(0, parseFloat((sub_usd - discountUsd - multiProductDiscountUsd - loyaltyDiscountUsd + shippingFeeUsd).toFixed(2))),
           currency,
           paymentMethod:   formData.payment_method,
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
@@ -190,13 +248,19 @@ export default function CheckoutPage() {
 
         // Navigate to success page
         router.push(`/order-success/${orderId}`)
-      } catch {
+      } catch (err) {
+        console.error('Checkout error:', err)
         toast.error('حدث خطأ غير متوقع. يرجى المحاولة مجدداً.')
       } finally {
         setIsSubmitting(false)
       }
     },
-    [items, couponCode, discountSyp, discountUsd, currency, clearCart, router, subtotalSyp, subtotalUsd, shippingMethods, settings, deliveryType]
+    [
+      items, couponCode, discountSyp, discountUsd, currency, clearCart, 
+      router, sub_syp, sub_usd, shippingMethods, settings, deliveryType,
+      multiProductDiscountSyp, multiProductDiscountUsd, loyaltyDiscountSyp, loyaltyDiscountUsd, 
+      shippingFeeSyp, shippingFeeUsd, shippingFeeDetermined
+    ]
   )
 
   // Avoid hydration mismatch — render empty cart check only after mount
@@ -246,56 +310,6 @@ export default function CheckoutPage() {
     )
   }
 
-  const sub_syp = subtotalSyp()
-  const sub_usd = subtotalUsd()
-
-  // Multi-product discount calculation
-  let multiProductDiscountSyp = 0
-  let multiProductDiscountUsd = 0
-  const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0)
-
-  if (settings?.discount_multi_items_enabled) {
-    if (totalItemsCount >= 3) {
-      multiProductDiscountSyp = settings.discount_3_items_plus_syp
-    } else if (totalItemsCount >= 2) {
-      multiProductDiscountSyp = settings.discount_2_items_syp
-    }
-
-    if (multiProductDiscountSyp > 0) {
-      const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
-      multiProductDiscountUsd = parseFloat((multiProductDiscountSyp * ratio).toFixed(2))
-    }
-  }
-
-  // Shipping fee calculation
-  let shippingFeeSyp = 0
-  let shippingFeeUsd = 0
-  let shippingFeeDetermined = false
-
-  if (settings) {
-    if (deliveryType === 'delivery') {
-      // Delivery fee is fixed regardless of quantity
-      shippingFeeSyp = settings.delivery_fee_syp || 0
-      shippingFeeUsd = settings.delivery_fee_usd || 0
-    } else {
-      // Shipping fee depends on quantity
-      if (totalItemsCount === 1) {
-        shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
-        shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
-      } else if (totalItemsCount === 2) {
-        shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
-        shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
-      } else if (totalItemsCount === 3) {
-        shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
-      } else if (totalItemsCount > 3) {
-        // More than 3 items: determined with seller
-        shippingFeeDetermined = true
-        shippingFeeSyp = 0
-        shippingFeeUsd = 0
-      }
-    }
-  }
 
   return (
     <>
@@ -319,6 +333,7 @@ export default function CheckoutPage() {
                 isSubmitting={isSubmitting}
                 settings={settings}
                 onDeliveryTypeChange={setDeliveryType}
+                onPhoneChange={handlePhoneChange}
               />
             </div>
 
@@ -341,6 +356,8 @@ export default function CheckoutPage() {
                   shippingFeeUsd={shippingFeeUsd}
                   shippingFeeDetermined={shippingFeeDetermined}
                   deliveryType={deliveryType}
+                  loyaltyDiscountSyp={loyaltyDiscountSyp}
+                  loyaltyDiscountUsd={loyaltyDiscountUsd}
                 />
 
                 {/* Coupon */}
@@ -352,6 +369,17 @@ export default function CheckoutPage() {
                     appliedCode={couponCode}
                   />
                 </div>
+
+                {/* Loyalty Status */}
+                {loyaltyInfo && (
+                  <div className="bg-white rounded-2xl p-5 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
+                    <LoyaltyStatus 
+                      confirmedCount={loyaltyInfo.confirmedCount}
+                      pendingCount={loyaltyInfo.pendingCount}
+                      hasDiscount={loyaltyInfo.hasDiscount}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
