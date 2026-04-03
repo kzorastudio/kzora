@@ -238,6 +238,7 @@ export default function CheckoutPage() {
           paymentMethod:   formData.payment_method,
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
           shamCashNumber:  settings?.sham_cash_number ?? undefined,
+          loyaltyPointsCount: loyaltyInfo?.confirmedCount ?? 0,
         })
 
         // Open WhatsApp in new tab

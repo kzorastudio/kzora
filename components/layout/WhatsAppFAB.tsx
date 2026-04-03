@@ -24,7 +24,7 @@ function WhatsAppIcon() {
 }
 
 export function WhatsAppFAB({
-  phone = '963991234567',
+  phone = '963964514765',
   message = 'مرحباً، أريد الاستفسار عن منتج من متجر كزورا.',
 }: WhatsAppFABProps) {
   const encodedMessage = encodeURIComponent(message)

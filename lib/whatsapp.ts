@@ -29,6 +29,7 @@ interface OrderForWhatsApp {
   paymentMethod?: string
   paymentTransactionId?: string
   shamCashNumber?: string
+  loyaltyPointsCount?: number
 }
 
 export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
@@ -113,6 +114,22 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   lines.push(``)
   lines.push(`🎁 *مبروك! لقد كسبت نقطة ولاء من هذا الطلب.*`)
   lines.push(`(سيتم تفعيل وبدء حساب النقطة في رصيدك فور استلام الطلب والتأكد منه)`)
+  
+  if (typeof order.loyaltyPointsCount === 'number') {
+    const currentPoints = order.loyaltyPointsCount
+    const remaining = Math.max(0, 3 - currentPoints)
+    
+    lines.push(``)
+    lines.push(`* نظام الولاء المكافآت 🎁: *`)
+    lines.push(`- النقاط المكتسبة من هذا الطلب: 1 نقطة ✨`)
+    lines.push(`- رصيد نقاطك المؤكدة حالياً: ${currentPoints} نقطة`)
+    
+    if (remaining > 0) {
+      lines.push(`- بقي لك ${remaining} طلبات مؤكدة لتصل للطلب الرابع وتحصل على خصم 1000 ليرة سورية!`)
+    } else {
+      lines.push(`- مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض (1000 ل.س.ج) 🥳`)
+    }
+  }
 
   const pMethod = order.paymentMethod === 'sham_cash' ? 'شام كاش (تم التحويل)' : 'الدفع عند الاستلام'
   lines.push(`*طريقة الدفع:* ${pMethod}`)
