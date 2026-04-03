@@ -296,8 +296,8 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
 
       {/* Category tabs */}
       {initialCategories.length > 0 && (
-        <div className="w-full overflow-x-auto no-scrollbar mb-8 -mx-4 px-4 md:mx-0 md:px-0 pb-1">
-          <div className="flex sm:justify-center w-max min-w-full sm:min-w-0 sm:w-auto">
+        <div className="w-full overflow-x-auto no-scrollbar mb-8 -mx-4 px-4 md:mx-0 md:px-0 pb-1" dir="rtl">
+          <div className="flex justify-start sm:justify-center w-max min-w-full sm:min-w-0 sm:w-auto">
             <div className="flex items-center gap-2 bg-white border border-[#F0EBE3] rounded-2xl p-1.5 shadow-sm">
               {/* All */}
               <button

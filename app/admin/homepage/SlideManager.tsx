@@ -297,8 +297,7 @@ export default function SlideManager() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center justify-between sm:justify-start gap-1 w-full sm:w-auto shrink-0 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-outline-variant/30">
+                <div className="flex items-center justify-start gap-4 sm:gap-1 w-full sm:w-auto shrink-0 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-outline-variant/30">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleToggleActive(slide)}
