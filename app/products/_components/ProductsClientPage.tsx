@@ -24,7 +24,7 @@ const TAG_OPTIONS: { value: ProductTag; label: string }[] = [
 ]
 
 const SPECIAL_TABS = [
-  { id: 'sale', label: 'عروض حصرية', onSale: true,  tag: null,          icon: '🔥', baseClass: 'text-rose-600 hover:bg-rose-50/80',   activeClass: 'bg-gradient-to-l from-rose-500 to-rose-600 text-white shadow-sm ring-1 ring-rose-200' },
+  { id: 'sale', label: 'عروض حصرية', onSale: false, tag: 'on_sale',     icon: '🔥', baseClass: 'text-rose-600 hover:bg-rose-50/80',   activeClass: 'bg-gradient-to-l from-rose-500 to-rose-600 text-white shadow-sm ring-1 ring-rose-200' },
   { id: 'new',  label: 'وصل حديثاً', onSale: false, tag: 'new',         icon: '✨', baseClass: 'text-amber-600 hover:bg-amber-50/80', activeClass: 'bg-gradient-to-l from-amber-500 to-amber-600 text-white shadow-sm ring-1 ring-amber-200' },
   { id: 'best', label: 'الأكثر مبيعاً', onSale: false, tag: 'best_seller', icon: '🏆', baseClass: 'text-indigo-600 hover:bg-indigo-50/80', activeClass: 'bg-gradient-to-l from-indigo-500 to-indigo-600 text-white shadow-sm ring-1 ring-indigo-200' },
 ]
@@ -324,14 +324,14 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
 
               {/* Special Distingusihed Tabs */}
               {SPECIAL_TABS.map(tab => {
-                const isActive = (tab.onSale && onSale) || (tab.tag && selectedTags.length === 1 && selectedTags[0] === tab.tag);
+                const isActive = (tab.tag && selectedTags.length === 1 && selectedTags[0] === tab.tag);
                 return (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => {
                       setSelectedCategories([]);
-                      setOnSale(tab.onSale);
+                      setOnSale(false);
                       setSelectedTags(tab.tag ? [tab.tag] : []);
                       setPage(1);
                     }}
