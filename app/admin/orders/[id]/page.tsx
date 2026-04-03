@@ -43,10 +43,16 @@ async function getOrder(id: string): Promise<OrderFull | null> {
 async function getCustomerLoyalty(phone: string) {
   const { data } = await supabaseAdmin
     .from('loyalty_points')
-    .select('*')
-    .eq('phone', phone)
-    .maybeSingle()
-  return data
+    .select('status, cycle_used')
+    .eq('customer_phone', phone)
+    .eq('cycle_used', false)
+
+  if (!data) return { confirmed_orders_count: 0, pending_orders_count: 0 }
+
+  const confirmed_orders_count = data.filter(d => d.status === 'confirmed').length
+  const pending_orders_count = data.filter(d => d.status === 'pending').length
+
+  return { confirmed_orders_count, pending_orders_count }
 }
 
 async function getShippingMethodName(slug: string): Promise<string> {
