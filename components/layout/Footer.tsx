@@ -57,7 +57,7 @@ export function Footer() {
           <div className="flex flex-col gap-5">
             <Link href="/" className="hover:opacity-80 transition-opacity w-fit">
               <Image
-                src="/newlogo.png"
+                src="/logo.png"
                 alt="كزورا Kzora"
                 width={150}
                 height={90}

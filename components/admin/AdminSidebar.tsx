@@ -97,7 +97,7 @@ export default function AdminSidebar({ open = false, onClose }: AdminSidebarProp
             </button>
           )}
           <NextImage
-            src="/newlogo.png"
+            src="/logo.png"
             alt="كزورا Kzora"
             width={120}
             height={72}

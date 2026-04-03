@@ -57,7 +57,7 @@ export default function AdminLoginPage() {
           {/* Logo + title */}
           <div className="flex flex-col items-center gap-2 text-center">
             <Image
-              src="/newlogo.png"
+              src="/logo.png"
               alt="كزورا Kzora"
               width={170}
               height={102}

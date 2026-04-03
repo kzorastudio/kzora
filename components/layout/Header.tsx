@@ -215,7 +215,7 @@ export function Header() {
 
             <Link href="/" aria-label="كزورا" className="shrink-0">
               <Image
-                src="/newlogo.png"
+                src="/logo.png"
                 alt="كزورا Kzora"
                 width={140}
                 height={84}

@@ -60,7 +60,7 @@ export default function AdminSetupPage() {
       <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md">
 
         <div className="flex justify-center mb-8">
-          <Image src="/newlogo.png" alt="كزورا" width={120} height={72} className="h-16 w-auto object-contain" />
+          <Image src="/logo.png" alt="كزورا" width={120} height={72} className="h-16 w-auto object-contain" />
         </div>
 
         <h1 className="text-2xl font-arabic font-bold text-[#1A1A1A] mb-1 text-center">إعداد حساب المدير</h1>

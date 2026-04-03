@@ -77,7 +77,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#F0EBE3]">
               <Link href="/" onClick={onClose}>
                 <Image
-                  src="/newlogo.png"
+                  src="/logo.png"
                   alt="كزورا Kzora"
                   width={120}
                   height={72}
