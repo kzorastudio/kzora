@@ -23,7 +23,8 @@ async function getProduct(id: string): Promise<ProductFull | null> {
       images:product_images(*),
       colors:product_colors(*),
       sizes:product_sizes(size, is_available),
-      tags:product_tags(tag)
+      tags:product_tags(tag),
+      variants:product_variants(*)
       `
     )
     .eq('id', id)
