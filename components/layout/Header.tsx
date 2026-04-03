@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/store/cartStore'
 import { useCurrencyStore } from '@/store/currencyStore'
-import { ShoppingBag, Search, X, Truck } from 'lucide-react'
+import { ShoppingBag, Search, X, Truck, AlignRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -200,17 +200,30 @@ export function Header() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-8 py-4">
 
-          {/* Logo — appears on RIGHT in RTL */}
-          <Link href="/" aria-label="كزورا" className="shrink-0">
-            <Image
-              src="/newlogo.png"
-              alt="كزورا Kzora"
-              width={140}
-              height={84}
-              className="h-16 w-auto object-contain scale-[1.7] origin-right"
-              priority
-            />
-          </Link>
+          {/* Right Section: Mobile Menu + Logo (appears on RIGHT in RTL) */}
+          <div className="flex items-center sm:gap-2 shrink-0">
+            {/* Mobile menu toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              aria-label="القائمة"
+              title="القائمة"
+              className="md:hidden flex items-center justify-center p-2 mr-[-10px] ml-1 rounded-xl text-[#1A1A1A] hover:bg-[#F0EBE3] transition-all duration-150"
+            >
+              <AlignRight size={28} strokeWidth={2} />
+            </button>
+
+            <Link href="/" aria-label="كزورا" className="shrink-0">
+              <Image
+                src="/newlogo.png"
+                alt="كزورا Kzora"
+                width={140}
+                height={84}
+                className="h-16 w-auto object-contain scale-[1.7] origin-right"
+                priority
+              />
+            </Link>
+          </div>
 
           {/* Desktop nav — CENTER */}
           <nav className="hidden md:flex items-center gap-10" aria-label="التنقل الرئيسي">
@@ -334,17 +347,6 @@ export function Header() {
               )}
             </button>
 
-            {/* Mobile menu toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              aria-label="القائمة"
-              className="md:hidden flex flex-col gap-[5px] p-2.5 rounded-xl hover:bg-[#F0EBE3] transition-all duration-150"
-            >
-              <span className="w-5 h-[2px] bg-[#1A1A1A] rounded-full block" />
-              <span className="w-4 h-[2px] bg-[#1A1A1A] rounded-full block" />
-              <span className="w-5 h-[2px] bg-[#1A1A1A] rounded-full block" />
-            </button>
           </div>
 
         </div>
