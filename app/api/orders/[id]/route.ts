@@ -130,14 +130,18 @@ export async function PUT(
         })
 
       // ─── Handle Loyalty Point Updates ────────────────────────────────────
-      const isConfirmedState = ['confirmed', 'shipped', 'delivered'].includes(status)
+      const isDeliveredState = status === 'delivered'
       const isCancelledState = status === 'cancelled'
 
-      if (isConfirmedState || isCancelledState) {
+      let pointStatus = 'pending'
+      if (isDeliveredState) pointStatus = 'confirmed'
+      if (isCancelledState) pointStatus = 'cancelled'
+
+      if (isDeliveredState || isCancelledState) {
         // 1. Update the loyalty point specifically for this order
         await supabaseAdmin
           .from('loyalty_points')
-          .update({ status: isConfirmedState ? 'confirmed' : 'cancelled' })
+          .update({ status: pointStatus })
           .eq('order_id', id)
 
         // 2. If cancelled AND this order used a loyalty discount, revert the 3 points

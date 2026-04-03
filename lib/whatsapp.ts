@@ -109,6 +109,10 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
   lines.push(``)
   lines.push(`*الاجمالي النهائي: ${total}*`)
+  
+  lines.push(``)
+  lines.push(`🎁 *مبروك! لقد كسبت نقطة ولاء من هذا الطلب.*`)
+  lines.push(`(سيتم تفعيل وبدء حساب النقطة في رصيدك فور استلام الطلب والتأكد منه)`)
 
   const pMethod = order.paymentMethod === 'sham_cash' ? 'شام كاش (تم التحويل)' : 'الدفع عند الاستلام'
   lines.push(`*طريقة الدفع:* ${pMethod}`)

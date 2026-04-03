@@ -262,7 +262,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-[11px] rounded-xl border border-blue-100 flex items-start gap-1.5 leading-relaxed">
                   <span className="text-lg">💡</span>
                   <span className="flex-1 font-arabic">
-                    تزداد النقاط المؤكدة تلقائياً عند تغيير حالة الطلب إلى "شحن" أو "تم التوصيل". 
+                    تزداد النقاط المؤكدة للعميل بشكل فعلي فقط عند تغيير حالة هذا الطلب إلى "تم التوصيل". 
+                    هذا يحمي من كسب النقاط لطلبات غير مستلمة.
                     عند وصول العدد لـ 3، يحصل العميل على خصم بقيمة 1000 ل.س في طلبه القادم.
                   </span>
                 </div>
