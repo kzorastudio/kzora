@@ -23,6 +23,12 @@ const TAG_OPTIONS: { value: ProductTag; label: string }[] = [
   { value: 'on_sale',     label: 'عروض حصرية'    },
 ]
 
+const SPECIAL_TABS = [
+  { id: 'sale', label: 'عروض حصرية', onSale: true,  tag: null,          icon: '🔥', baseClass: 'text-rose-600 hover:bg-rose-50/80',   activeClass: 'bg-gradient-to-l from-rose-500 to-rose-600 text-white shadow-sm ring-1 ring-rose-200' },
+  { id: 'new',  label: 'وصل حديثاً', onSale: false, tag: 'new',         icon: '✨', baseClass: 'text-amber-600 hover:bg-amber-50/80', activeClass: 'bg-gradient-to-l from-amber-500 to-amber-600 text-white shadow-sm ring-1 ring-amber-200' },
+  { id: 'best', label: 'الأكثر مبيعاً', onSale: false, tag: 'best_seller', icon: '🏆', baseClass: 'text-indigo-600 hover:bg-indigo-50/80', activeClass: 'bg-gradient-to-l from-indigo-500 to-indigo-600 text-white shadow-sm ring-1 ring-indigo-200' },
+]
+
 const ITEMS_PER_PAGE = 24
 
 interface Props {
@@ -302,10 +308,10 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
               {/* All */}
               <button
                 type="button"
-                onClick={() => { setSelectedCategories([]); setPage(1) }}
+                onClick={() => { setSelectedCategories([]); setOnSale(false); setSelectedTags([]); setPage(1) }}
                 className={cn(
                   'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
-                  selectedCategories.length === 0
+                  selectedCategories.length === 0 && !onSale && selectedTags.length === 0
                     ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
                     : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
                 )}
@@ -314,13 +320,41 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
                 الكل
               </button>
 
+              <div className="w-px h-6 bg-outline-variant/30 mx-0.5 shrink-0" />
+
+              {/* Special Distingusihed Tabs */}
+              {SPECIAL_TABS.map(tab => {
+                const isActive = (tab.onSale && onSale) || (tab.tag && selectedTags.length === 1 && selectedTags[0] === tab.tag);
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategories([]);
+                      setOnSale(tab.onSale);
+                      setSelectedTags(tab.tag ? [tab.tag] : []);
+                      setPage(1);
+                    }}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
+                      isActive ? tab.activeClass : tab.baseClass
+                    )}
+                  >
+                    <span className="text-sm leading-none">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                )
+              })}
+
+              <div className="w-px h-6 bg-outline-variant/30 mx-0.5 shrink-0" />
+
               {initialCategories.map((cat) => {
                 const isActive = selectedCategories.length === 1 && selectedCategories[0] === cat.slug
                 return (
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => { setSelectedCategories([cat.slug]); setPage(1) }}
+                    onClick={() => { setSelectedCategories([cat.slug]); setOnSale(false); setSelectedTags([]); setPage(1) }}
                     className={cn(
                       'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
                       isActive
