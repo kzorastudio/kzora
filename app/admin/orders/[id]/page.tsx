@@ -69,7 +69,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   if (!order) notFound()
 
   const deliveryType = (order as any).delivery_type || 'shipping'
-  const shippingName = deliveryType === 'delivery' ? 'توصيل عادي' : (await getShippingMethodName(order.shipping_company || ''))
+  const shippingName = deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : (await getShippingMethodName(order.shipping_company || ''))
   const loyalty = await getCustomerLoyalty(order.customer_phone)
 
   const subtotal = order.currency_used === 'USD'
@@ -156,16 +156,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     </div>
 
                     {/* Price */}
-                    <div className="text-left shrink-0">
+                    <div className="text-right shrink-0" dir="rtl">
                       <p className="text-sm font-label font-semibold text-on-surface">
                         {order.currency_used === 'USD'
                           ? formatPrice(item.unit_price_usd * item.quantity, 'USD')
                           : formatPrice(item.unit_price_syp * item.quantity, 'SYP')}
                       </p>
                       <p className="text-xs font-label text-secondary mt-0.5">
-                        {order.currency_used === 'USD'
-                          ? formatPrice(item.unit_price_usd, 'USD')
-                          : formatPrice(item.unit_price_syp, 'SYP')} × {item.quantity}
+                        {item.quantity} قطعة
                       </p>
                     </div>
                   </div>
@@ -320,14 +318,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 {order.coupon_code && (
                   <div className="flex justify-between">
                     <span className="text-secondary">كوبون ({order.coupon_code})</span>
-                    <span className="text-tertiary font-medium">- {discount}</span>
+                    <span className="text-tertiary font-medium">{discount}</span>
                   </div>
                 )}
                 {(order.loyalty_discount_syp > 0 || order.loyalty_discount_usd > 0) && (
                   <div className="flex justify-between">
                     <span className="text-secondary">خصم الولاء 🎁</span>
-                    <span className="text-[#BA1A1A] font-medium">
-                      - {order.currency_used === 'USD' ? formatPrice(order.loyalty_discount_usd, 'USD') : formatPrice(order.loyalty_discount_syp, 'SYP')}
+                    <span className="text-[#BA1A1A] font-medium" dir="rtl">
+                      {order.currency_used === 'USD' ? formatPrice(order.loyalty_discount_usd, 'USD') : formatPrice(order.loyalty_discount_syp, 'SYP')}
                     </span>
                   </div>
                 )}

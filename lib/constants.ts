@@ -57,7 +57,7 @@ export const STOCK_STATUS_OPTIONS = [
 ] as const
 
 export const CURRENCY_SYMBOL: Record<string, string> = {
-  SYP: 'ل.س.ج',
+  SYP: 'ل.س',
   USD: '$',
 }
 

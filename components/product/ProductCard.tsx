@@ -378,7 +378,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </div>
 
         {/* Price */}
-        <div className="mt-auto flex items-center gap-2 pt-1" dir="ltr">
+        <div className="mt-auto flex items-center gap-2 pt-1" dir="rtl">
           <span className={cn(
             "font-arabic font-semibold text-sm tabular-nums",
             isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#1A1A1A]'

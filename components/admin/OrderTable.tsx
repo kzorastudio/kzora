@@ -12,7 +12,7 @@ const SHIPPING_DISPLAY: Record<string, string> = {
   karam:   'كرم',
   qadmous: 'قدموس',
   masarat: 'مسارات',
-  delivery: 'توصيل عادي',
+  delivery: 'توصيل عادي (حلب)',
   shipping: 'شحن شركات',
 }
 
@@ -195,7 +195,7 @@ export default function OrderTable({
                     </td>
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface-variant whitespace-nowrap">
                       {order.delivery_type === 'delivery' 
-                        ? '🚀 توصيل عادي' 
+                        ? '🚀 توصيل عادي (حلب)'
                         : (SHIPPING_DISPLAY[order.shipping_company!] || order.shipping_company || 'شحن للمحافظات')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={order.status} /></td>

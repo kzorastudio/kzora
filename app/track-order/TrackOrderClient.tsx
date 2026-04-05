@@ -75,7 +75,7 @@ function formatPrice(amount: number, currency: 'SYP' | 'USD'): string {
       maximumFractionDigits: 2,
     }).format(amount)
   }
-  return new Intl.NumberFormat('ar-SY', { maximumFractionDigits: 0 }).format(amount) + ' ل.س.ج'
+  return 'السعر : ' + new Intl.NumberFormat('ar-SY', { maximumFractionDigits: 0 }).format(amount) + ' ل.س'
 }
 
 // ─── Status progress bar ──────────────────────────────────────────────────────
@@ -256,7 +256,7 @@ function OrderCard({ order }: { order: OrderFull }) {
                       <span>الكمية: {item.quantity}</span>
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-[#1A1A1A] shrink-0" dir="ltr">
+                  <span className="text-sm font-semibold text-[#1A1A1A] shrink-0" dir="rtl">
                     {order.currency_used === 'USD'
                       ? formatPrice(item.unit_price_usd * item.quantity, 'USD')
                       : formatPrice(item.unit_price_syp * item.quantity, 'SYP')}
@@ -276,7 +276,7 @@ function OrderCard({ order }: { order: OrderFull }) {
                 </p>
                 <p className="text-sm font-arabic font-medium text-[#1A1A1A]">
                   {(order as any).delivery_type === 'delivery' 
-                    ? '🚀 توصيل عادي' 
+                    ? '🚀 توصيل عادي (حلب)'
                     : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
                 </p>
               </div>
@@ -298,7 +298,7 @@ function OrderCard({ order }: { order: OrderFull }) {
             <div className="bg-[#FAF8F5] rounded-xl px-4 py-3 flex flex-col gap-1.5">
               <div className="flex justify-between text-sm font-arabic">
                 <span className="text-[#9E9890]">المجموع الفرعي</span>
-                <span className="text-[#1A1A1A]" dir="ltr">
+                <span className="text-[#1A1A1A]" dir="rtl">
                   {order.currency_used === 'USD'
                     ? formatPrice(order.subtotal_usd, 'USD')
                     : formatPrice(order.subtotal_syp, 'SYP')}
@@ -307,8 +307,7 @@ function OrderCard({ order }: { order: OrderFull }) {
               {order.coupon_code && (
                 <div className="flex justify-between text-sm font-arabic">
                   <span className="text-[#9E9890]">كوبون ({order.coupon_code})</span>
-                  <span className="text-[#BA1A1A] font-medium" dir="ltr">
-                    -{' '}
+                  <span className="text-[#BA1A1A] font-medium" dir="rtl">
                     {order.currency_used === 'USD'
                       ? formatPrice(order.discount_amount_usd, 'USD')
                       : formatPrice(order.discount_amount_syp, 'SYP')}
@@ -317,7 +316,7 @@ function OrderCard({ order }: { order: OrderFull }) {
               )}
               <div className="flex justify-between text-sm font-arabic pt-1.5 border-t border-[#E3DDD5]">
                 <span className="font-bold text-[#1A1A1A]">الإجمالي</span>
-                <span className="font-bold text-[#785600]" dir="ltr">{total}</span>
+                <span className="font-bold text-[#785600]" dir="rtl">{total}</span>
               </div>
             </div>
           </div>

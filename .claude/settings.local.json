@@ -29,7 +29,11 @@
       "Bash(rm:*)",
       "Bash(xargs sed:*)",
       "Bash(npm install:*)",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(sed:*)",
+      "Bash(sed -i \"s/'🚀 توصيل عادي'/'🚀 توصيل عادي \\(حلب\\)'/g\" app/track-order/TrackOrderClient.tsx \"app/order-success/[orderId]/page.tsx\" components/admin/OrderTable.tsx)",
+      "Bash(sed -i \"s/توصيل عادي \\(حلب فقط\\)/توصيل عادي \\(حلب\\)/g\" components/checkout/CheckoutForm.tsx)",
+      "Bash(sed -i \"s/'توصيل عادي'/'توصيل عادي \\(حلب\\)'/g\" components/admin/OrderTable.tsx \"app/admin/orders/[id]/page.tsx\" \"app/admin/orders/[id]/OrderDetailsEditor.tsx\")"
     ]
   }
 }

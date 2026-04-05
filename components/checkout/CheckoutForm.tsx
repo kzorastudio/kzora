@@ -170,7 +170,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliv
             {
               id: 'delivery-special',
               slug: 'delivery',
-              name: '🚀 توصيل عادي (حلب فقط)',
+              name: '🚀 توصيل عادي (حلب)',
               description: 'توصيل لباب المنزل عبر مندوب كزورا.',
               badge: 'الأسرع'
             },

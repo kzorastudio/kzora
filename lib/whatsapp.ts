@@ -127,7 +127,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     if (remaining > 0) {
       lines.push(`- بقي لك ${remaining} طلبات مؤكدة لتصل للطلب الرابع وتحصل على خصم 1000 ليرة سورية!`)
     } else {
-      lines.push(`- مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض (1000 ل.س.ج) 🥳`)
+      lines.push(`- مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض (1000 ل.س) 🥳`)
     }
   }
 

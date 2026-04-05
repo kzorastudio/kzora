@@ -82,14 +82,14 @@ export default function CouponForm({ onSuccess }: CouponFormProps) {
           className={cn(FIELD_CLASS, errors.type && 'border-error')}
         >
           <option value="percentage">نسبة مئوية (%)</option>
-          <option value="fixed_amount">مبلغ ثابت (ل.س.ج)</option>
+          <option value="fixed_amount">مبلغ ثابت (ل.س)</option>
         </select>
       </div>
 
       {/* Value */}
       <div>
         <label className={LABEL_CLASS}>
-          {watchedType === 'percentage' ? 'نسبة الخصم (%)' : 'مبلغ الخصم (ل.س.ج)'} *
+          {watchedType === 'percentage' ? 'نسبة الخصم (%)' : 'مبلغ الخصم (ل.س)'} *
         </label>
         <input
           type="number"
@@ -107,7 +107,7 @@ export default function CouponForm({ onSuccess }: CouponFormProps) {
 
       {/* Min order */}
       <div>
-        <label className={LABEL_CLASS}>الحد الأدنى للطلب (ل.س.ج)</label>
+        <label className={LABEL_CLASS}>الحد الأدنى للطلب (ل.س)</label>
         <input
           type="number"
           min={0}

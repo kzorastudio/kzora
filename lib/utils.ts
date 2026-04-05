@@ -15,9 +15,9 @@ export function formatPrice(amount: number, currency: Currency): string {
       maximumFractionDigits: 2,
     }).format(amount)
   }
-  return new Intl.NumberFormat('ar-SY', {
+  return 'السعر : ' + new Intl.NumberFormat('ar-SY', {
     maximumFractionDigits: 0,
-  }).format(amount) + ' ل.س.ج'
+  }).format(amount) + ' ل.س'
 }
 
 // Generate slug from Arabic text using transliteration
@@ -74,8 +74,8 @@ export const SHIPPING_LABELS: Record<string, string> = {
   'karam':   'كرم (Karam)',
   'qadmous': 'قدموس (Qadmous)',
   'masarat': 'مسارات (Masarat)',
-  'delivery': '🚀 توصيل عادي',
-  'regular_delivery': '🚀 توصيل عادي',
+  'delivery': '🚀 توصيل عادي (حلب)',
+  'regular_delivery': '🚀 توصيل عادي (حلب)',
   'shipping': '📦 شحن للمحافظات',
 }
 

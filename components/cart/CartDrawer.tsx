@@ -168,7 +168,7 @@ export function CartDrawer({ className }: CartDrawerProps) {
             ) : (
               <>
                 {/* Items list (scrollable) */}
-                <div className="flex-1 overflow-y-auto px-5 divide-y divide-surface-container-high">
+                <div className="overflow-y-auto px-5 divide-y divide-surface-container-high" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                   {items.map((item) => (
                     <CartItem
                       key={`${item.id}__${item.color ?? ''}__${item.size ?? ''}`}

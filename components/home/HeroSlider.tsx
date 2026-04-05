@@ -9,7 +9,7 @@ import type { Swiper as SwiperType } from 'swiper'
 import type { HeroSlide } from '@/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { ChevronRight, ChevronLeft } from 'lucide-react'
+import { ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react'
 
 import 'swiper/css'
 import 'swiper/css/navigation'
@@ -214,6 +214,7 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
 
       {/* Decorative vertical line */}
       <div className="absolute bottom-0 left-12 lg:left-16 w-px h-24 bg-gradient-to-t from-[#785600] to-transparent hidden md:block" />
+
     </section>
   )
 }

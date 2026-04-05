@@ -53,7 +53,7 @@ export function PriceDisplay({
   const classes = sizeMap[size]
 
   return (
-    <div className={cn('flex items-center gap-2 flex-wrap', className)} dir="ltr">
+    <div className={cn('flex items-center gap-2 flex-wrap', className)} dir="rtl">
       {/* Current price */}
       <span
         className={cn(

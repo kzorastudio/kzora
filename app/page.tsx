@@ -14,6 +14,7 @@ import type { HeroSlide, Category, ProductFull } from '@/types'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
+import { ScrollHint } from '@/components/ui/ScrollHint'
 
 // ─── Fetch helpers ─────────────────────────────────────────────────────────────
 async function fetchProductsByTag(tag: string, limit = 8): Promise<ProductFull[]> {
@@ -202,6 +203,7 @@ export default async function HomePage() {
       <Footer />
       <WhatsAppFAB />
       <CartDrawer />
+      <ScrollHint />
     </>
   )
 }

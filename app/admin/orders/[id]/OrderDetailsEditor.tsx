@@ -172,7 +172,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                 }}
                 className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
               >
-                <option value="delivery">🚀 توصيل عادي</option>
+                <option value="delivery">🚀 توصيل عادي (حلب)</option>
                 <option value="shipping">📦 شحن محافظات</option>
               </select>
             </div>

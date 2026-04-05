@@ -231,7 +231,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   </p>
                   <p className="font-arabic text-sm font-medium text-on-surface">
                     {(order as any).delivery_type === 'delivery' 
-                      ? '🚀 توصيل عادي' 
+                      ? '🚀 توصيل عادي (حلب)'
                       : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
                   </p>
                 </div>
@@ -286,10 +286,11 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                           </div>
                         </div>
                         {/* Price × qty */}
-                        <div className="text-left shrink-0" dir="ltr">
+                        <div className="text-right shrink-0" dir="rtl">
                           <p className="font-body text-sm font-semibold text-on-surface tabular-nums">
-                            {item.quantity} × {formatPrice(itemPrice, currency)}
+                            {formatPrice(itemPrice, currency)}
                           </p>
+                          <p className="text-xs text-secondary">{item.quantity} قطعة</p>
                         </div>
                       </li>
                     )
@@ -304,7 +305,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-arabic text-secondary">المجموع الفرعي</span>
-                  <span className="font-body tabular-nums text-on-surface" dir="ltr">
+                  <span className="font-body tabular-nums text-on-surface" dir="rtl">
                     {formatPrice(subtotal, currency)}
                   </span>
                 </div>
@@ -316,8 +317,8 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                         <span className="font-body text-primary mr-1">({order.coupon_code})</span>
                       )}
                     </span>
-                    <span className="font-body tabular-nums text-[#BA1A1A]" dir="ltr">
-                      -{formatPrice(baseDiscount, currency)}
+                    <span className="font-body tabular-nums text-[#BA1A1A]" dir="rtl">
+                      {formatPrice(baseDiscount, currency)}
                     </span>
                   </div>
                 )}
@@ -326,8 +327,8 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     <span className="font-arabic text-[#006E1C] font-semibold">
                       خصم الولاء 🎁
                     </span>
-                    <span className="font-body tabular-nums text-[#006E1C] font-bold" dir="ltr">
-                      -{formatPrice(loyaltyDiscount, currency)}
+                    <span className="font-body tabular-nums text-[#006E1C] font-bold" dir="rtl">
+                      {formatPrice(loyaltyDiscount, currency)}
                     </span>
                   </div>
                 )}
@@ -343,14 +344,14 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     <span className="font-arabic text-secondary">
                       أجرة الشحن
                     </span>
-                    <span className="font-body tabular-nums text-[#2E7D32]" dir="ltr">
-                      +{formatPrice(shippingFee, currency)}
+                    <span className="font-body tabular-nums text-[#2E7D32]" dir="rtl">
+                      {formatPrice(shippingFee, currency)}
                     </span>
                   </div>
                 ) : null}
                 <div className="flex items-center justify-between pt-2 border-t border-surface-container-high">
                   <span className="font-arabic font-bold text-on-surface">الإجمالي</span>
-                  <span className="font-body font-bold text-lg text-primary tabular-nums" dir="ltr">
+                  <span className="font-body font-bold text-lg text-primary tabular-nums" dir="rtl">
                     {formatPrice(total, currency)}
                   </span>
                 </div>

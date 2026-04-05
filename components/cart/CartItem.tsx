@@ -144,9 +144,8 @@ export function CartItem({ item, className }: CartItemProps) {
           )}
 
           {/* Line total */}
-          <div className="text-left">
-            <span className="block text-[10px] font-arabic text-secondary mb-0.5">الإجمالي</span>
-            <span className="font-body font-bold text-base text-[#785600] tabular-nums" dir="ltr">
+          <div className="text-right">
+            <span className="font-body font-bold text-base text-[#785600] tabular-nums" dir="rtl">
               {formatPrice(lineTotal, currency)}
             </span>
           </div>

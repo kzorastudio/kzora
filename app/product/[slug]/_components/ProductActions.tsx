@@ -268,15 +268,15 @@ export default function ProductActions({ product, settings, activeColorName, onC
           {settings && (
             <div className="flex flex-col gap-0.5 mt-1 border-t border-black/5 pt-2">
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
-                <span className="opacity-80">🚀 توصيل عادي:</span>
-                <span className="font-bold text-[#1A1A1A] tabular-nums">
-                  +{formatPrice(currency === 'SYP' ? (settings.delivery_fee_1_piece_syp || 0) : (settings.delivery_fee_1_piece_usd || 0), currency)}
+                <span className="opacity-80">🚀 توصيل عادي (حلب):</span>
+                <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
+                  {formatPrice(currency === 'SYP' ? (settings.delivery_fee_1_piece_syp || 0) : (settings.delivery_fee_1_piece_usd || 0), currency)}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
                 <span className="opacity-80">📦 شحن محافظات:</span>
-                <span className="font-bold text-[#1A1A1A] tabular-nums">
-                  +{formatPrice(currency === 'SYP' ? (settings.shipping_fee_1_piece_syp || 0) : (settings.shipping_fee_1_piece_usd || 0), currency)}
+                <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
+                  {formatPrice(currency === 'SYP' ? (settings.shipping_fee_1_piece_syp || 0) : (settings.shipping_fee_1_piece_usd || 0), currency)}
                 </span>
               </div>
             </div>
@@ -302,7 +302,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
               currency === 'SYP' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
             )}
           >
-            ل.س.ج
+            ل.س
           </button>
         </div>
       </div>

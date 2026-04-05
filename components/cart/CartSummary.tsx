@@ -40,7 +40,7 @@ export function CartSummary({
       {/* Subtotal row */}
       <div className="flex items-center justify-between py-2.5">
         <span className="font-brand text-sm text-secondary">المجموع الفرعي</span>
-        <span className="font-body text-sm tabular-nums text-on-surface" dir="ltr">
+        <span className="font-body text-sm tabular-nums text-on-surface" dir="rtl">
           {formatPrice(subtotal, currency)}
         </span>
       </div>
@@ -56,8 +56,8 @@ export function CartSummary({
               </span>
             )}
           </span>
-          <span className="font-body text-sm tabular-nums text-[#BA1A1A]" dir="ltr">
-            -{formatPrice(discount, currency)}
+          <span className="font-body text-sm tabular-nums text-[#BA1A1A]" dir="rtl">
+            {formatPrice(discount, currency)}
           </span>
         </div>
       )}
@@ -68,8 +68,8 @@ export function CartSummary({
           <span className="font-brand text-sm text-secondary">
             خصم تعدد المنتجات
           </span>
-          <span className="font-body text-sm tabular-nums text-[#BA1A1A]" dir="ltr">
-            -{formatPrice(multiDisc, currency)}
+          <span className="font-body text-sm tabular-nums text-[#BA1A1A]" dir="rtl">
+            {formatPrice(multiDisc, currency)}
           </span>
         </div>
       )}
@@ -80,7 +80,7 @@ export function CartSummary({
       {/* Total row */}
       <div className="flex items-center justify-between py-2.5">
         <span className="font-brand text-base font-semibold text-on-surface">الإجمالي</span>
-        <span className="font-body text-base font-bold tabular-nums text-primary" dir="ltr">
+        <span className="font-body text-base font-bold tabular-nums text-primary" dir="rtl">
           {formatPrice(total, currency)}
         </span>
       </div>
