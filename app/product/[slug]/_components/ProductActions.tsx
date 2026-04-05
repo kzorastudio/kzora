@@ -270,7 +270,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
                 <span className="opacity-80">🚀 توصيل عادي (حلب):</span>
                 <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {formatPrice(currency === 'SYP' ? (settings.delivery_fee_1_piece_syp || 0) : (settings.delivery_fee_1_piece_usd || 0), currency)}
+                  {formatPrice(currency === 'SYP' ? (settings.delivery_fee_syp || 0) : (settings.delivery_fee_usd || 0), currency)}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
