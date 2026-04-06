@@ -53,9 +53,6 @@ export default async function ShippingPage() {
           
           <div className="relative z-10 max-w-4xl mx-auto">
             <ScrollReveal direction="up">
-              <span className="inline-block px-4 py-1.5 bg-[#F5F1EB] text-[#785600] rounded-full text-[10px] font-arabic font-bold uppercase tracking-widest mb-6 border border-[#E8E3DB]">
-                اللوجستيات والشحن
-              </span>
               <h1 className="font-arabic text-4xl md:text-5xl lg:text-6xl font-black text-[#1A1A1A] leading-tight mb-6 tracking-tight">
                 {title}
               </h1>
