@@ -75,7 +75,11 @@ export default async function PrivacyPolicyPage() {
 
   const title = page?.title || 'سياسة الخصوصية'
   const paragraphs = page?.content
-    ? page.content.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean)
+    ? page.content
+        .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags
+        .split(/\n+/)
+        .map((p: string) => p.trim())
+        .filter(Boolean)
     : [
         'نحن في كزورا نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية.',
         'البيانات التي نجمعها تُستخدم فقط لمعالجة طلباتك وتحسين تجربة التسوق.',

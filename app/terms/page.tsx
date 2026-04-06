@@ -31,7 +31,11 @@ export default async function TermsPage() {
 
   const title = page?.title || 'شروط الاستخدام'
   const paragraphs = page?.content
-    ? page.content.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean)
+    ? page.content
+        .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags
+        .split(/\n+/)
+        .map((p: string) => p.trim())
+        .filter(Boolean)
     : [
         'استخدامك لموقع كزورا Kzora يعني موافقتك الكاملة على جميع الشروط والأحكام المذكورة هنا. نحن نحتفظ بالحق في تعديل هذه الشروط في أي وقت لتتواكب مع حقوق المستهلك وتطور خدماتنا.',
         'نحن نسعى لعرض ألوان وتفاصيل الأحذية بأكبر قدر ممكن من الدقة. ومع ذلك، قد تختلف درجة اللون قليلاً حسب إعدادات شاشة جهازك. نحن نضمن لك توافق المنتج مع الوصف المذكور.',

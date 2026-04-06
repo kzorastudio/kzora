@@ -31,7 +31,11 @@ export default async function ShippingPage() {
 
   const title = page?.title || 'سياسة الشحن والتوصيل'
   const paragraphs = page?.content
-    ? page.content.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean)
+    ? page.content
+        .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags
+        .split(/\n+/)
+        .map((p: string) => p.trim())
+        .filter(Boolean)
     : [
         'نفتخر في كزورا Kzora بتوفير خدمة التوصيل لجميع المحافظات السورية، بما في ذلك حلب، دمشق، ريف دمشق، حمص، حماة، اللاذقية، طرطوس، والسويداء.',
         'نعمل جاهدين لتسليم طلباتكم في أسرع وقت ممكن. تستغرق عملية التوصيل عادةً ما بين ٢٤ إلى ٧٢ ساعة عمل من تاريخ تأكيد الطلب عبر الواتساب.',
