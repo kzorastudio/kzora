@@ -116,7 +116,11 @@ export async function PUT(
       .single()
 
     if (updateError || !order) {
-      return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+      console.error('[ORDER_UPDATE_API] Supabase update fail:', updateError?.message || 'Unknown')
+      return NextResponse.json({ 
+        error: 'Update failed', 
+        details: updateError?.message 
+      }, { status: 500 })
     }
 
     // ─── Append status history only if status changed ─────────────────────
@@ -138,29 +142,34 @@ export async function PUT(
       if (isCancelledState) pointStatus = 'cancelled'
 
       if (isDeliveredState || isCancelledState) {
-        // 1. Update the loyalty point specifically for this order
-        await supabaseAdmin
-          .from('loyalty_points')
-          .update({ status: pointStatus })
-          .eq('order_id', id)
-
-        // 2. If cancelled AND this order used a loyalty discount, revert the 3 points
-        if (isCancelledState && currentOrder.loyalty_discount_syp > 0) {
-          // Find the 3 most recently used points for this customer
-          const { data: recentUsedPoints } = await supabaseAdmin
+        try {
+          // 1. Update the loyalty point specifically for this order
+          await supabaseAdmin
             .from('loyalty_points')
-            .select('id')
-            .eq('customer_phone', currentOrder.customer_phone)
-            .eq('cycle_used', true)
-            .order('created_at', { ascending: false })
-            .limit(3)
-          
-          if (recentUsedPoints && recentUsedPoints.length > 0) {
-            await supabaseAdmin
+            .update({ status: pointStatus })
+            .eq('order_id', id)
+
+          // 2. If cancelled AND this order used a loyalty discount, revert the 3 points
+          if (isCancelledState && currentOrder.loyalty_discount_syp > 0) {
+            // Find the 3 most recently used points for this customer
+            const { data: recentUsedPoints } = await supabaseAdmin
               .from('loyalty_points')
-              .update({ cycle_used: false })
-              .in('id', recentUsedPoints.map(p => p.id))
+              .select('id')
+              .eq('customer_phone', currentOrder.customer_phone)
+              .eq('cycle_used', true)
+              .order('created_at', { ascending: false })
+              .limit(3)
+            
+            if (recentUsedPoints && recentUsedPoints.length > 0) {
+              await supabaseAdmin
+                .from('loyalty_points')
+                .update({ cycle_used: false })
+                .in('id', recentUsedPoints.map(p => p.id))
+            }
           }
+        } catch (loyaltyErr) {
+          console.error('[ORDER_UPDATE_API] Loyalty update soft fail:', loyaltyErr)
+          // We don't fail the order update for this
         }
       }
     }
