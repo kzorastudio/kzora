@@ -7,14 +7,8 @@ export async function middleware(req: NextRequest) {
   const host = req.headers.get('host') || ''
   const path = url.pathname
 
-  // Redirect www.kzora.co to kzora.co
-  if (host === 'www.kzora.co') {
-    url.host = 'kzora.co'
-    return NextResponse.redirect(url, 301)
-  }
-  
-  // Allow access to public admin routes
-  if (path === '/admin/login' || path === '/admin/setup') {
+  // Allow access to public admin routes (using startsWith to handle trailing slashes/queries)
+  if (path.startsWith('/admin/login') || path.startsWith('/admin/setup')) {
     return NextResponse.next()
   }
   
