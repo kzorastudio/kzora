@@ -107,52 +107,54 @@ export async function PUT(
     if (delivery_type !== undefined) updateFields.delivery_type = delivery_type
     if (payment_method !== undefined) updateFields.payment_method = payment_method
 
-    // ─── Perform Update ──────────────────────────────────────────────────
-    const { data: order, error: updateError } = await supabaseAdmin
+    // ─── 1. PRIMARY UPDATE: Change the Order Status (Atomic) ─────────────
+    const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from('orders')
       .update(updateFields)
       .eq('id', id)
       .select()
       .single()
 
-    if (updateError || !order) {
-      console.error('[ORDER_UPDATE_API] Supabase update fail:', updateError?.message || 'Unknown')
+    if (updateError || !updatedOrder) {
+      console.error('[ORDER_UPDATE_API] Primary update failed:', updateError)
       return NextResponse.json({ 
         error: 'Update failed', 
-        details: updateError?.message 
+        message: updateError?.message,
+        code: updateError?.code
       }, { status: 500 })
     }
 
-    // ─── Append status history only if status changed ─────────────────────
+    // ─── 2. SECONDARY UPDATES: (Run in background or safely) ─────────────
+    // These won't block the successful response if they fail
+    
+    // Status History
     if (status && status !== currentOrder.status) {
-      await supabaseAdmin
-        .from('order_status_history')
-        .insert({
-          order_id:   id,
-          status,
-          changed_at: new Date().toISOString(),
-        })
+      try {
+        await supabaseAdmin
+          .from('order_status_history')
+          .insert({
+            order_id: id,
+            status,
+            changed_at: new Date().toISOString(),
+          })
+      } catch (e) {
+        console.error('[ORDER_UPDATE_API] History insertion soft fail:', e)
+      }
 
-      // ─── Handle Loyalty Point Updates ────────────────────────────────────
-      const isDeliveredState = status === 'delivered'
-      const isCancelledState = status === 'cancelled'
-
-      let pointStatus = 'pending'
-      if (isDeliveredState) pointStatus = 'confirmed'
-      if (isCancelledState) pointStatus = 'cancelled'
-
-      if (isDeliveredState || isCancelledState) {
+      // Loyalty Points Logic
+      if (status === 'delivered' || status === 'cancelled') {
         try {
-          // 1. Update the loyalty point specifically for this order
+          const pointStatus = status === 'delivered' ? 'confirmed' : 'cancelled'
+          
+          // Update order point
           await supabaseAdmin
             .from('loyalty_points')
             .update({ status: pointStatus })
             .eq('order_id', id)
 
-          // 2. If cancelled AND this order used a loyalty discount, revert the 3 points
-          if (isCancelledState && currentOrder.loyalty_discount_syp > 0) {
-            // Find the 3 most recently used points for this customer
-            const { data: recentUsedPoints } = await supabaseAdmin
+          // Revert points if cancelled and discount was used
+          if (status === 'cancelled' && currentOrder.loyalty_discount_syp > 0) {
+            const { data: pointsToRevert } = await supabaseAdmin
               .from('loyalty_points')
               .select('id')
               .eq('customer_phone', currentOrder.customer_phone)
@@ -160,21 +162,20 @@ export async function PUT(
               .order('created_at', { ascending: false })
               .limit(3)
             
-            if (recentUsedPoints && recentUsedPoints.length > 0) {
+            if (pointsToRevert && pointsToRevert.length > 0) {
               await supabaseAdmin
                 .from('loyalty_points')
                 .update({ cycle_used: false })
-                .in('id', recentUsedPoints.map(p => p.id))
+                .in('id', pointsToRevert.map(p => p.id))
             }
           }
-        } catch (loyaltyErr) {
-          console.error('[ORDER_UPDATE_API] Loyalty update soft fail:', loyaltyErr)
-          // We don't fail the order update for this
+        } catch (e) {
+          console.error('[ORDER_UPDATE_API] Loyalty logic soft fail:', e)
         }
       }
     }
 
-    return NextResponse.json({ order })
+    return NextResponse.json({ order: updatedOrder })
   } catch (err) {
     console.error('Order PUT [id] unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
