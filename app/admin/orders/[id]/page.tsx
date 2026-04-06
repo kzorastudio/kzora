@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,6 +10,7 @@ import { formatDate, formatPrice, SHIPPING_LABELS } from '@/lib/utils'
 import type { OrderFull } from '@/types'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
+import CopyOrderButton from './CopyOrderButton'
 
 interface OrderDetailPageProps {
   params: { id: string }
@@ -108,6 +110,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             <p className="text-sm font-arabic text-secondary mt-0.5">
               {formatDate(order.created_at)}
             </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            <CopyOrderButton order={order} />
           </div>
         </div>
 
