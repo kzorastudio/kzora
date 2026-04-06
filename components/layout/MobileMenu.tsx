@@ -7,7 +7,9 @@ import { X, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import type { Category } from '@/types'
 
 const NAV_LINKS = [
   { label: 'الرئيسية',     href: '/' },
@@ -17,11 +19,7 @@ const NAV_LINKS = [
   { label: 'من نحن',     href: '/about' },
 ]
 
-const CATEGORY_LINKS = [
-  { label: 'أحذية رجالية', href: '/category/mens-shoes' },
-  { label: 'أحذية نسائية', href: '/category/womens-shoes' },
-  { label: 'أحذية رياضية', href: '/category/sport' },
-  { label: 'إكسسوارات', href: '/category/accessories' },
+const FIXED_CATEGORY_LINKS = [
   { label: 'عروض حصرية', href: '/products?tag=on_sale', highlight: true },
 ]
 
@@ -32,6 +30,28 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const pathname = usePathname()
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+        if (data) setCategories(data)
+      } catch (err) {
+        console.error('Failed to fetch categories:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (isOpen) {
+      fetchCategories()
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -135,30 +155,63 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               </p>
             </div>
             <nav className="px-4 pb-4">
-              {CATEGORY_LINKS.map((link, i) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.04, duration: 0.2 }}
-                >
-                  <Link
-                    href={link.href}
-                    onClick={onClose}
-                    className={cn(
-                      'flex items-center justify-between px-3 py-3 rounded-xl',
-                      'text-sm font-arabic',
-                      'transition-colors duration-150',
-                      link.highlight
-                        ? 'text-[#BA1A1A] font-semibold hover:bg-[#FFF0F0]'
-                        : 'text-[#3D3B38] hover:bg-[#F5F1EB]'
-                    )}
-                  >
-                    {link.label}
-                    <ChevronLeft size={14} className="text-[#D0CAC0]" />
-                  </Link>
-                </motion.div>
-              ))}
+              {loading ? (
+                 <div className="px-4 py-4 space-y-3">
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="h-10 bg-[#F5F1EB] rounded-xl animate-pulse" />
+                    ))}
+                 </div>
+              ) : (
+                <>
+                  {categories.map((cat, i) => (
+                    <motion.div
+                      key={cat.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + i * 0.04, duration: 0.2 }}
+                    >
+                      <Link
+                        href={`/category/${cat.slug}`}
+                        onClick={onClose}
+                        className={cn(
+                          'flex items-center justify-between px-3 py-3 rounded-xl',
+                          'text-sm font-arabic',
+                          'transition-colors duration-150',
+                          'text-[#3D3B38] hover:bg-[#F5F1EB]'
+                        )}
+                      >
+                        {cat.name_ar}
+                        <ChevronLeft size={14} className="text-[#D0CAC0]" />
+                      </Link>
+                    </motion.div>
+                  ))}
+                  
+                  {FIXED_CATEGORY_LINKS.map((link, i) => (
+                    <motion.div
+                      key={link.href}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + (categories.length + i) * 0.04, duration: 0.2 }}
+                    >
+                      <Link
+                        href={link.href}
+                        onClick={onClose}
+                        className={cn(
+                          'flex items-center justify-between px-3 py-3 rounded-xl',
+                          'text-sm font-arabic',
+                          'transition-colors duration-150',
+                          link.highlight
+                            ? 'text-[#BA1A1A] font-semibold hover:bg-[#FFF0F0]'
+                            : 'text-[#3D3B38] hover:bg-[#F5F1EB]'
+                        )}
+                      >
+                        {link.label}
+                        <ChevronLeft size={14} className="text-[#D0CAC0]" />
+                      </Link>
+                    </motion.div>
+                  ))}
+                </>
+              )}
             </nav>
 
             {/* Spacer */}

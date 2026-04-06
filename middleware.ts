@@ -3,7 +3,15 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname
+  const url = req.nextUrl.clone()
+  const host = req.headers.get('host') || ''
+  const path = url.pathname
+
+  // Redirect www.kzora.co to kzora.co
+  if (host === 'www.kzora.co') {
+    url.host = 'kzora.co'
+    return NextResponse.redirect(url, 301)
+  }
   
   // Allow access to public admin routes
   if (path === '/admin/login' || path === '/admin/setup') {

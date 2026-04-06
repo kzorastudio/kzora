@@ -28,6 +28,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://kzora.co'),
   title: 'كزورا — أناقة تبدأ من خطوتك',
   description: 'متجر الأحذية الفاخرة في سوريا. تشكيلة واسعة من الأحذية الكلاسيكية والعصرية.',
   keywords: 'أحذية, كزورا, سوريا, حلب, أحذية فاخرة',
