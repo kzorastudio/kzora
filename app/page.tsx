@@ -128,7 +128,57 @@ export default async function HomePage() {
     <>
       <Header />
 
-      <main className="min-h-screen bg-[#FAF8F5] pt-24">
+      {/* FAQ Schema for Google Search Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'هل يتوفر توصيل لكافة المحافظات السورية؟',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'نعم، في متجر كزورا Kzora نوفر خدمة التوصيل السريع لكافة المحافظات السورية (حلب، دمشق، حمص، حماة، اللاذقية، طرطوس، وغيرها) مع ضمان وصول المنتج بأمان.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'هل يمكنني تبديل المقاس إذا كان غير مناسب؟',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'بالتأكيد، في كزورا Kzora رضاكم هو ركيزتنا. نوفر سياسة تبديل مرنة وسهلة خلال ٤٨ ساعة من استلام الطلب لضمان حصولكم على المقاس المثالي.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'ما هي جودة الأحذية المتوفرة في كزورا Kzora؟',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'نفتخر في كزورا Kzora بتقديم أحذية مصنعة من أجود الخامات والجلود الطبيعية التي تجمع بين المتانة والأناقة الكلاسيكية والراحة اليومية.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'كيف يمكنني الطلب من متجر كزورا أونلاين؟',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'يمكنكم الطلب مباشرة عبر موقعنا الإلكتروني kzora.co بإضافة المنتجات للسلة، أو التواصل معنا مباشرة عبر الواتساب على الرقم 963964514765.',
+                },
+              },
+            ],
+          }),
+        }}
+      />
+
+      <main className="min-h-screen bg-[#FAF8F5] pt-24 text-right">
+        {/* SEO Accessibility H1 */}
+        <h1 className="sr-only">
+          متجر كزورا Kzora للأحذية — أفضل متجر أحذية أونلاين في سوريا وحلب. أحذية رجالية، أحذية نسائية، أحذية رياضية، وأحذية جلد طبيعي فاخرة.
+        </h1>
+
         {/* 1. Hero Slider */}
         <HeroSlider 
           slides={slides} 
@@ -198,6 +248,62 @@ export default async function HomePage() {
             />
           </ScrollReveal>
         )}
+
+        {/* 7. SEO Content Section (Rich Text for Search Engines) */}
+        <section className="px-8 py-16 border-t border-surface-container-high bg-white/50">
+          <div className="max-w-screen-xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-2xl font-arabic font-bold text-on-surface mb-6">
+                  لماذا تختار كزورا Kzora لتسوق الأحذية في سوريا؟
+                </h2>
+                <p className="text-secondary font-arabic text-sm leading-relaxed mb-4">
+                  يعتبر متجر <span className="text-primary font-bold">كزورا Kzora</span> الوجهة الأولى لعشاق الأناقة والجودة في <span className="font-bold text-on-surface">سوريا</span>. نحن نفخر بتقديم تشكيلة واسعة من <span className="font-bold">الأحذية الرجالية الفاخرة</span> و <span className="font-bold">الأحذية النسائية العصرية</span> التي تناسب كافة الأذواق والمناسبات.
+                </p>
+                <p className="text-secondary font-arabic text-sm leading-relaxed mb-4">
+                  سواء كنت تبحث عن <span className="font-bold">أحذية رياضية (سبور)</span> مريحة للمشي والركض، أو <span className="font-bold">أحذية رسمية</span> للمناسبات الخاصة، أو حتى <span className="font-bold">أحذية طبية</span> توفر الراحة لقدميك، فإن كزورا توفر لك الأفضل بأعلى معايير الجودة وأنسب <span className="font-bold">أسعار الأحذية في سوريا</span>.
+                </p>
+                <p className="text-secondary font-arabic text-sm leading-relaxed">
+                  نحن نتخذ من مدينة <span className="font-bold text-on-surface">حلب</span> مركزاً لنا وفخورون بخدمة زبائننا في كافة المحافظات (دمشق، حمص، حماة، اللاذقية، طرطوس) مع نظام توصيل سريع ودقيق. تسوق الآن عبر الإنترنت وتمتع بتجربة شراء أحذية سهلة وآمنة.
+                </p>
+              </div>
+              <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/30">
+                <h3 className="text-lg font-arabic font-bold text-on-surface mb-4">أهم تصنيفاتنا</h3>
+                <ul className="grid grid-cols-2 gap-3 text-sm font-arabic text-secondary">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    أحذية رجالية رسمية وكاجوال
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    أحذية نسائية (كعب، فلات، جزم)
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    أحذية رياضية (سنيكرز) ماركات
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    صبابات ولحف جلد طبيعي
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    أحذية شتوية وصيفية موديلات 2026
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    إكسسوارات وعناية بالأحذية
+                  </li>
+                </ul>
+                <div className="mt-8 p-4 bg-primary/5 rounded-xl border border-primary/10">
+                  <p className="text-xs font-arabic text-primary leading-relaxed">
+                    <strong>كلمات دلالية للبحث:</strong> كزورا، kzora، أحذية سوريا، أحذية حلب، شراء أحذية أونلاين، أسعار الأحذية، أحذية رياضية سوريا، صبابات جلد طبيعي، موديلات أحذية 2026.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />

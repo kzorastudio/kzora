@@ -7,8 +7,11 @@ import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import TrackOrderClient from './TrackOrderClient'
 
 export const metadata: Metadata = {
-  title: 'تتبع الطلب — كزورا',
-  description: 'تتبع حالة طلبك مباشرة من خلال رقم هاتفك. اعرف أين وصل طلبك الآن.',
+  title: 'تتبع الطلب — كزورا Kzora سوريا',
+  description: 'تتبع حالة طلبك من كزورا Kzora مباشرة من خلال رقم هاتفك. اعرف أين وصل طلبك وموعد التسويل المتوقع في جميع المحافظات السورية.',
+  alternates: { 
+    canonical: '/track-order',
+  },
 }
 
 export default function TrackOrderPage() {

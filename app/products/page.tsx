@@ -24,8 +24,12 @@ interface PageProps {
 }
 
 export const metadata = {
-  title:       'المنتجات — كزورا',
-  description: 'تصفح كامل تشكيلة الأحذية لدى كزورا',
+  title: 'كافة المنتجات — تسوق أحدث موديلات الأحذية في سوريا | كزورا Kzora',
+  description: 'اكتشف مجموعتنا الكاملة من الأحذية الرجالية والنسائية والرياضية. صبابات جلد طبيعي، سنيكرز، وأحذية رسمية بأعلى جودة في سوريا. كزورا Kzora.',
+  keywords: 'أحذية سوريا، تسوق أحذية، كزورا، Kzora، صبابات، سنيكرز سوريا',
+  alternates: { 
+    canonical: '/products',
+  },
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
@@ -37,7 +41,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#FAF8F5] pt-24">
+      <main className="min-h-screen bg-[#FAF8F5] pt-24 text-right">
+        {/* SEO H1 */}
+        <h1 className="sr-only">استعراض كافة المنتجات والأحذية في متجر كزورا Kzora - سوريا</h1>
+
         <Suspense
           fallback={
             <div className="flex items-center justify-center min-h-[60vh]">

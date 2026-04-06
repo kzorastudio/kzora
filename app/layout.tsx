@@ -29,27 +29,46 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://kzora.co'),
-  title: 'كزورا — أناقة تبدأ من خطوتك',
-  description: 'متجر الأحذية الفاخرة في سوريا. تشكيلة واسعة من الأحذية الكلاسيكية والعصرية.',
-  keywords: 'أحذية, كزورا, سوريا, حلب, أحذية فاخرة',
+  title: {
+    default: 'كزورا Kzora — أفضل متجر أحذية أونلاين في سوريا',
+    template: '%s — كزورا Kzora',
+  },
+  description: 'تسوق أفضل الأحذية في سوريا من كزورا Kzora. أحذية رسمية ورياضية وكاجوال رجالية ونسائية بجودة عالية وتوصيل سريع في حلب وجميع المحافظات السورية. كزورا، أناقة تبدأ من خطوتك.',
+  keywords: 'أحذية سوريا, كزورا, Kzora, متجر أحذية سوريا, شراء أحذية أونلاين سوريا, أحذية حلب, أحذية رياضية سوريا, أحذية نسائية سوريا, أحذية رجالية سوريا, أحذية جلد طبيعي سوريا, أسعار الأحذية في سوريا, أحذية سبور سوريا',
+  alternates: {
+    canonical: '/',
+  },
+  manifest: '/manifest.json',
+  themeColor: '#785600',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'كزورا Kzora',
+  },
   icons: {
     icon: '/logo.png',
     apple: '/logo.png',
   },
   openGraph: {
-    title: 'كزورا — أناقة تبدأ من خطوتك',
-    description: 'متجر الأحذية الفاخرة في سوريا. تشكيلة واسعة من الأحذية الكلاسيكية والعصرية.',
+    title: 'كزورا Kzora — متجر الأحذية الفاخرة في سوريا',
+    description: 'تشكيلة واسعة من الأحذية الرجالية والنسائية والرياضية. جودة عالية وتوصيل لجميع المحافظات السورية من كزورا Kzora.',
+    url: 'https://kzora.co',
+    siteName: 'كزورا Kzora',
+    locale: 'ar_SY',
+    type: 'website',
     images: [
       {
         url: '/logo.png',
-        width: 800,
-        height: 600,
-        alt: 'لوغو متجر كزورا',
+        width: 1200,
+        height: 630,
+        alt: 'متجر كزورا للاأحذية - سوريا Kzora Shoes',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'كزورا Kzora — أناقة تبدأ من خطوتك',
+    description: 'أفضل متجر أحذية أونلاين في سوريا - كزورا Kzora',
     images: ['/logo.png'],
   },
 }
@@ -57,7 +76,66 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
-      <body>
+      <body className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'كزورا Kzora',
+              url: 'https://kzora.co',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: 'https://kzora.co/products?search={search_term_string}',
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'ShoeStore',
+              name: 'كزورا Kzora',
+              image: 'https://kzora.co/logo.png',
+              '@id': 'https://kzora.co',
+              url: 'https://kzora.co',
+              telephone: '963964514765',
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: 'Aleppo',
+                addressRegion: 'Aleppo Governorate',
+                addressCountry: 'SY',
+              },
+              geo: {
+                '@type': 'GeoCoordinates',
+                latitude: 36.2021,
+                longitude: 37.1343,
+              },
+              openingHoursSpecification: {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: [
+                  'Monday',
+                  'Tuesday',
+                  'Wednesday',
+                  'Thursday',
+                  'Saturday',
+                  'Sunday',
+                ],
+                opens: '09:00',
+                closes: '22:00',
+              },
+              sameAs: [
+                'https://kzora.co',
+                // Add social links here if available
+              ],
+            }),
+          }}
+        />
         <Providers>
           <VisitTracker />
           <ScrollToTop />

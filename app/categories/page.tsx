@@ -9,8 +9,12 @@ import { CartDrawer } from '@/components/cart/CartDrawer'
 import type { Category } from '@/types'
 
 export const metadata: Metadata = {
-  title: 'الأقسام — كزورا',
-  description: 'تصفح جميع أقسام الأحذية الفاخرة في كزورا',
+  title: 'أقسام الأحذية — تصفح حسب الفئة | كزورا Kzora سوريا',
+  description: 'استكشف تصنيفات الأحذية المتنوعة في كزورا Kzora. أحذية رجالية، نسائية، رياضية، وصيفية. كل ما تحتاجه في مكان واحد مع شحن لجميع المحافظات السورية.',
+  keywords: 'أقسام كزورا، أحذية رجالية سوريا، أحذية نسائية سوريا، تصنيفات الأحذية',
+  alternates: { 
+    canonical: '/categories',
+  },
 }
 
 async function getCategories(): Promise<Category[]> {

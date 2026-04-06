@@ -185,7 +185,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         {product.images && product.images.length > 0 ? (
           <Image
             src={imageUrl}
-            alt={product.name}
+            alt={`${product.name} — من كزورا Kzora`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={cn(

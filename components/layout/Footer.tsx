@@ -58,18 +58,18 @@ export function Footer() {
             <Link href="/" className="hover:opacity-80 transition-opacity w-fit">
               <Image
                 src="/logo.png"
-                alt="كزورا Kzora"
+                alt="متجر كزورا Kzora للأحذية في سوريا"
                 width={150}
                 height={90}
                 className="h-28 w-auto object-contain"
               />
             </Link>
             <p className="text-sm font-arabic text-[#6B6560] leading-7">
-              وجهتك الأولى للأحذية الأنيقة والمريحة في سوريا. جودة تثق بها، وأسعار تناسبك.
+              وجهتك الأولى للأحذية الأنيقة والمريحة في <span className="font-bold text-[#1A1A1A]">سوريا</span>. جودة تثق بها، وأسعار تناسبك. نوفر <span className="underline decoration-[#785600]/30 underline-offset-4">توصيل سريع</span> لجميع المحافظات السورية.
             </p>
             <div className="flex items-center gap-3 mt-1">
               {[
-                { icon: <WhatsAppIcon />, href: 'https://wa.me/963XXXXXXXXX', label: 'WhatsApp' },
+                { icon: <WhatsAppIcon />, href: 'https://wa.me/963964514765', label: 'WhatsApp' },
               ].map((s) => (
                 <a
                   key={s.label}
@@ -87,6 +87,11 @@ export function Footer() {
                   {s.icon}
                 </a>
               ))}
+            </div>
+            <div className="mt-2">
+              <p className="text-[10px] font-arabic text-[#9E9890] leading-relaxed">
+                نشحن إلى: حلب، دمشق، ريف دمشق، حمص، حماة، اللاذقية، طرطوس، السويداء، درعا، طرطوس وكافة المناطق السورية.
+              </p>
             </div>
           </div>
 
@@ -139,6 +144,8 @@ export function Footer() {
               {[
                 { label: 'سياسة الإرجاع والاستبدال', href: '/returns-exchanges' },
                 { label: 'سياسة الخصوصية', href: '/privacy-policy' },
+                { label: 'سياسة الشحن والتوصيل', href: '/shipping' },
+                { label: 'شروط الاستخدام', href: '/terms' },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

@@ -12,8 +12,11 @@ import { supabaseAdmin } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title:       'من نحن — كزورا | أناقة تبدأ من خطوتك',
-  description: 'تعرف على متجر كزورا للأحذية الفاخرة في سوريا. نقدم أفخم الأحذية والإكسسوارات الجلدية بجودة عالمية وتوصيل لكل المحافظات.',
+  title: 'من نحن — كزورا Kzora | قصة شغف بالأحذية في سوريا',
+  description: 'تعرف على قصة كزورا Kzora للأحذية في سوريا. نحن نجمع بين الحرفية اليدوية السورية وأحدث التصاميم العالمية لنقدم أفضل تجربة تسوق أحذية أونلاين في حلب وكافة المحافظات السورية.',
+  alternates: { 
+    canonical: '/about',
+  },
 }
 
 async function getAboutPage() {

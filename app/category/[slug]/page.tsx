@@ -69,14 +69,18 @@ async function getCategoryProducts(categoryId: string): Promise<ProductFull[]> {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const category = await getCategory(slug)
-  if (!category) return { title: 'القسم غير موجود — كزورا' }
+  if (!category) return { title: 'القسم غير موجود — كزورا Kzora' }
 
   return {
-    title:       `${category.name_ar} — كزورا`,
-    description: category.description || `تصفح منتجات ${category.name_ar} في متجر كزورا للأحذية`,
+    title: `${category.name_ar} — تشكيلة واسعة من كزورا Kzora سوريا`,
+    description: category.description || `تصفح أحدث موديلات ${category.name_ar} في متجر كزورا Kzora للأحذية. جودة عالية وأسعار منافسة في سوريا.`,
+    alternates: {
+      canonical: `/category/${category.slug}`,
+    },
     openGraph: {
-      title:  category.name_ar,
-      images: category.image_url ? [{ url: category.image_url }] : [],
+      title: `${category.name_ar} — كزورا Kzora`,
+      description: category.description || `تصفح أحدث موديلات ${category.name_ar} في متجر كزورا Kzora للأحذية.`,
+      images: category.image_url ? [{ url: category.image_url, width: 1200, height: 630, alt: category.name_ar }] : [],
     },
   }
 }
@@ -91,10 +95,59 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const categoryProducts = await getCategoryProducts(category.id)
 
+  // Breadcrumb Schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'الرئيسية',
+        item: 'https://kzora.co',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'كافة المنتجات',
+        item: 'https://kzora.co/products',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: category.name_ar,
+        item: `https://kzora.co/category/${category.slug}`,
+      },
+    ],
+  }
+
+  // ItemList Schema for products in this category
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: category.name_ar,
+    description: category.description,
+    numberOfItems: categoryProducts.length,
+    itemListElement: categoryProducts.slice(0, 10).map((p, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: p.name,
+      url: `https://kzora.co/product/${p.slug}`,
+    })),
+  }
+
   return (
     <>
       <Header />
-
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      
       <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-24">
         {/* Hero banner */}
         <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden bg-surface-container-low">
@@ -124,24 +177,24 @@ export default async function CategoryPage({ params }: PageProps) {
               </p>
             )}
             <p className="font-arabic text-sm text-white/60 mt-1.5 opacity-80">
-              {categoryProducts.length} منتج
+              {categoryProducts.length} منتج متوفر الآن
             </p>
           </div>
         </div>
 
-        {/* Breadcrumb */}
+        {/* Breadcrumb Navigation (Visible) */}
         <div className="max-w-screen-xl mx-auto px-4 md:px-8 lg:px-16 pt-5 pb-0">
           <nav aria-label="مسار التنقل">
             <ol className="flex items-center flex-wrap gap-1.5 text-xs font-arabic text-secondary">
               <li>
-                <Link href="/" className="hover:text-primary transition-colors">الرئيسية</Link>
+                <Link href="/" className="hover:text-primary transition-colors focus:outline-none">الرئيسية</Link>
               </li>
               <li aria-hidden className="text-outline-variant">›</li>
               <li>
-                <Link href="/products" className="hover:text-primary transition-colors">المنتجات</Link>
+                <Link href="/products" className="hover:text-primary transition-colors focus:outline-none">المنتجات</Link>
               </li>
               <li aria-hidden className="text-outline-variant">›</li>
-              <li className="text-on-surface font-medium">{category.name_ar}</li>
+              <li className="text-on-surface font-semibold underline decoration-primary/30 decoration-2 underline-offset-4">{category.name_ar}</li>
             </ol>
           </nav>
         </div>

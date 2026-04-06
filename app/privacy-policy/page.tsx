@@ -8,8 +8,11 @@ import { supabaseAdmin } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'سياسة الخصوصية — كزورا',
-  description: 'سياسة الخصوصية وحماية البيانات في متجر كزورا',
+  title: 'سياسة الخصوصية — كزورا Kzora | حماية بياناتك هدفنا',
+  description: 'تعرف على سياسة الخصوصية في متجر كزورا Kzora. نحن نلتزم بحماية بياناتك الشخصية وضمان تجربة تسوق آمنة وسريعة في سوريا.',
+  alternates: { 
+    canonical: '/privacy-policy',
+  },
 }
 
 async function getPage() {
