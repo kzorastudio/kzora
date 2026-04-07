@@ -189,12 +189,12 @@ export function Header() {
 
   return (
     <>
-      <div className="fixed top-0 w-full z-[60] bg-[#1A1A1A] py-2 px-6 overflow-hidden">
+      <div className="w-full bg-[#1A1A1A] py-2.5 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto flex items-center justify-center">
-          <p className="text-[11px] md:text-xs font-arabic font-bold text-[#FFDEA6] flex items-center gap-2 md:gap-3 whitespace-nowrap animate-pulse">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDEA6]" />
+          <p className="text-[11px] md:text-xs font-arabic font-bold text-[#FFDEA6] flex items-center justify-center text-center gap-2 md:gap-3 whitespace-normal md:whitespace-nowrap animate-pulse leading-relaxed">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDEA6] shrink-0" />
             ✨ برنامج الولاء: أكمل 3 طلبيات واحصل على عرض خاص وهدية في طلبيتك القادمة!
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDEA6] hidden sm:inline" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDEA6] shrink-0 hidden sm:inline" />
           </p>
         </div>
       </div>
@@ -202,9 +202,9 @@ export function Header() {
       <header
         dir="rtl"
         className={cn(
-          'fixed top-8 w-full z-50 transition-all duration-300',
+          'sticky top-0 w-full z-50 transition-all duration-300',
           scrolled
-            ? 'bg-[#FAF8F5]/90 backdrop-blur-xl shadow-[0_4px_40px_rgba(27,28,26,0.10)] top-0'
+            ? 'bg-[#FAF8F5]/90 backdrop-blur-xl shadow-[0_4px_40px_rgba(27,28,26,0.10)]'
             : 'bg-[#FAF8F5]/70 backdrop-blur-lg shadow-[0_4px_40px_rgba(27,28,26,0.04)]'
         )}
       >
