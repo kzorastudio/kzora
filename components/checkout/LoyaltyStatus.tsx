@@ -2,18 +2,32 @@
 
 import React from 'react'
 import { Gift, CheckCircle2, CircleDashed } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatPrice } from '@/lib/utils'
+import { Currency } from '@/types'
 
 interface LoyaltyStatusProps {
   confirmedCount: number;
   pendingCount: number;
   hasDiscount: boolean;
+  currency: Currency;
+  discountAmountSyp: number;
+  discountAmountUsd: number;
   className?: string;
 }
 
-export function LoyaltyStatus({ confirmedCount, pendingCount, hasDiscount, className }: LoyaltyStatusProps) {
+export function LoyaltyStatus({ 
+  confirmedCount, 
+  pendingCount, 
+  hasDiscount, 
+  currency,
+  discountAmountSyp,
+  discountAmountUsd,
+  className 
+}: LoyaltyStatusProps) {
   // We only show progress up to 3 points in a cycle
   const currentProgress = hasDiscount ? 3 : (confirmedCount % 3);
+
+  const displayDiscount = currency === 'SYP' ? discountAmountSyp : discountAmountUsd;
 
   return (
     <div className={cn('p-4 rounded-xl border border-[#986D00]/20 bg-gradient-to-br from-[#986D00]/5 to-transparent', className)} dir="rtl">
@@ -59,7 +73,7 @@ export function LoyaltyStatus({ confirmedCount, pendingCount, hasDiscount, class
 
       {hasDiscount && (
         <p className="mt-3 text-xs bg-[#bfa15f]/10 text-on-surface p-2 rounded-lg font-medium border border-[#bfa15f]/20 leading-relaxed text-center">
-          🎉 مبروك! لقد أتممت 3 طلبات مؤكدة، تم تطبيق خصم <strong className="text-[#bfa15f] font-bold">1,000 ل.س</strong> على طلبك الحالي تلقائياً.
+          🎉 مبروك! لقد أتممت 3 طلبات مؤكدة، تم تطبيق خصم <strong className="text-[#bfa15f] font-bold">{formatPrice(displayDiscount, currency)}</strong> على طلبك الحالي تلقائياً.
         </p>
       )}
     </div>

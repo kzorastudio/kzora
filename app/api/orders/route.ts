@@ -4,6 +4,7 @@ import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
+import { normalizePhone } from '@/lib/utils'
 
 // â”€â”€â”€ Helper: generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function generateOrderNumber(): Promise<string> {
@@ -252,7 +253,7 @@ export async function POST(request: NextRequest) {
         discountSyp = Math.round((subtotalSyp * coupon.value) / 100)
         discountUsd = parseFloat(((subtotalUsd * coupon.value) / 100).toFixed(2))
       } else {
-        // fixed_amount â€” stored in SYP; approximate USD using ratio
+        // fixed_amount — stored in SYP; approximate USD using ratio
         discountSyp = Math.min(coupon.value, subtotalSyp)
         const ratio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
         discountUsd = parseFloat((discountSyp * ratio).toFixed(2))
@@ -260,7 +261,7 @@ export async function POST(request: NextRequest) {
 
       appliedCouponCode = coupon.code
 
-      // â”€â”€ Step 4: Increment coupon used_count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ─── Step 4: Increment coupon used_count ────────────────────────────────
       await supabaseAdmin
         .from('coupons')
         .update({ used_count: coupon.used_count + 1 })
@@ -295,10 +296,12 @@ export async function POST(request: NextRequest) {
     let loyaltyDiscountUsd = 0
     let loyaltyPointsToUpdate: string[] = []
 
+    const normalizedPhone = normalizePhone(customer.phone)
+
     const { data: loyaltyPoints } = await supabaseAdmin
       .from('loyalty_points')
       .select('id')
-      .eq('customer_phone', customer.phone)
+      .eq('customer_phone', normalizedPhone)
       .eq('status', 'confirmed')
       .eq('cycle_used', false)
       .order('created_at', { ascending: true })
@@ -419,7 +422,7 @@ export async function POST(request: NextRequest) {
     
     // 1. Insert a new pending loyalty point for this specific order
     await supabaseAdmin.from('loyalty_points').insert({
-      customer_phone: customer.phone,
+      customer_phone: normalizedPhone,
       order_id:       order.id,
       status:         'pending',
       cycle_used:     false,

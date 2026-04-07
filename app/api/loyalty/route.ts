@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { normalizePhone } from '@/lib/utils'
 
 // ─── GET /api/loyalty?phone=xxx ───────────────────────────────────────────────
 // Public. Returns loyalty status for a customer phone number.
@@ -8,7 +9,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const phone = searchParams.get('phone')?.trim()
+    const rawPhone = searchParams.get('phone')?.trim()
+    const phone = normalizePhone(rawPhone || '')
 
     if (!phone) {
       return NextResponse.json({ error: 'Phone number required' }, { status: 400 })

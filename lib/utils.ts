@@ -99,3 +99,27 @@ export function isNewProduct(createdAt: string): boolean {
   const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
   return diffDays <= 14
 }
+
+/**
+ * Normalizes a phone number (especially Syrian ones) to a standard 9-digit format
+ * (e.g., 0936... -> 936...)
+ */
+export function normalizePhone(phone: string): string {
+  if (!phone) return '';
+  // Remove all non-numeric characters
+  let clean = phone.replace(/\D/g, '');
+  
+  // Remove country code if present (+963 or 00963)
+  if (clean.startsWith('963')) {
+    clean = clean.substring(3);
+  } else if (clean.startsWith('00963')) {
+    clean = clean.substring(5);
+  }
+  
+  // Remove leading zero
+  if (clean.startsWith('0')) {
+    clean = clean.substring(1);
+  }
+  
+  return clean;
+}

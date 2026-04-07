@@ -378,6 +378,9 @@ export default function CheckoutPage() {
                       confirmedCount={loyaltyInfo.confirmedCount}
                       pendingCount={loyaltyInfo.pendingCount}
                       hasDiscount={loyaltyInfo.hasDiscount}
+                      currency={currency}
+                      discountAmountSyp={1000}
+                      discountAmountUsd={loyaltyDiscountUsd}
                     />
                   </div>
                 )}
