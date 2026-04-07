@@ -302,76 +302,73 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
 
       {/* Category tabs */}
       {initialCategories.length > 0 && (
-        <div className="w-full overflow-x-auto no-scrollbar mb-8 -mx-4 px-4 md:mx-0 md:px-0 pb-1" dir="rtl">
-          <div className="flex justify-start sm:justify-center w-max min-w-full sm:min-w-0 sm:w-auto">
-            <div className="flex items-center gap-2 bg-white border border-[#F0EBE3] rounded-2xl p-1.5 shadow-sm">
-              {/* All */}
-              <button
-                type="button"
-                onClick={() => { setSelectedCategories([]); setOnSale(false); setSelectedTags([]); setPage(1) }}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
-                  selectedCategories.length === 0 && !onSale && selectedTags.length === 0
-                    ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
-                    : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
-                )}
-              >
-                <LayoutGrid size={15} />
-                الكل
-              </button>
+        <div className="w-full overflow-x-auto no-scrollbar mb-8 -mx-4 px-4 md:mx-0 md:px-0" dir="rtl">
+          <div className="flex items-center gap-2 w-max min-w-full pb-2">
+            {/* All */}
+            <button
+              type="button"
+              onClick={() => { setSelectedCategories([]); setOnSale(false); setSelectedTags([]); setPage(1) }}
+              className={cn(
+                'flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-arabic font-bold transition-all duration-300 shrink-0 whitespace-nowrap',
+                selectedCategories.length === 0 && !onSale && selectedTags.length === 0
+                  ? 'bg-[#1A1A1A] text-white shadow-lg scale-105 active:scale-95'
+                  : 'bg-white text-[#6B6560] border border-[#F0EBE3] hover:border-primary/30 hover:text-primary active:scale-95'
+              )}
+            >
+              <LayoutGrid size={16} />
+              الكل
+            </button>
 
-              <div className="w-px h-6 bg-outline-variant/30 mx-0.5 shrink-0" />
+            {/* Special Distingusihed Tabs */}
+            {SPECIAL_TABS.map(tab => {
+              const isActive = (tab.tag && selectedTags.length === 1 && selectedTags[0] === tab.tag);
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategories([]);
+                    setOnSale(false);
+                    setSelectedTags(tab.tag ? [tab.tag] : []);
+                    setPage(1);
+                  }}
+                  className={cn(
+                    'flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-arabic font-bold transition-all duration-300 shrink-0 whitespace-nowrap',
+                    isActive 
+                      ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-lg scale-105 active:scale-95' 
+                      : 'bg-white text-[#6B6560] border border-[#F0EBE3] hover:border-primary/30 hover:text-primary active:scale-95'
+                  )}
+                >
+                  <span className="text-base leading-none">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              )
+            })}
 
-              {/* Special Distingusihed Tabs */}
-              {SPECIAL_TABS.map(tab => {
-                const isActive = (tab.tag && selectedTags.length === 1 && selectedTags[0] === tab.tag);
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setOnSale(false);
-                      setSelectedTags(tab.tag ? [tab.tag] : []);
-                      setPage(1);
-                    }}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
-                      isActive ? tab.activeClass : tab.baseClass
-                    )}
-                  >
-                    <span className="text-sm leading-none">{tab.icon}</span>
-                    {tab.label}
-                  </button>
-                )
-              })}
-
-              <div className="w-px h-6 bg-outline-variant/30 mx-0.5 shrink-0" />
-
-              {initialCategories.map((cat) => {
-                const isActive = selectedCategories.length === 1 && selectedCategories[0] === cat.slug
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => { setSelectedCategories([cat.slug]); setOnSale(false); setSelectedTags([]); setPage(1) }}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-all duration-200 shrink-0',
-                      isActive
-                        ? 'bg-gradient-to-l from-[#785600] to-[#986D00] text-white shadow-sm'
-                        : 'text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]'
-                    )}
-                  >
-                    {cat.image_url && (
-                      <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
-                        <Image src={cat.image_url} alt={cat.name_ar} width={20} height={20} className="object-cover w-full h-full" />
-                      </div>
-                    )}
-                    {cat.name_ar}
-                  </button>
-                )
-              })}
-            </div>
+            {/* Categories */}
+            {initialCategories.map((cat) => {
+              const isActive = selectedCategories.length === 1 && selectedCategories[0] === cat.slug
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => { setSelectedCategories([cat.slug]); setOnSale(false); setSelectedTags([]); setPage(1) }}
+                  className={cn(
+                    'flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-arabic font-bold transition-all duration-300 shrink-0 whitespace-nowrap',
+                    isActive
+                      ? 'bg-[#B8860B] text-white shadow-lg scale-105 active:scale-95'
+                      : 'bg-white text-[#6B6560] border border-[#F0EBE3] hover:border-primary/30 hover:text-primary active:scale-95'
+                  )}
+                >
+                  {cat.image_url && (
+                    <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-white/20">
+                      <Image src={cat.image_url} alt={cat.name_ar} width={20} height={20} className="object-cover w-full h-full" />
+                    </div>
+                  )}
+                  {cat.name_ar}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}

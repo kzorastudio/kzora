@@ -41,7 +41,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#FAF8F5] pt-24 text-right">
+      <main className="min-h-screen bg-[#FAF8F5] pt-36 text-right">
         {/* SEO H1 */}
         <h1 className="sr-only">استعراض كافة المنتجات والأحذية في متجر كزورا Kzora - سوريا</h1>
 
