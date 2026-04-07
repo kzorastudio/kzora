@@ -530,6 +530,21 @@ export default function ProductActions({ product, settings, activeColorName, onC
           </p>
         )}
       </div>
+
+      {/* 🎁 Loyalty Program Card */}
+      {!outOfStock && (
+        <div className="bg-[#FFFBEA] border border-[#FBE39A] rounded-2xl p-4 flex items-start gap-3 shadow-sm group hover:shadow-md transition-shadow">
+          <div className="w-10 h-10 rounded-full bg-[#785600] flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:rotate-12 transition-transform">
+            <span className="text-xl">🎁</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-arabic font-bold text-[#785600]">مفاجأة بانتظارك!</p>
+            <p className="text-[11px] font-arabic text-[#785600]/80 leading-relaxed">
+              لأنك عميل مميز، ستحصل على <span className="font-bold underline">خصم حصري وهدية مميزة</span> فور إتمامك لـ 3 طلبيات من متجرنا. وفّر أكثر مع برنامج الولاء!
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
