@@ -166,12 +166,7 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
 
         {/* Related products */}
         {product.category && (
-          <section className="mt-24">
-            <h2 className="font-arabic text-3xl font-bold text-[#1A1A1A] mb-10">
-              منتجات قد تعجبك
-            </h2>
-            {relatedProductsNode}
-          </section>
+          relatedProductsNode
         )}
 
         {/* Product Reviews */}

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { ProductFull } from '@/types'
-import { ProductCard } from '@/components/product/ProductCard'
+import RelatedProductsClient from './RelatedProductsClient'
 
 interface Props {
   categorySlug: string
@@ -24,7 +24,7 @@ async function fetchRelated(categorySlug: string, excludeId: string): Promise<Pr
     .neq('id', excludeId)
     .order('stock_status', { ascending: true })
     .order('created_at', { ascending: false })
-    .limit(4)
+    .limit(8)
 
   if (error || !data) return []
 
@@ -43,21 +43,6 @@ export default async function RelatedProducts({ categorySlug, excludeId }: Props
   const products = await fetchRelated(categorySlug, excludeId)
   if (products.length === 0) return null
 
-  return (
-    <div
-      dir="rtl"
-      className="flex gap-6 overflow-x-auto pb-6 no-scrollbar snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0"
-      style={{ scrollbarWidth: 'none' }}
-    >
-      {products.map((product) => (
-        <div 
-          key={product.id} 
-          className="min-w-[240px] sm:min-w-[280px] md:min-w-[300px] snap-start shrink-0"
-        >
-          <ProductCard product={product} />
-        </div>
-      ))}
-    </div>
-  )
+  return <RelatedProductsClient products={products} />
 }
 
