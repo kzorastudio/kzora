@@ -48,7 +48,7 @@ export default async function ShippingPage() {
   return (
     <>
       <Header />
-      <main dir="rtl" className="min-h-screen bg-[#FAFAF9] pt-[100px]">
+      <main dir="rtl" className="min-h-screen bg-[#FAFAF9] pt-36">
         
         {/* ── HERO ── */}
         <section className="relative py-20 px-6 text-center border-b border-[#F0EBE3] bg-white overflow-hidden">

@@ -148,7 +148,7 @@ export default async function CategoryPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
       
-      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-24">
+      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-36">
         {/* Hero banner */}
         <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden bg-surface-container-low">
           {category.image_url ? (

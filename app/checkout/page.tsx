@@ -269,7 +269,7 @@ export default function CheckoutPage() {
     return (
       <>
         <Header />
-        <main className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <main className="min-h-screen bg-[#FAF8F5] flex items-center justify-center pt-36">
           <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
         </main>
         <Footer />
@@ -284,7 +284,7 @@ export default function CheckoutPage() {
         <Header />
         <main
           dir="rtl"
-          className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center gap-5 px-4 text-center"
+          className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center gap-5 px-4 text-center pt-36"
         >
           <div className="w-20 h-20 rounded-full bg-[#F2EDE6] flex items-center justify-center">
             <ShoppingBag size={32} className="text-[#9E9890]" />
@@ -316,7 +316,7 @@ export default function CheckoutPage() {
     <>
       <Header />
 
-      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-[160px] pb-16">
+      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-[180px] pb-16">
         <div className="max-w-screen-xl mx-auto px-4 md:px-8 lg:px-16">
           {/* Page heading — centered */}
           <div className="text-center mb-10">

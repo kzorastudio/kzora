@@ -49,7 +49,7 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
   ]
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-24">
+    <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-36">
       <div className="max-w-7xl mx-auto px-4 md:px-12 pt-4 pb-20">
         {/* Breadcrumb */}
         <nav aria-label="مسار التنقل" className="flex items-center gap-2 text-sm font-arabic text-[#9E9890] mb-10">

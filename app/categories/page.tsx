@@ -32,7 +32,7 @@ export default async function CategoriesPage() {
   return (
     <>
       <Header />
-      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-24">
+      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-36">
         {/* Premium Categories Hero - Compact Version */}
         <div className="relative bg-[#0A0A0A] py-16 md:py-24 px-4 overflow-hidden text-center flex flex-col items-center justify-center min-h-[35vh]">
             {/* Background Image with Overlay */}
