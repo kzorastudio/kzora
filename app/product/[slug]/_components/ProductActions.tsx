@@ -207,11 +207,16 @@ export default function ProductActions({ product, settings, activeColorName, onC
       toast.error('يرجى اختيار المقاس أولاً')
       return
     }
+    // Find the image that belongs to the selected color
+    const colorSpecificImage = selectedColor 
+      ? product.images.find(img => img.color_variant === selectedColor.name_ar)?.url
+      : null;
+
     const item: CartItem = {
       id:                 product.id,
       slug:               product.slug,
       name:               product.name,
-      image:              product.images[0]?.url ?? '',
+      image:              colorSpecificImage ?? (product.images[0]?.url ?? ''),
       color:              selectedColor?.name_ar ?? null,
       color_hex:          selectedColor?.hex_code ?? null,
       size:               selectedSize,
