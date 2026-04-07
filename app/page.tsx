@@ -32,8 +32,8 @@ async function fetchProductsByTag(tag: string, limit = 8): Promise<ProductFull[]
     .select(`*, product_images (*), product_colors (*), product_sizes (*), product_tags (*), product_variants (*), categories (*)`)
     .eq('is_published', true)
     .in('id', productIds)
-    .order('stock_status', { ascending: true })
     .order('created_at', { ascending: false })
+    .order('stock_status', { ascending: true })
     .limit(limit)
 
   if (prodError || !products) return []

@@ -136,14 +136,6 @@ export async function PUT(
 
     const newCategorySlug = (product?.categories as any)?.slug
 
-    // Clear caches
-    revalidatePath('/')
-    revalidatePath('/products')
-    revalidatePath('/admin/products')
-    if (oldCategorySlug) revalidatePath(`/category/${oldCategorySlug}`)
-    if (newCategorySlug && newCategorySlug !== oldCategorySlug) revalidatePath(`/category/${newCategorySlug}`)
-    if (existing?.slug) revalidatePath(`/product/${existing.slug}`)
-    revalidatePath(`/product/${product.slug}`)
 
 
     // Replace relations if provided
@@ -254,6 +246,15 @@ export async function PUT(
           })))
       }
     }
+
+    // ───── Clear caches ─────
+    revalidatePath('/')
+    revalidatePath('/products')
+    revalidatePath('/admin/products')
+    if (oldCategorySlug) revalidatePath(`/category/${oldCategorySlug}`)
+    if (newCategorySlug && (newCategorySlug !== oldCategorySlug)) revalidatePath(`/category/${newCategorySlug}`)
+    if (existing?.slug) revalidatePath(`/product/${existing.slug}`)
+    revalidatePath(`/product/${product.slug}`)
 
     return NextResponse.json({ product })
   } catch (err) {

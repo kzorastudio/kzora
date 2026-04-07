@@ -104,8 +104,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort
-    // We strictly order by stock_status first ('in_stock' < 'low_stock' < 'out_of_stock')
+    query = query.order('created_at', { ascending: false })
     query = query.order('stock_status', { ascending: true })
+    
     switch (sort) {
       case 'price_asc':
         query = query.order('price_syp', { ascending: true })
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
         break
       case 'newest':
       default:
-        query = query.order('created_at', { ascending: false })
+        // Already handled above
         break
     }
 
@@ -308,13 +309,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get category slug for revalidation
-    const { data: catData } = await supabaseAdmin.from('categories').select('slug').eq('id', productId).single()
-    const categorySlug = catData?.slug
+    if (category_id) {
+      const { data: catData } = await supabaseAdmin.from('categories').select('slug').eq('id', category_id).single()
+      if (catData?.slug) revalidatePath(`/category/${catData.slug}`)
+    }
 
     revalidatePath('/')
     revalidatePath('/products')
     revalidatePath('/admin/products')
-    if (categorySlug) revalidatePath(`/category/${categorySlug}`)
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (err) {
