@@ -9,6 +9,7 @@ import { formatPrice, getDiscountPercent } from '@/lib/utils'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { useCartStore } from '@/store/cartStore'
 import type { ProductFull, CartItem } from '@/types'
+import { trackAddToCart } from '@/lib/analytics'
 
 const TAG_LABELS: Record<string, string> = {
   new:         'جديد',
@@ -117,6 +118,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
         max_stock:          variantStock,
       }
       addItem(item)
+      trackAddToCart(product, 1)
+
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
       if (isDesktop) {
         router.push('/checkout')
@@ -148,6 +151,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         max_stock:          variantStock,
       }
       addItem(item)
+      trackAddToCart(product, 1)
       setShowSizeBar(false)
 
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768

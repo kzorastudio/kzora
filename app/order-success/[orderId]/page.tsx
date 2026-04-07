@@ -10,6 +10,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer'
 import { formatPrice, SHIPPING_LABELS } from '@/lib/utils'
 import type { OrderFull, OrderItem, HomepageSettings } from '@/types'
 import { CreditCard } from 'lucide-react'
+import TrackPurchase from '@/components/analytics/TrackPurchase'
 
 export const metadata: Metadata = {
   title: 'تم استلام طلبك — كزورا',
@@ -151,6 +152,16 @@ export default async function OrderSuccessPage({ params }: PageProps) {
   return (
     <>
       <Header />
+      <TrackPurchase 
+        orderId={order.order_number} 
+        total={total} 
+        items={order.items.map(i => ({
+          id: i.id,
+          name: i.product_name,
+          price_syp: currency === 'SYP' ? i.unit_price_syp : i.unit_price_usd,
+          quantity: i.quantity
+        }))}
+      />
 
       <main dir="rtl" className="min-h-screen bg-surface pt-36 pb-12 px-4">
         <div className="max-w-2xl mx-auto">

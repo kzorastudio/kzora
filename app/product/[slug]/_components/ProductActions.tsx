@@ -8,6 +8,7 @@ import { useCurrencyStore } from '@/store/currencyStore'
 import { useCartStore } from '@/store/cartStore'
 import type { ProductFull, ProductColor, CartItem, HomepageSettings } from '@/types'
 import toast from 'react-hot-toast'
+import { trackAddToCart } from '@/lib/analytics'
 
 import { useRouter } from 'next/navigation'
 
@@ -224,6 +225,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
       max_stock:          currentAvailableStock,
     }
     addItem(item)
+    trackAddToCart(product, quantity)
     
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
 

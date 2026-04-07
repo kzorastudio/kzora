@@ -173,7 +173,7 @@ export default async function HomePage() {
         }}
       />
 
-      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-36 text-right">
+      <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-32 text-right">
         {/* SEO Accessibility H1 */}
         <h1 className="sr-only">
           متجر كزورا Kzora للأحذية — أفضل متجر أحذية أونلاين في سوريا وحلب. أحذية رجالية، أحذية نسائية، أحذية رياضية، وأحذية جلد طبيعي فاخرة.

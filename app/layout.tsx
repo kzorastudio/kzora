@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import Providers from '@/components/Providers'
 import ScrollToTop from '@/components/layout/ScrollToTop'
 import VisitTracker from '@/components/analytics/VisitTracker'
+import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -70,6 +71,9 @@ export const metadata: Metadata = {
     title: 'كزورا Kzora — أناقة تبدأ من خطوتك',
     description: 'أفضل متجر أحذية أونلاين في سوريا - كزورا Kzora',
     images: ['/logo.png'],
+  },
+  verification: {
+    google: 'QIzKZwVc9QgD9CyJy0S5u9dsuiRnX43X1_lysapN5Ak',
   },
 }
 
@@ -137,6 +141,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <Providers>
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <GoogleAnalytics ga_id={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
           <VisitTracker />
           <ScrollToTop />
           {children}
