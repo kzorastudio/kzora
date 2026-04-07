@@ -117,11 +117,20 @@ export default function ProductActions({ product, settings, activeColorName, onC
 
   // Effective max the user can pick on this page (stock minus what's already in cart)
   const effectiveMax = useMemo(() => {
-    const raw = (product.variants && product.variants.length > 0)
-      ? Math.min(10, currentAvailableStock)
-      : (product.colors.length > 0 || product.sizes.length > 0 ? 0 : 10)
-    return Math.max(0, raw - alreadyInCart)
-  }, [currentAvailableStock, alreadyInCart, product.variants, product.colors.length, product.sizes.length])
+    if (product.variants && product.variants.length > 0) {
+      // If NO selection yet, allow up to the maximum stock any one variant has (of course max 10)
+      if (selectedColorId === null || selectedSize === null) {
+        const maxAcrossAll = Math.max(...product.variants.map(v => v.quantity ?? 0));
+        return Math.min(10, maxAcrossAll);
+      }
+      
+      const raw = Math.min(10, currentAvailableStock)
+      return Math.max(0, raw - alreadyInCart)
+    }
+
+    // Default for products without variants (shouldn't happen in Kzora)
+    return 10;
+  }, [currentAvailableStock, alreadyInCart, product.variants, selectedColorId, selectedSize])
 
   const isComboOutOfStock = useMemo(() => {
     // If no selection yet, it's NOT 'out of stock' for the UI, just 'unselected'
@@ -151,11 +160,12 @@ export default function ProductActions({ product, settings, activeColorName, onC
   const outOfStock = isEntirelyOutOfStock || isComboOutOfStock
 
   // Reset quantity when variant changes and current qty exceeds available stock
+  // ONLY if selection is made.
   useEffect(() => {
-    if (effectiveMax > 0 && quantity > effectiveMax) {
+    if (selectedColorId && selectedSize && effectiveMax > 0 && quantity > effectiveMax) {
       setQuantity(effectiveMax)
     }
-  }, [effectiveMax])
+  }, [effectiveMax, selectedColorId, selectedSize])
 
   const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
   const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
@@ -181,19 +191,9 @@ export default function ProductActions({ product, settings, activeColorName, onC
 
   const currentMultiDisc = currency === 'SYP' ? multiDiscSyp : multiDiscUsd
   
-  // Calculate delivery/shipping fee for total price display (1 piece vs multiple)
-  let currentFee = 0
-  if (settings) {
-    if (quantity >= 3) {
-      currentFee = currency === 'SYP' ? (settings.delivery_fee_3_plus_pieces_syp || 0) : (settings.delivery_fee_3_plus_pieces_usd || 0)
-    } else if (quantity === 2) {
-      currentFee = currency === 'SYP' ? (settings.delivery_fee_2_pieces_syp || 0) : (settings.delivery_fee_2_pieces_usd || 0)
-    } else {
-      currentFee = currency === 'SYP' ? (settings.delivery_fee_1_piece_syp || 0) : (settings.delivery_fee_1_piece_usd || 0)
-    }
-  }
-
-  const totalPrice = (displayPrice * quantity) - currentMultiDisc + currentFee
+  // Note: We removed the currentFee from here to avoid user confusion.
+  // The fee is added at checkout globally.
+  const totalPrice = (displayPrice * quantity) - currentMultiDisc
 
   const handleAddToCart = useCallback(() => {
     if (outOfStock) return
@@ -245,7 +245,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
       <div className="flex items-center justify-between bg-[#F5F3F0] px-5 py-4 rounded-2xl">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-[#785600] tabular-nums">
+            <span className="text-2xl sm:text-3xl font-bold text-[#785600] tabular-nums whitespace-nowrap">
               {formatPrice(displayPrice, currency)}
             </span>
             {hasDiscount && discountPct > 0 && (
@@ -486,7 +486,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
           {quantity > 1 && (
             <span className="mr-3 font-arabic text-sm text-[#6B6560] flex flex-col items-start gap-0.5">
               <span className="opacity-70">المجموع النهائي:</span>
-              <span className="font-bold text-[#785600] text-lg tabular-nums">
+              <span className="font-bold text-[#785600] text-lg tabular-nums whitespace-nowrap">
                 {formatPrice(totalPrice, currency)}
               </span>
             </span>
