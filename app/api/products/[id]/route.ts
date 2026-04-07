@@ -139,6 +139,7 @@ export async function PUT(
     // Clear caches
     revalidatePath('/')
     revalidatePath('/products')
+    revalidatePath('/admin/products')
     if (oldCategorySlug) revalidatePath(`/category/${oldCategorySlug}`)
     if (newCategorySlug && newCategorySlug !== oldCategorySlug) revalidatePath(`/category/${newCategorySlug}`)
     if (existing?.slug) revalidatePath(`/product/${existing.slug}`)
@@ -316,6 +317,7 @@ export async function DELETE(
 
     revalidatePath('/')
     revalidatePath('/products')
+    revalidatePath('/admin/products')
 
     return NextResponse.json({ success: true })
   } catch (err) {

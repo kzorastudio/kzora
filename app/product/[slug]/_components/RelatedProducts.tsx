@@ -1,9 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
-import Image from 'next/image'
 import type { ProductFull } from '@/types'
-import { formatPrice, cn } from '@/lib/utils'
-import { Star } from 'lucide-react'
+import { ProductCard } from '@/components/product/ProductCard'
 
 interface Props {
   categorySlug: string
@@ -49,73 +46,18 @@ export default async function RelatedProducts({ categorySlug, excludeId }: Props
   return (
     <div
       dir="rtl"
-      className="flex gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0"
+      className="flex gap-6 overflow-x-auto pb-6 no-scrollbar snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0"
+      style={{ scrollbarWidth: 'none' }}
     >
-      {products.map((product) => {
-        const imageUrl = product.images[0]?.url ?? ''
-        const price = product.discount_price_usd ?? product.price_usd
-
-        return (
-          <Link
-            key={product.id}
-            href={`/product/${product.slug}`}
-            className={cn(
-              "min-w-[240px] sm:min-w-[280px] snap-start shrink-0 rounded-2xl overflow-hidden group transition-all duration-300",
-              product.stock_status === 'out_of_stock'
-                ? 'bg-[#F9F9F9] opacity-80 hover:opacity-100 grayscale-[0.2] border border-transparent hover:border-[#E8E3DB]' 
-                : 'bg-white shadow-sm hover:shadow-md'
-            )}
-          >
-            <div className="aspect-[3/4] overflow-hidden relative bg-[#F5F1EB]">
-              {imageUrl && (
-                <Image
-                  src={imageUrl}
-                  alt={product.name}
-                  fill
-                  sizes="280px"
-                  className={cn(
-                    "object-cover transition-transform duration-500",
-                    product.stock_status !== 'out_of_stock' && "group-hover:scale-105",
-                    product.stock_status === 'out_of_stock' && "opacity-90"
-                  )}
-                />
-              )}
-              {/* Out of Stock subtle badge */}
-              {product.stock_status === 'out_of_stock' && (
-                <div className="absolute top-3 right-3 z-0">
-                  <span className="text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full bg-[#E8E4DE] text-[#6B6560] shadow-sm">
-                    نفدت الكمية
-                  </span>
-                </div>
-              )}
-              {/* Low Stock Badge */}
-              {product.stock_status === 'low_stock' && (
-                <div className="absolute top-3 right-3 z-0">
-                   <span className="text-[10px] font-arabic font-bold px-2 py-1 rounded-full bg-[#BA1A1A]/10 text-[#BA1A1A] border border-[#BA1A1A]/20 shadow-sm">
-                     كمية محدودة
-                   </span>
-                </div>
-              )}
-            </div>
-            <div className="p-4">
-              <h3 className="font-arabic font-bold text-base text-[#1A1A1A] mb-2 line-clamp-2 flex items-start gap-1">
-                {product.is_featured && (
-                  <Star size={14} className="fill-[#C59B27] text-[#C59B27] shrink-0 mt-0.5" />
-                )}
-                <span>{product.name}</span>
-              </h3>
-              <div className="flex items-center justify-between">
-                <span className={cn(
-                  "font-arabic font-bold tabular-nums",
-                  product.stock_status === 'out_of_stock' ? 'text-[#9E9890]' : 'text-[#785600]'
-                )}>
-                  {formatPrice(price, 'USD')}
-                </span>
-              </div>
-            </div>
-          </Link>
-        )
-      })}
+      {products.map((product) => (
+        <div 
+          key={product.id} 
+          className="min-w-[240px] sm:min-w-[280px] md:min-w-[300px] snap-start shrink-0"
+        >
+          <ProductCard product={product} />
+        </div>
+      ))}
     </div>
   )
 }
+

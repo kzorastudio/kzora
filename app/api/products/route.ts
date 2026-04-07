@@ -313,6 +313,7 @@ export async function POST(request: NextRequest) {
 
     revalidatePath('/')
     revalidatePath('/products')
+    revalidatePath('/admin/products')
     if (categorySlug) revalidatePath(`/category/${categorySlug}`)
 
     return NextResponse.json({ product }, { status: 201 })
