@@ -228,7 +228,7 @@ export function Header() {
                   alt="كزورا Kzora"
                   width={140}
                   height={84}
-                  className="h-12 md:h-16 w-auto object-contain scale-[1.7] origin-right"
+                  className="h-16 w-auto object-contain scale-[1.7] origin-right -translate-y-2"
                   priority
                 />
               </Link>
@@ -335,9 +335,6 @@ export function Header() {
           </div>
         </header>
       </div>
-
-      {/* Spacer to prevent content jump */}
-      <div className="h-[96px] md:h-[120px]" />
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
