@@ -189,178 +189,155 @@ export function Header() {
 
   return (
     <>
-      <div className="w-full bg-[#1A1A1A] py-2.5 px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto flex items-center justify-center">
-          <p className="text-[11px] md:text-xs font-arabic font-bold text-[#FFDEA6] flex items-center justify-center text-center gap-2 md:gap-3 whitespace-normal md:whitespace-nowrap animate-pulse leading-relaxed">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDEA6] shrink-0" />
-            ✨ برنامج الولاء: أكمل 3 طلبيات واحصل على عرض خاص وهدية في طلبيتك القادمة!
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFDEA6] shrink-0 hidden sm:inline" />
-          </p>
-        </div>
-      </div>
-
-      <header
-        dir="rtl"
-        className={cn(
-          'sticky top-0 w-full z-50 transition-all duration-300',
-          scrolled
-            ? 'bg-[#FAF8F5]/90 backdrop-blur-xl shadow-[0_4px_40px_rgba(27,28,26,0.10)]'
-            : 'bg-[#FAF8F5]/70 backdrop-blur-lg shadow-[0_4px_40px_rgba(27,28,26,0.04)]'
-        )}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-8 py-4">
-
-          {/* Right Section: Mobile Menu + Logo (appears on RIGHT in RTL) */}
-          <div className="flex items-center sm:gap-2 shrink-0">
-            {/* Mobile menu toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              aria-label="القائمة"
-              title="القائمة"
-              className="md:hidden flex items-center justify-center p-2 mr-[-10px] ml-1 rounded-xl text-[#1A1A1A] hover:bg-[#F0EBE3] transition-all duration-150"
-            >
-              <AlignRight size={28} strokeWidth={2} />
-            </button>
-
-            <Link href="/" aria-label="كزورا" className="shrink-0">
-              <Image
-                src="/logo.png"
-                alt="كزورا Kzora"
-                width={140}
-                height={84}
-                className="h-16 w-auto object-contain scale-[1.7] origin-right -translate-y-2"
-                priority
-              />
-            </Link>
+      <div className="fixed top-0 left-0 w-full z-50 flex flex-col">
+        {/* Top Bar - Loyalty Program */}
+        <div className="w-full bg-[#1A1A1A] py-2 md:py-1.5 px-6 overflow-hidden border-b border-white/5">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <p className="text-[10px] md:text-xs font-arabic font-bold text-[#FFDEA6] flex items-center justify-center text-center gap-2 md:gap-3 whitespace-normal md:whitespace-nowrap animate-pulse leading-tight md:leading-relaxed">
+              <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-[#FFDEA6] shrink-0" />
+              ✨ برنامج الولاء: أكمل 3 طلبيات واحصل على عرض خاص وهدية في طلبيتك القادمة!
+              <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-[#FFDEA6] shrink-0 hidden sm:inline" />
+            </p>
           </div>
+        </div>
 
-          {/* Desktop nav — CENTER */}
-          <nav className="hidden md:flex items-center gap-10" aria-label="التنقل الرئيسي">
-            {NAV_LINKS.map((link) => {
-              const active = isActive(link.href)
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'text-sm font-arabic font-medium transition-colors duration-200 pb-1',
-                    active
-                      ? 'text-[#B8860B] border-b-2 border-[#B8860B] font-bold'
-                      : 'text-[#6B6560] hover:text-[#1A1A1A]'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* Actions — appears on LEFT in RTL */}
-          <div className="flex items-center gap-1 md:gap-2 shrink-0">
-
-            {/* Currency switcher — Desktop: Pill, Mobile: Circular Toggle */}
-            <div className="hidden md:flex items-center bg-black/5 backdrop-blur-sm rounded-full p-[1.5px] border border-[#E8E3DB]/40 ml-2 transition-all shrink-0">
+        {/* Main Header */}
+        <header
+          dir="rtl"
+          className={cn(
+            'w-full transition-all duration-300',
+            scrolled
+              ? 'bg-[#FAF8F5]/90 backdrop-blur-xl shadow-[0_4px_40px_rgba(27,28,26,0.10)] py-2'
+              : 'bg-[#FAF8F5]/70 backdrop-blur-lg shadow-[0_4px_40px_rgba(27,28,26,0.04)] py-4'
+          )}
+        >
+          <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-8">
+            {/* Right Section: Mobile Menu + Logo */}
+            <div className="flex items-center sm:gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => setCurrency('USD')}
-                className={cn(
-                  'px-2.5 py-1 rounded-full text-[11px] font-bold transition-all duration-300',
-                  currency === 'USD' 
-                    ? 'bg-white text-[#785600] shadow-sm cursor-default' 
-                    : 'text-[#9E9890] hover:text-[#1A1A1A]'
-                )}
+                onClick={() => setMobileOpen(true)}
+                className="md:hidden flex items-center justify-center p-2 mr-[-10px] ml-1 rounded-xl text-[#1A1A1A] hover:bg-[#F0EBE3] transition-all duration-150"
               >
-                USD
+                <AlignRight size={28} strokeWidth={2} />
               </button>
-              <button
-                type="button"
-                onClick={() => setCurrency('SYP')}
-                className={cn(
-                  'px-2.5 py-1 rounded-full text-[11px] font-bold font-arabic transition-all duration-300',
-                  currency === 'SYP' 
-                    ? 'bg-white text-[#785600] shadow-sm cursor-default' 
-                    : 'text-[#9E9890] hover:text-[#1A1A1A]'
-                )}
-              >
-                ل.س
-              </button>
+
+              <Link href="/" className="shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="كزورا Kzora"
+                  width={140}
+                  height={84}
+                  className="h-12 md:h-16 w-auto object-contain scale-[1.7] origin-right"
+                  priority
+                />
+              </Link>
             </div>
 
-            {/* Mobile Currency Toggle — Small circle */}
-            <button
-              type="button"
-              onClick={() => setCurrency(currency === 'USD' ? 'SYP' : 'USD')}
-              className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-surface-container/50 border border-outline-variant/30 text-[10px] font-bold font-arabic text-on-surface hover:bg-surface-container transition-all active:scale-95 ml-1"
-            >
-              {currency === 'USD' ? '$' : 'ل.س'}
-            </button>
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-10">
+              {NAV_LINKS.map((link) => {
+                const active = isActive(link.href)
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'text-sm font-arabic font-medium transition-colors duration-200 pb-1',
+                      active
+                        ? 'text-[#B8860B] border-b-2 border-[#B8860B] font-bold'
+                        : 'text-[#6B6560] hover:text-[#1A1A1A]'
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
+            </nav>
 
-            {/* Search */}
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label="بحث"
-              title="بحث"
-              className="p-2.5 rounded-xl text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F0EBE3] transition-all duration-150"
-            >
-              <Search size={20} />
-            </button>
-            
-            {/* Track Order Icon - Desktop Only */}
-            <Link
-              href="/track-order"
-              aria-label="تتبع الطلب"
-              title="تتبع الطلب"
-              className={cn(
-                "hidden md:flex p-2.5 rounded-xl transition-all duration-150",
-                isActive('/track-order') 
-                  ? "text-[#B8860B] bg-[#F0EBE3]" 
-                  : "text-[#6B6560] hover:text-[#1A1A1A] hover:bg-[#F0EBE3]"
-              )}
-            >
-              <Truck size={20} />
-            </Link>
+            {/* Actions */}
+            <div className="flex items-center gap-1 md:gap-2 shrink-0">
+              {/* Currency switcher */}
+              <div className="hidden md:flex items-center bg-black/5 backdrop-blur-sm rounded-full p-[1.5px] border border-[#E8E3DB]/40 ml-2 transition-all">
+                <button
+                  type="button"
+                  onClick={() => setCurrency('USD')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-[11px] font-bold transition-all duration-300',
+                    currency === 'USD' ? 'bg-white text-[#785600] shadow-sm' : 'text-[#9E9890]'
+                  )}
+                >
+                  USD
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrency('SYP')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-[11px] font-bold font-arabic transition-all duration-300',
+                    currency === 'SYP' ? 'bg-white text-[#785600] shadow-sm' : 'text-[#9E9890]'
+                  )}
+                >
+                  ل.س
+                </button>
+              </div>
 
-            {/* Cart — desktop: navigate to checkout, mobile: open drawer */}
-            <Link
-              href="/checkout"
-              aria-label={`سلة التسوق${itemCount > 0 ? ` — ${itemCount} منتج` : ''}`}
-              title="سلة التسوق"
-              className="hidden md:flex relative p-2.5 rounded-xl hover:bg-[#F0EBE3] transition-all duration-150"
-            >
-              <ShoppingBag
-                size={20}
-                className={itemCount > 0 ? 'text-[#B8860B]' : 'text-[#6B6560] hover:text-[#1A1A1A]'}
-              />
-              {itemCount > 0 && (
-                <span className="absolute -top-0.5 -left-0.5 min-w-[17px] h-[17px] px-0.5 flex items-center justify-center rounded-full bg-[#785600] text-white text-[9px] font-bold leading-none select-none">
-                  {itemCount > 99 ? '99+' : itemCount}
-                </span>
-              )}
-            </Link>
-            <button
-              type="button"
-              onClick={openCart}
-              aria-label={`سلة التسوق${itemCount > 0 ? ` — ${itemCount} منتج` : ''}`}
-              title="سلة التسوق"
-              className="md:hidden relative p-2.5 rounded-xl hover:bg-[#F0EBE3] transition-all duration-150"
-            >
-              <ShoppingBag
-                size={20}
-                className={itemCount > 0 ? 'text-[#B8860B]' : 'text-[#6B6560] hover:text-[#1A1A1A]'}
-              />
-              {itemCount > 0 && (
-                <span className="absolute -top-0.5 -left-0.5 min-w-[17px] h-[17px] px-0.5 flex items-center justify-center rounded-full bg-[#785600] text-white text-[9px] font-bold leading-none select-none">
-                  {itemCount > 99 ? '99+' : itemCount}
-                </span>
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => setCurrency(currency === 'USD' ? 'SYP' : 'USD')}
+                className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-surface-container/50 border border-outline-variant/30 text-[10px] font-bold font-arabic text-on-surface ml-1"
+              >
+                {currency === 'USD' ? '$' : 'ل.س'}
+              </button>
 
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="p-2.5 rounded-xl text-[#6B6560] hover:bg-[#F0EBE3]"
+              >
+                <Search size={20} />
+              </button>
+              
+              <Link
+                href="/track-order"
+                className={cn(
+                  "hidden md:flex p-2.5 rounded-xl",
+                  isActive('/track-order') ? "text-[#B8860B] bg-[#F0EBE3]" : "text-[#6B6560] hover:bg-[#F0EBE3]"
+                )}
+              >
+                <Truck size={20} />
+              </Link>
+
+              <Link
+                href="/checkout"
+                className="hidden md:flex relative p-2.5 rounded-xl hover:bg-[#F0EBE3]"
+              >
+                <ShoppingBag size={20} className={itemCount > 0 ? 'text-[#B8860B]' : 'text-[#6B6560]'} />
+                {itemCount > 0 && (
+                  <span className="absolute -top-0.5 -left-0.5 min-w-[17px] h-[17px] flex items-center justify-center rounded-full bg-[#785600] text-white text-[9px] font-bold">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+              
+              <button
+                type="button"
+                onClick={openCart}
+                className="md:hidden relative p-2.5 rounded-xl hover:bg-[#F0EBE3]"
+              >
+                <ShoppingBag size={20} className={itemCount > 0 ? 'text-[#B8860B]' : 'text-[#6B6560]'} />
+                {itemCount > 0 && (
+                  <span className="absolute -top-0.5 -left-0.5 min-w-[17px] h-[17px] flex items-center justify-center rounded-full bg-[#785600] text-white text-[9px] font-bold">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
+        </header>
+      </div>
 
-        </div>
-      </header>
+      {/* Spacer to prevent content jump */}
+      <div className="h-[96px] md:h-[120px]" />
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
