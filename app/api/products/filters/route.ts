@@ -39,12 +39,36 @@ export async function GET(request: NextRequest) {
     // Get sizes that are marked as available by admin
     const { data: sizesData } = await supabaseAdmin
       .from('product_sizes')
-      .select('size')
+      .select('product_id, size')
       .in('product_id', productIds)
       .eq('is_available', true)
 
-    const uniqueSizes = [...new Set((sizesData || []).map((s: { size: number }) => s.size))]
-      .sort((a, b) => a - b)
+    // Check variants for these products to ensure stock exists
+    const { data: allVariants } = await supabaseAdmin
+      .from('product_variants')
+      .select('product_id, size, quantity')
+      .in('product_id', productIds)
+
+    // Map: "product_id-size" -> max quantity
+    const variantStock = new Map<string, number>()
+    for (const v of (allVariants || [])) {
+      if (v.size) {
+        const key = `${v.product_id}-${v.size}`
+        variantStock.set(key, Math.max(variantStock.get(key) ?? 0, v.quantity ?? 0))
+      }
+    }
+
+    const availableSizesSet = new Set<number>()
+    for (const s of (sizesData || [])) {
+      const key = `${s.product_id}-${s.size}`
+      const qty = variantStock.get(key)
+      // Keep if no variant exists for this size OR stock > 0
+      if (qty === undefined || qty > 0) {
+        availableSizesSet.add(s.size)
+      }
+    }
+
+    const uniqueSizes = Array.from(availableSizesSet).sort((a, b) => a - b)
 
     return NextResponse.json({ sizes: uniqueSizes })
   } catch (err) {

@@ -67,17 +67,44 @@ export async function GET(request: NextRequest) {
       query = query.in('id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000'])
     }
 
-    // Size filter — only match sizes marked as available in admin panel
+    // Size filter — size must be marked available AND have stock in variants
     if (size) {
       const sizes = size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
-      const { data: sizeIds } = await supabaseAdmin
+
+      // Step 1: products where this size is marked is_available = true
+      const { data: availSizes } = await supabaseAdmin
         .from('product_sizes')
         .select('product_id')
         .in('size', sizes)
         .eq('is_available', true)
 
-      const ids = [...new Set((sizeIds || []).map((r: { product_id: string }) => r.product_id))]
-      query = query.in('id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000'])
+      const candidateIds = [...new Set((availSizes || []).map((r: { product_id: string }) => r.product_id))]
+
+      if (candidateIds.length === 0) {
+        query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
+      } else {
+        // Step 2: among candidates, check variant stock for these sizes
+        const { data: allVariants } = await supabaseAdmin
+          .from('product_variants')
+          .select('product_id, quantity')
+          .in('size', sizes)
+          .in('product_id', candidateIds)
+
+        // Map: product_id → max quantity across matching variants
+        const variantStock = new Map<string, number>()
+        for (const v of (allVariants || [])) {
+          variantStock.set(v.product_id, Math.max(variantStock.get(v.product_id) ?? 0, v.quantity ?? 0))
+        }
+
+        // Keep products that: have no variants for this size (size-only products)
+        // OR have at least one variant with quantity > 0
+        const finalIds = candidateIds.filter(id => {
+          const qty = variantStock.get(id)
+          return qty === undefined || qty > 0
+        })
+
+        query = query.in('id', finalIds.length > 0 ? finalIds : ['00000000-0000-0000-0000-000000000000'])
+      }
     }
 
     // Color filter (by hex_code or name_ar)

@@ -88,12 +88,19 @@ export default function CategoryProductsClient({ products }: Props) {
   const [onSale, setOnSale] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Sizes that are actually in products AND marked as available in admin panel
+  // Sizes that are actually in products AND marked as available in admin panel AND have stock > 0
   const availableSizes = useMemo(() => {
     const sizeSet = new Set<number>()
     products.forEach(p => {
       p.sizes.forEach((s: any) => {
-        if (s.is_available) sizeSet.add(s.size)
+        if (s.is_available) {
+          const matchingVariants = p.variants?.filter(v => v.size === s.size) || []
+          if (matchingVariants.length === 0) {
+            sizeSet.add(s.size) // No variants, treat as available
+          } else if (matchingVariants.some(v => v.quantity > 0)) {
+            sizeSet.add(s.size) // Has variant with stock
+          }
+        }
       })
     })
     return Array.from(sizeSet).sort((a, b) => a - b)
@@ -128,7 +135,11 @@ export default function CategoryProductsClient({ products }: Props) {
 
     if (search) result = result.filter(p => p.name.includes(search))
     if (selectedTags.length > 0) result = result.filter(p => p.tags.some(t => selectedTags.includes(t)))
-    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some((s: any) => selectedSizes.includes(String(s?.size ?? s)) && s.is_available))
+    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some((s: any) => {
+      if (!selectedSizes.includes(String(s?.size ?? s)) || !s.is_available) return false
+      const matchingVariants = p.variants?.filter(v => v.size === s.size) || []
+      return matchingVariants.length === 0 || matchingVariants.some(v => v.quantity > 0)
+    }))
     if (onSale) result = result.filter(p => p.discount_price_syp !== null)
     if (minPrice) {
       const min = Number(minPrice)
