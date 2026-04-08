@@ -67,14 +67,16 @@ export async function GET(request: NextRequest) {
       query = query.in('id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000'])
     }
 
-    // Size filter
+    // Size filter — only match sizes marked as available in admin panel
     if (size) {
+      const sizes = size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
       const { data: sizeIds } = await supabaseAdmin
         .from('product_sizes')
         .select('product_id')
-        .eq('size', parseInt(size, 10))
+        .in('size', sizes)
+        .eq('is_available', true)
 
-      const ids = (sizeIds || []).map((r: { product_id: string }) => r.product_id)
+      const ids = [...new Set((sizeIds || []).map((r: { product_id: string }) => r.product_id))]
       query = query.in('id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000'])
     }
 

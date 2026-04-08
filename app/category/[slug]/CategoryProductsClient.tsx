@@ -70,8 +70,6 @@ const SORT_OPTIONS = [
   { value: 'name_asc',   label: 'الاسم: أ-ي' },
 ]
 
-const SHOE_SIZES = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46]
-
 interface Props {
   products: ProductFull[]
 }
@@ -89,6 +87,17 @@ export default function CategoryProductsClient({ products }: Props) {
   const [maxPrice, setMaxPrice] = useState('')
   const [onSale, setOnSale] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Sizes that are actually in products AND marked as available in admin panel
+  const availableSizes = useMemo(() => {
+    const sizeSet = new Set<number>()
+    products.forEach(p => {
+      p.sizes.forEach((s: any) => {
+        if (s.is_available) sizeSet.add(s.size)
+      })
+    })
+    return Array.from(sizeSet).sort((a, b) => a - b)
+  }, [products])
 
   const toggleSelection = (setter: React.Dispatch<React.SetStateAction<string[]>>, val: string) => {
     setter(prev => prev.includes(val) ? prev.filter(p => p !== val) : [...prev, val])
@@ -119,7 +128,7 @@ export default function CategoryProductsClient({ products }: Props) {
 
     if (search) result = result.filter(p => p.name.includes(search))
     if (selectedTags.length > 0) result = result.filter(p => p.tags.some(t => selectedTags.includes(t)))
-    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some((s: any) => selectedSizes.includes(String(s?.size ?? s))))
+    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some((s: any) => selectedSizes.includes(String(s?.size ?? s)) && s.is_available))
     if (onSale) result = result.filter(p => p.discount_price_syp !== null)
     if (minPrice) {
       const min = Number(minPrice)
@@ -167,15 +176,17 @@ export default function CategoryProductsClient({ products }: Props) {
       </div>
 
       {/* Size */}
-      <div>
-        <h3 className="font-brand font-semibold text-on-surface text-sm mb-2">المقاس</h3>
-        <MultiSelectDropdown
-          options={SHOE_SIZES.map(s => ({ label: String(s), value: String(s) }))}
-          selectedValues={selectedSizes}
-          onChange={(val) => toggleSelection(setSelectedSizes, val)}
-          placeholder="المقاس..."
-        />
-      </div>
+      {availableSizes.length > 0 && (
+        <div>
+          <h3 className="font-brand font-semibold text-on-surface text-sm mb-2">المقاس</h3>
+          <MultiSelectDropdown
+            options={availableSizes.map(s => ({ label: String(s), value: String(s) }))}
+            selectedValues={selectedSizes}
+            onChange={(val) => toggleSelection(setSelectedSizes, val)}
+            placeholder="المقاس..."
+          />
+        </div>
+      )}
 
       {/* Price range */}
       <div>

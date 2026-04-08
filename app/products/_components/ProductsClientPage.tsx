@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { useCurrencyStore } from '@/store/currencyStore'
 import type { Category, ProductFull, ProductTag } from '@/types'
-import { SHOE_SIZES } from '@/lib/constants'
 
 const SORT_OPTIONS = [
   { value: 'newest',      label: 'الأحدث'         },
@@ -120,6 +119,7 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
   const [products,     setProducts]     = useState<ProductFull[]>([])
   const [total,        setTotal]        = useState(0)
   const [loading,      setLoading]      = useState(true)
+  const [availableSizes, setAvailableSizes] = useState<number[]>([])
 
   // Build URL params and push to router
   const buildParams = useCallback(() => {
@@ -153,6 +153,16 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
       setLoading(false)
     }
   }, [buildParams])
+
+  // Fetch available sizes whenever category filter changes
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (selectedCategories.length) params.set('category', selectedCategories.join(','))
+    fetch(`/api/products/filters?${params.toString()}`)
+      .then(r => r.json())
+      .then(data => setAvailableSizes(data.sizes ?? []))
+      .catch(() => setAvailableSizes([]))
+  }, [selectedCategories])
 
   useEffect(() => {
     fetchProducts()
@@ -238,15 +248,17 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
       </div>
 
       {/* Size */}
-      <div>
-        <h3 className="font-brand font-semibold text-on-surface text-sm mb-2">المقاس</h3>
-        <MultiSelectDropdown
-          options={SHOE_SIZES.map(size => ({ label: String(size), value: String(size) }))}
-          selectedValues={selectedSizes}
-          onChange={(val) => toggleSelection(setSelectedSizes, val)}
-          placeholder="المقاس..."
-        />
-      </div>
+      {availableSizes.length > 0 && (
+        <div>
+          <h3 className="font-brand font-semibold text-on-surface text-sm mb-2">المقاس</h3>
+          <MultiSelectDropdown
+            options={availableSizes.map(size => ({ label: String(size), value: String(size) }))}
+            selectedValues={selectedSizes}
+            onChange={(val) => toggleSelection(setSelectedSizes, val)}
+            placeholder="المقاس..."
+          />
+        </div>
+      )}
 
       {/* Price range */}
       <div>
