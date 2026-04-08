@@ -129,17 +129,38 @@ export default function CategoryProductsClient({ products }: Props) {
     setSearch(searchInput)
   }
 
-  // Filtered + sorted products
-  const filtered = useMemo(() => {
+  // Filtered + sorted products + unavailability map for size filters
+  const { filtered, filterUnavailableMap } = useMemo(() => {
     let result = [...products]
 
     if (search) result = result.filter(p => p.name.includes(search))
     if (selectedTags.length > 0) result = result.filter(p => p.tags.some(t => selectedTags.includes(t)))
-    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some((s: any) => {
-      if (!selectedSizes.includes(String(s?.size ?? s)) || !s.is_available) return false
-      const matchingVariants = p.variants?.filter(v => v.size === s.size) || []
-      return matchingVariants.length === 0 || matchingVariants.some(v => v.quantity > 0)
-    }))
+
+    // Size filter: include products that have the size listed, but mark as unavailable
+    // if no variant has stock for that size
+    const unavailableMap: Record<string, string> = {}
+    if (selectedSizes.length > 0) {
+      result = result.filter(p => {
+        // Check if product has any of the selected sizes listed
+        const hasSize = p.sizes.some((s: any) => selectedSizes.includes(String(s?.size ?? s)))
+        if (!hasSize) return false // Product doesn't have this size at all — hide it
+
+        // Check if ANY of the selected sizes is actually purchasable
+        const canAddToCart = p.sizes.some((s: any) => {
+          if (!selectedSizes.includes(String(s?.size ?? s)) || !s.is_available) return false
+          const matchingVariants = p.variants?.filter(v => v.size === s.size) || []
+          return matchingVariants.length === 0 || matchingVariants.some(v => v.quantity > 0)
+        })
+
+        if (!canAddToCart) {
+          // Product has the size but it can't be added to cart — mark as unavailable
+          unavailableMap[p.id] = 'غير متوفر بهذا المقاس'
+        }
+
+        return true // Show the product regardless (available or unavailable)
+      })
+    }
+
     if (onSale) result = result.filter(p => p.discount_price_syp !== null)
     if (minPrice) {
       const min = Number(minPrice)
@@ -150,14 +171,23 @@ export default function CategoryProductsClient({ products }: Props) {
       result = result.filter(p => currency === 'SYP' ? p.price_syp <= max : p.price_usd <= max)
     }
 
+    // Sort: available products first, then unavailable
+    // Then apply the selected sort order
+    result.sort((a, b) => {
+      const aUnavail = unavailableMap[a.id] ? 1 : 0
+      const bUnavail = unavailableMap[b.id] ? 1 : 0
+      if (aUnavail !== bUnavail) return aUnavail - bUnavail
+      return 0
+    })
+
     switch (sort) {
-      case 'price_asc':   result.sort((a, b) => a.price_syp - b.price_syp); break
-      case 'price_desc':  result.sort((a, b) => b.price_syp - a.price_syp); break
-      case 'most_viewed': result.sort((a, b) => b.view_count - a.view_count); break
-      case 'name_asc':    result.sort((a, b) => a.name.localeCompare(b.name, 'ar')); break
+      case 'price_asc':   result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || a.price_syp - b.price_syp }); break
+      case 'price_desc':  result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || b.price_syp - a.price_syp }); break
+      case 'most_viewed': result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || b.view_count - a.view_count }); break
+      case 'name_asc':    result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || a.name.localeCompare(b.name, 'ar') }); break
     }
 
-    return result
+    return { filtered: result, filterUnavailableMap: unavailableMap }
   }, [products, sort, search, selectedTags, selectedSizes, onSale, minPrice, maxPrice, currency])
 
   // ─── Filter Sidebar Content ────────────────────────────────────────────
@@ -323,6 +353,7 @@ export default function CategoryProductsClient({ products }: Props) {
             products={filtered}
             isLoading={false}
             columns={3}
+            filterUnavailableMap={filterUnavailableMap}
           />
 
           {/* No results */}

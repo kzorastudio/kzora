@@ -11,6 +11,8 @@ interface ProductGridProps {
   isLoading?: boolean
   columns?: number
   className?: string
+  /** Map of productId → unavailable label for filter-based unavailability */
+  filterUnavailableMap?: Record<string, string>
 }
 
 function SkeletonCard() {
@@ -35,6 +37,7 @@ export function ProductGrid({
   isLoading = false,
   columns = 4,
   className,
+  filterUnavailableMap,
 }: ProductGridProps) {
   const colClass: Record<number, string> = {
     2: 'grid-cols-2',
@@ -87,7 +90,11 @@ export function ProductGrid({
       )}
     >
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          filterUnavailableLabel={filterUnavailableMap?.[product.id] ?? null}
+        />
       ))}
     </div>
   )

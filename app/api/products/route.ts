@@ -67,8 +67,60 @@ export async function GET(request: NextRequest) {
       query = query.in('id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000'])
     }
 
-    // Size filter — size must be marked available AND have stock in variants
-    if (size) {
+    // Size + Color combined filter — ensures the specific combination has stock
+    if (size && color) {
+      const sizes = size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
+
+      // Step 1: products where this size is marked is_available = true
+      const { data: availSizes } = await supabaseAdmin
+        .from('product_sizes')
+        .select('product_id')
+        .in('size', sizes)
+        .eq('is_available', true)
+
+      const sizeCandidates = Array.from(new Set((availSizes || []).map((r: { product_id: string }) => r.product_id)))
+
+      // Step 2: products that have this color
+      const { data: colorMatches } = await supabaseAdmin
+        .from('product_colors')
+        .select('product_id, name_ar')
+        .or(`hex_code.ilike.%${color}%,name_ar.ilike.%${color}%`)
+
+      const colorCandidates = (colorMatches || []).map((r: { product_id: string }) => r.product_id)
+      // Get color names for matching variants
+      const colorNameMap = new Map<string, string>()
+      for (const c of (colorMatches || [])) {
+        colorNameMap.set(c.product_id, c.name_ar)
+      }
+
+      // Intersect: products that have BOTH the size and the color
+      const combinedCandidates = sizeCandidates.filter(id => colorCandidates.includes(id))
+
+      if (combinedCandidates.length === 0) {
+        query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
+      } else {
+        // Step 3: check that the specific color+size variant has stock > 0
+        const { data: allVariants } = await supabaseAdmin
+          .from('product_variants')
+          .select('product_id, color, size, quantity')
+          .in('size', sizes)
+          .in('product_id', combinedCandidates)
+
+        const finalIds = combinedCandidates.filter(id => {
+          const colorName = colorNameMap.get(id) || ''
+          const matchingVariants = (allVariants || []).filter(
+            (v: any) => v.product_id === id && v.color === colorName
+          )
+          // No variants = size-only product, treat as available
+          if (matchingVariants.length === 0) return true
+          // Has variants: at least one must have stock > 0
+          return matchingVariants.some((v: any) => (v.quantity ?? 0) > 0)
+        })
+
+        query = query.in('id', finalIds.length > 0 ? finalIds : ['00000000-0000-0000-0000-000000000000'])
+      }
+    } else if (size) {
+      // Size filter only — size must be marked available AND have stock in variants
       const sizes = size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
 
       // Step 1: products where this size is marked is_available = true
@@ -105,10 +157,8 @@ export async function GET(request: NextRequest) {
 
         query = query.in('id', finalIds.length > 0 ? finalIds : ['00000000-0000-0000-0000-000000000000'])
       }
-    }
-
-    // Color filter (by hex_code or name_ar)
-    if (color) {
+    } else if (color) {
+      // Color filter only (by hex_code or name_ar)
       const { data: colorIds } = await supabaseAdmin
         .from('product_colors')
         .select('product_id')

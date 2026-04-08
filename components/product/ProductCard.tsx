@@ -20,9 +20,11 @@ const TAG_LABELS: Record<string, string> = {
 interface ProductCardProps {
   product: ProductFull
   className?: string
+  /** When set, forces the card into an "unavailable" state with this custom label (e.g. "غير متوفر بهذا المقاس") */
+  filterUnavailableLabel?: string | null
 }
 
-export function ProductCard({ product, className }: ProductCardProps) {
+export function ProductCard({ product, className, filterUnavailableLabel }: ProductCardProps) {
   const router = useRouter()
   const { currency } = useCurrencyStore()
   const { addItem, openCart } = useCartStore()
@@ -36,7 +38,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
       ? product.variants.every(v => (v.quantity ?? 0) <= 0) 
       : (product.colors.length > 0 || product.sizes.length > 0))
 
-  const isActuallyOutOfStock = isEntirelyOutOfStock
+  // If the filter says this product is unavailable for the selected criteria, treat as out of stock
+  const isActuallyOutOfStock = isEntirelyOutOfStock || !!filterUnavailableLabel
 
   const mainImage = product.images?.find(img => img.is_main) || product.images?.[0]
   const defaultImageUrl = mainImage?.url ?? '/placeholder-shoe.jpg'
@@ -224,11 +227,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
         )}
 
-        {/* Out of Stock subtle badge */}
+        {/* Out of Stock or Filter Unavailable badge */}
         {isActuallyOutOfStock && (
           <div className="absolute top-3 right-3 z-0">
-            <span className="text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full bg-[#E8E4DE] text-[#6B6560] shadow-sm">
-              نفدت الكمية
+            <span className={cn(
+              "text-[10px] font-arabic font-semibold px-2.5 py-1 rounded-full shadow-sm",
+              filterUnavailableLabel
+                ? "bg-[#F5E6D0] text-[#8B5E14] border border-[#E8D5B5]"
+                : "bg-[#E8E4DE] text-[#6B6560]"
+            )}>
+              {filterUnavailableLabel || 'نفدت الكمية'}
             </span>
           </div>
         )}
