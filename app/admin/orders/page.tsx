@@ -75,16 +75,20 @@ export default function OrdersPage() {
     }
   }
 
-  async function handleDeleteOrder(id: string) {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')) return
-
+  async function handleDeleteOrder(id: string, restoreStock: boolean) {
     try {
-      const res = await fetch(`/api/orders/${id}`, {
-        method: 'DELETE',
-      })
+      const url = restoreStock
+        ? `/api/orders/${id}?restore_stock=true`
+        : `/api/orders/${id}`
+
+      const res = await fetch(url, { method: 'DELETE' })
       if (!res.ok) throw new Error()
-      
-      toast.success('تم حذف الطلب بنجاح')
+
+      toast.success(
+        restoreStock
+          ? 'تم حذف الطلب وإرجاع الكميات إلى المخزون'
+          : 'تم حذف الطلب بنجاح'
+      )
       setOrders((prev) => prev.filter((o) => o.id !== id))
     } catch {
       toast.error('فشل حذف الطلب، يرجى المحاولة مرة أخرى')

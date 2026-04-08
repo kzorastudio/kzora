@@ -184,6 +184,7 @@ export async function PUT(
 
 // ─── DELETE /api/orders/[id] ──────────────────────────────────────────────────
 // Admin only. Deletes order.
+// Query param: ?restore_stock=true  → restores product_variants quantities before deleting
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
@@ -195,8 +196,98 @@ export async function DELETE(
     }
 
     const { id } = params
+    const url = new URL(_request.url)
+    const restoreStock = url.searchParams.get('restore_stock') === 'true'
 
-    // We assume cascading deletes are set up in Supabase for order_items and status_history
+    // ─── Restore stock if requested ───────────────────────────────────────
+    if (restoreStock) {
+      // 1. Fetch all order items (product_id, color, size, quantity)
+      const { data: items, error: itemsErr } = await supabaseAdmin
+        .from('order_items')
+        .select('product_id, color, size, quantity')
+        .eq('order_id', id)
+
+      if (itemsErr) {
+        console.error('[DELETE] Failed to fetch order items:', itemsErr)
+        return NextResponse.json({ error: 'فشل جلب عناصر الطلب' }, { status: 500 })
+      }
+
+      // 2. For each item, find matching variant and restore quantity
+      const productIdsToCheck = new Set<string>()
+      for (const item of items ?? []) {
+        if (!item.product_id) continue
+
+        // Find variant by product_id + color + size
+        const { data: variant } = await supabaseAdmin
+          .from('product_variants')
+          .select('id, quantity')
+          .eq('product_id', item.product_id)
+          .eq('color', item.color ?? '')
+          .eq('size', item.size ?? 0)
+          .single()
+
+        if (variant) {
+          await supabaseAdmin
+            .from('product_variants')
+            .update({ quantity: variant.quantity + item.quantity })
+            .eq('id', variant.id)
+
+          productIdsToCheck.add(item.product_id)
+        }
+      }
+
+      // 3. If product was out_of_stock, update it back to in_stock
+      for (const pid of Array.from(productIdsToCheck)) {
+        const { data: variants } = await supabaseAdmin
+          .from('product_variants')
+          .select('quantity')
+          .eq('product_id', pid)
+
+        if (variants) {
+          const totalStock = variants.reduce((sum: number, v: { quantity: number }) => sum + v.quantity, 0)
+          if (totalStock > 0) {
+            await supabaseAdmin
+              .from('products')
+              .update({ stock_status: 'in_stock' })
+              .eq('id', pid)
+              .eq('stock_status', 'out_of_stock') // only update if was out_of_stock
+          }
+        }
+      }
+
+      // 4. Revert loyalty points cycle_used if this order used a loyalty discount
+      const { data: orderMeta } = await supabaseAdmin
+        .from('orders')
+        .select('loyalty_discount_syp, customer_phone')
+        .eq('id', id)
+        .single()
+
+      if (orderMeta?.loyalty_discount_syp > 0) {
+        // Cancel this order's loyalty point
+        await supabaseAdmin
+          .from('loyalty_points')
+          .update({ status: 'cancelled' })
+          .eq('order_id', id)
+
+        // Revert the 3 points that were marked cycle_used when the discount was applied
+        const { data: pointsToRevert } = await supabaseAdmin
+          .from('loyalty_points')
+          .select('id')
+          .eq('customer_phone', orderMeta.customer_phone)
+          .eq('cycle_used', true)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        if (pointsToRevert && pointsToRevert.length > 0) {
+          await supabaseAdmin
+            .from('loyalty_points')
+            .update({ cycle_used: false })
+            .in('id', pointsToRevert.map((p: { id: string }) => p.id))
+        }
+      }
+    }
+
+    // ─── Delete order (cascades to order_items, status_history, loyalty_points) ─
     const { error } = await supabaseAdmin
       .from('orders')
       .delete()

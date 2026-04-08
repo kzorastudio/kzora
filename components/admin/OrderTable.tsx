@@ -1,10 +1,12 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { ChevronRight, ChevronLeft, Trash2 } from 'lucide-react'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, formatPrice } from '@/lib/utils'
 import StatusBadge from './StatusBadge'
+import DeleteOrderModal from './DeleteOrderModal'
 import { cn } from '@/lib/utils'
 import type { Order, OrderStatus } from '@/types'
 
@@ -19,7 +21,7 @@ const SHIPPING_DISPLAY: Record<string, string> = {
 interface OrderTableProps {
   orders: Order[]
   onStatusChange: (id: string, status: OrderStatus) => void
-  onDeleteOrder: (id: string) => void
+  onDeleteOrder: (id: string, restoreStock: boolean) => void
   page: number
   totalPages: number
   onPageChange: (page: number) => void
@@ -36,6 +38,8 @@ export default function OrderTable({
   loading = false,
 }: OrderTableProps) {
   const router = useRouter()
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string } | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   function handleRowClick(id: string) {
     router.push(`/admin/orders/${id}`)
@@ -44,6 +48,27 @@ export default function OrderTable({
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>, orderId: string) {
     e.stopPropagation()
     onStatusChange(orderId, e.target.value as OrderStatus)
+  }
+
+  function openDeleteModal(e: React.MouseEvent, order: Order) {
+    e.stopPropagation()
+    setPendingDelete({ id: order.id, orderNumber: order.order_number })
+  }
+
+  async function handleDeleteOnly() {
+    if (!pendingDelete) return
+    setDeleteLoading(true)
+    await onDeleteOrder(pendingDelete.id, false)
+    setDeleteLoading(false)
+    setPendingDelete(null)
+  }
+
+  async function handleDeleteAndRestore() {
+    if (!pendingDelete) return
+    setDeleteLoading(true)
+    await onDeleteOrder(pendingDelete.id, true)
+    setDeleteLoading(false)
+    setPendingDelete(null)
   }
 
   const Pagination = () => totalPages > 1 ? (
@@ -83,6 +108,17 @@ export default function OrderTable({
 
   return (
     <div dir="rtl" className="flex flex-col gap-4">
+
+      {/* Delete confirmation modal */}
+      {pendingDelete && (
+        <DeleteOrderModal
+          orderNumber={pendingDelete.orderNumber}
+          loading={deleteLoading}
+          onClose={() => { if (!deleteLoading) setPendingDelete(null) }}
+          onDeleteOnly={handleDeleteOnly}
+          onDeleteAndRestore={handleDeleteAndRestore}
+        />
+      )}
 
       {/* ── MOBILE CARDS ── */}
       <div className="flex flex-col gap-3 md:hidden">
@@ -134,7 +170,7 @@ export default function OrderTable({
               </select>
               
               <button
-                onClick={() => onDeleteOrder(order.id)}
+                onClick={(e) => openDeleteModal(e, order)}
                 className="h-10 w-10 flex items-center justify-center rounded-xl bg-error-container/30 text-error hover:bg-error-container/50 transition-colors"
                 title="حذف الطلب"
               >
@@ -210,7 +246,7 @@ export default function OrderTable({
                           ))}
                         </select>
                         <button
-                          onClick={() => onDeleteOrder(order.id)}
+                          onClick={(e) => openDeleteModal(e, order)}
                           className="p-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container/40 transition-colors"
                           title="حذف الطلب"
                         >
