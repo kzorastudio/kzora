@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         .in('size', sizes)
         .eq('is_available', true)
 
-      const candidateIds = [...new Set((availSizes || []).map((r: { product_id: string }) => r.product_id))]
+      const candidateIds = Array.from(new Set((availSizes || []).map((r: { product_id: string }) => r.product_id)))
 
       if (candidateIds.length === 0) {
         query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
