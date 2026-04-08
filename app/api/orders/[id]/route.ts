@@ -262,7 +262,7 @@ export async function DELETE(
         .eq('id', id)
         .single()
 
-      if (orderMeta?.loyalty_discount_syp > 0) {
+      if (orderMeta && orderMeta.loyalty_discount_syp > 0) {
         // Cancel this order's loyalty point
         await supabaseAdmin
           .from('loyalty_points')

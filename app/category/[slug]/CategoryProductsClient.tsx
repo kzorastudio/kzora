@@ -119,7 +119,7 @@ export default function CategoryProductsClient({ products }: Props) {
 
     if (search) result = result.filter(p => p.name.includes(search))
     if (selectedTags.length > 0) result = result.filter(p => p.tags.some(t => selectedTags.includes(t)))
-    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some(s => selectedSizes.includes(String(s))))
+    if (selectedSizes.length > 0) result = result.filter(p => p.sizes.some((s: any) => selectedSizes.includes(String(s?.size ?? s))))
     if (onSale) result = result.filter(p => p.discount_price_syp !== null)
     if (minPrice) {
       const min = Number(minPrice)
