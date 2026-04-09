@@ -333,6 +333,7 @@ export default function CheckoutPage() {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 settings={settings}
+                shippingMethods={shippingMethods}
                 onDeliveryTypeChange={setDeliveryType}
                 onPhoneChange={handlePhoneChange}
               />

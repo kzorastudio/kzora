@@ -135,7 +135,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
               sameAs: [
                 'https://kzora.co',
-                // Add social links here if available
+                'https://www.facebook.com/kzora.studio',
+                'https://www.instagram.com/kzora.studio',
               ],
             }),
           }}

@@ -15,6 +15,7 @@ interface Props {
   onSubmit: (data: CheckoutFormData) => Promise<void>
   isSubmitting: boolean
   settings: HomepageSettings | null
+  shippingMethods?: any[]
   onDeliveryTypeChange?: (type: 'delivery' | 'shipping') => void
   onPhoneChange?: (phone: string) => void
 }
@@ -38,8 +39,8 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
   )
 }
 
-export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliveryTypeChange, onPhoneChange }: Props) {
-  const [shippingMethods, setShippingMethods] = useState<any[]>([])
+export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippingMethods: propShippingMethods, onDeliveryTypeChange, onPhoneChange }: Props) {
+  const [shippingMethods, setShippingMethods] = useState<any[]>(propShippingMethods || [])
 
   const {
     register,
@@ -79,13 +80,12 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, onDeliv
     }
   }, [deliveryType, onDeliveryTypeChange, setValue])
 
-  // Fetch shipping methods from DB
+  // Sync shipping methods when parent provides them
   useEffect(() => {
-    fetch('/api/shipping')
-      .then(r => r.json())
-      .then(d => setShippingMethods(d.methods || []))
-      .catch(() => {})
-  }, [])
+    if (propShippingMethods && propShippingMethods.length > 0) {
+      setShippingMethods(propShippingMethods)
+    }
+  }, [propShippingMethods])
 
   // Watchers for compatibility checks
   useEffect(() => {

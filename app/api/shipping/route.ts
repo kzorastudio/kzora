@@ -1,9 +1,11 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET() {
   try {
-    const { data: methods, error: methodsError } = await supabase
+    const { data: methods, error: methodsError } = await supabaseAdmin
       .from('shipping_methods')
       .select(`
         id,

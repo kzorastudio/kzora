@@ -1,4 +1,7 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { supabaseAdmin as supabase } from '@/lib/supabase'
 import { getAuthSession } from '@/lib/getSession'
 
@@ -41,6 +44,7 @@ export async function POST(req: NextRequest) {
     await supabase.from('shipping_governorates').insert(rows)
   }
 
+  revalidatePath('/', 'layout')
   return NextResponse.json({ method })
 }
 
@@ -72,6 +76,7 @@ export async function PUT(req: NextRequest) {
     }
   }
 
+  revalidatePath('/', 'layout')
   return NextResponse.json({ success: true })
 }
 
@@ -83,5 +88,6 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json()
   const { error } = await supabase.from('shipping_methods').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/', 'layout')
   return NextResponse.json({ success: true })
 }
