@@ -171,80 +171,29 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Policies + Contact */}
-          <div className="flex flex-col gap-8">
-            {/* Store policies */}
-            <div>
-              <h3 className="font-arabic font-bold text-[#1A1A1A] mb-6 text-base">
-                سياسات المتجر
-              </h3>
-              <ul className="flex flex-col gap-4">
-                {[
-                  { label: 'سياسة الإرجاع والاستبدال', href: '/returns-exchanges' },
-                  { label: 'سياسة الخصوصية', href: '/privacy-policy' },
-                  { label: 'سياسة الشحن والتوصيل', href: '/shipping' },
-                  { label: 'شروط الاستخدام', href: '/terms' },
-                ].map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm font-arabic text-[#6B6560] hover:text-[#785600] transition-colors duration-150 flex items-center gap-2"
-                    >
-                      <span className="w-1 h-1 rounded-full bg-[#D0CAC0]" />
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact Us */}
-            <div>
-              <h3 className="font-arabic font-bold text-[#1A1A1A] mb-4 text-base">
-                تواصل معنا
-              </h3>
-              <ul className="flex flex-col gap-3">
-                <li>
-                  <a
-                    href="https://wa.me/963964514765"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 text-sm font-arabic text-[#6B6560] hover:text-[#25D366] transition-colors duration-150 group"
+          {/* Column 4: Policies */}
+          <div>
+            <h3 className="font-arabic font-bold text-[#1A1A1A] mb-6 text-base">
+              سياسات المتجر
+            </h3>
+            <ul className="flex flex-col gap-4">
+              {[
+                { label: 'سياسة الإرجاع والاستبدال', href: '/returns-exchanges' },
+                { label: 'سياسة الخصوصية', href: '/privacy-policy' },
+                { label: 'سياسة الشحن والتوصيل', href: '/shipping' },
+                { label: 'شروط الاستخدام', href: '/terms' },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm font-arabic text-[#6B6560] hover:text-[#785600] transition-colors duration-150 flex items-center gap-2"
                   >
-                    <span className="w-7 h-7 rounded-full bg-[#EDE8E1] group-hover:bg-[#25D366] flex items-center justify-center text-[#6B6560] group-hover:text-white transition-all duration-200 shrink-0">
-                      <WhatsAppIcon />
-                    </span>
-                    واتساب
-                  </a>
+                    <span className="w-1 h-1 rounded-full bg-[#D0CAC0]" />
+                    {link.label}
+                  </Link>
                 </li>
-                <li>
-                  <a
-                    href="https://www.facebook.com/kzora.studio"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 text-sm font-arabic text-[#6B6560] hover:text-[#1877F2] transition-colors duration-150 group"
-                  >
-                    <span className="w-7 h-7 rounded-full bg-[#EDE8E1] group-hover:bg-[#1877F2] flex items-center justify-center text-[#6B6560] group-hover:text-white transition-all duration-200 shrink-0">
-                      <FacebookIcon />
-                    </span>
-                    فيسبوك — kzora.studio
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.instagram.com/kzora.studio"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 text-sm font-arabic text-[#6B6560] hover:text-[#C13584] transition-colors duration-150 group"
-                  >
-                    <span className="w-7 h-7 rounded-full bg-[#EDE8E1] group-hover:bg-[#C13584] flex items-center justify-center text-[#6B6560] group-hover:text-white transition-all duration-200 shrink-0">
-                      <InstagramIcon />
-                    </span>
-                    انستغرام — kzora.studio
-                  </a>
-                </li>
-              </ul>
-            </div>
+              ))}
+            </ul>
           </div>
 
         </div>
