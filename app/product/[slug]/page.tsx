@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: description,
       images: product.images[0] ? [{ url: product.images[0].url, width: 1200, height: 630, alt: product.name }] : [],
       url: `https://kzora.co/product/${product.slug}`,
-      type: 'website',
+      type: 'article',
     },
     twitter: {
       card: 'summary_large_image',

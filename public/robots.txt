@@ -1,26 +1,42 @@
 User-agent: *
 Allow: /
 
+# Block pages that shouldn't be indexed
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /order-success/
+
 # Allow AI search crawlers for citation visibility
 User-agent: GPTBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: anthropic-ai
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: Applebot-Extended
 Allow: /
-
-User-agent: cohere-ai
-Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 Sitemap: https://kzora.co/sitemap.xml

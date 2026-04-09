@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Tajawal, Noto_Sans_Arabic, Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
@@ -28,6 +28,13 @@ const inter = Inter({
   display: 'swap',
 })
 
+export const viewport: Viewport = {
+  themeColor: '#785600',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://kzora.co'),
   title: {
@@ -35,12 +42,17 @@ export const metadata: Metadata = {
     template: '%s — كزورا Kzora',
   },
   description: 'تسوق أفضل الأحذية في سوريا من كزورا Kzora. أحذية رسمية ورياضية وكاجوال رجالية ونسائية بجودة عالية وتوصيل سريع في حلب وجميع المحافظات السورية. كزورا، أناقة تبدأ من خطوتك.',
-  keywords: 'أحذية سوريا, كزورا, Kzora, متجر أحذية سوريا, شراء أحذية أونلاين سوريا, أحذية حلب, أحذية رياضية سوريا, أحذية نسائية سوريا, أحذية رجالية سوريا, أحذية جلد طبيعي سوريا, أسعار الأحذية في سوريا, أحذية سبور سوريا',
+  keywords: [
+    'كزورا', 'Kzora', 'أحذية سوريا', 'متجر أحذية سوريا', 'شراء أحذية أونلاين سوريا',
+    'أحذية حلب', 'أحذية رياضية سوريا', 'أحذية نسائية سوريا', 'أحذية رجالية سوريا',
+    'أحذية جلد طبيعي سوريا', 'أسعار الأحذية في سوريا', 'أحذية سبور سوريا',
+    'أحذية دمشق', 'أحذية كاجوال سوريا', 'متجر كزورا', 'kzora shoes syria',
+  ],
   alternates: {
     canonical: '/',
   },
   manifest: '/manifest.json',
-  themeColor: '#785600',
+  category: 'ecommerce',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -62,7 +74,7 @@ export const metadata: Metadata = {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'متجر كزورا للاأحذية - سوريا Kzora Shoes',
+        alt: 'متجر كزورا للأحذية - سوريا Kzora Shoes',
       },
     ],
   },
@@ -72,6 +84,17 @@ export const metadata: Metadata = {
     description: 'أفضل متجر أحذية أونلاين في سوريا - كزورا Kzora',
     images: ['/logo.png'],
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   verification: {
     google: 'QIzKZwVc9QgD9CyJy0S5u9dsuiRnX43X1_lysapN5Ak',
   },
@@ -80,8 +103,22 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
+      <head>
+        {/* Preconnect to Cloudinary for faster image loads (Core Web Vitals) */}
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+      </head>
       <body className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
-        {/* JSON-LD Structured Data */}
+        {/* Noscript fallback for search engine bots that don't run JS */}
+        <noscript>
+          <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#785600', color: 'white', fontFamily: 'Tajawal, sans-serif' }}>
+            <h1>متجر كزورا Kzora — أفضل أحذية في سوريا</h1>
+            <p>تسوق أفضل الأحذية الرجالية والنسائية والرياضية في سوريا. جودة عالية وتوصيل سريع لجميع المحافظات السورية من كزورا Kzora.</p>
+            <p>أحذية حلب، دمشق، حمص، حماة، اللاذقية، طرطوس، السويداء، درعا وجميع المحافظات.</p>
+          </div>
+        </noscript>
+
+        {/* JSON-LD: WebSite with SearchAction */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -89,7 +126,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               '@context': 'https://schema.org',
               '@type': 'WebSite',
               name: 'كزورا Kzora',
+              alternateName: 'Kzora',
               url: 'https://kzora.co',
+              inLanguage: 'ar',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: 'https://kzora.co/products?search={search_term_string}',
@@ -98,6 +137,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }),
           }}
         />
+
+        {/* JSON-LD: ShoeStore with full business info */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -105,10 +146,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               '@context': 'https://schema.org',
               '@type': 'ShoeStore',
               name: 'كزورا Kzora',
+              alternateName: 'Kzora',
+              description: 'متجر كزورا للأحذية الفاخرة في سوريا. أحذية رجالية ونسائية ورياضية بجودة عالية وتوصيل لجميع المحافظات.',
               image: 'https://kzora.co/logo.png',
+              logo: 'https://kzora.co/logo.png',
               '@id': 'https://kzora.co',
               url: 'https://kzora.co',
-              telephone: '963964514765',
+              telephone: '+963964514765',
+              priceRange: '$$',
+              currenciesAccepted: 'SYP, USD',
+              paymentAccepted: 'Cash, Sham Cash',
               address: {
                 '@type': 'PostalAddress',
                 addressLocality: 'Aleppo',
@@ -120,15 +167,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 latitude: 36.2021,
                 longitude: 37.1343,
               },
+              areaServed: {
+                '@type': 'Country',
+                name: 'سوريا',
+              },
               openingHoursSpecification: {
                 '@type': 'OpeningHoursSpecification',
                 dayOfWeek: [
-                  'Monday',
-                  'Tuesday',
-                  'Wednesday',
-                  'Thursday',
-                  'Saturday',
-                  'Sunday',
+                  'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+                  'Saturday', 'Sunday',
                 ],
                 opens: '09:00',
                 closes: '22:00',
@@ -141,6 +188,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }),
           }}
         />
+
         <Providers>
           {process.env.NEXT_PUBLIC_GA_ID && (
             <GoogleAnalytics ga_id={process.env.NEXT_PUBLIC_GA_ID} />

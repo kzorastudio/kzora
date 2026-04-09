@@ -30,36 +30,62 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  const now = new Date().toISOString()
+
   const staticUrls = [
     {
       url: baseUrl,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       changeFrequency: 'daily' as const,
       priority: 1.0,
     },
     {
       url: `${baseUrl}/products`,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       changeFrequency: 'daily' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/categories`,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
     {
       url: `${baseUrl}/about`,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
     {
       url: `${baseUrl}/track-order`,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       changeFrequency: 'always' as const,
       priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/shipping`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/returns-exchanges`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/privacy-policy`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.3,
     },
   ]
 

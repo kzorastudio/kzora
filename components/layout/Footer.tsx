@@ -202,31 +202,10 @@ export function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-[#E3DDD5]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-xs font-arabic text-[#9E9890]">
               © 2026 كزورا. جميع الحقوق محفوظة.
             </p>
-            {/* Social links in bottom bar */}
-            <div className="flex items-center gap-4">
-              <a
-                href="https://www.facebook.com/kzora.studio"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="فيسبوك كزورا"
-                className="text-[#9E9890] hover:text-[#1877F2] transition-colors duration-150"
-              >
-                <FacebookIcon />
-              </a>
-              <a
-                href="https://www.instagram.com/kzora.studio"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="انستغرام كزورا"
-                className="text-[#9E9890] hover:text-[#C13584] transition-colors duration-150"
-              >
-                <InstagramIcon />
-              </a>
-            </div>
             <p className="text-xs font-arabic text-[#9E9890]">
               صُنع بعناية في سوريا
             </p>
