@@ -35,23 +35,23 @@ interface OrderForWhatsApp {
 export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   const currency = order.currency
   const lines: string[] = [
-    `* طلب جديد من متجر كزورا *`,
+    `📦 *طلب جديد من متجر كزورا* 📦`,
     ``,
-    `* رقم الطلب: * ${order.orderNumber}`,
-    `* التاريخ: * ${new Date().toLocaleDateString('ar-SY')}`,
-    `------------------------------------------`,
+    `🆔 *رقم الطلب:* #${order.orderNumber}`,
+    `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-SY')}`,
+    `━━━━━━━━━━━━━━━━━━━━`,
     ``,
-    `* معلومات الزبون: *`,
-    `- *الاسم:* ${order.customerName}`,
-    `- *الهاتف:* ${order.customerPhone}`,
-    `- *المحافظة:* ${order.governorate}`,
-    `- *العنوان:* ${order.address}`,
+    `👤 *معلومات الزبون*`,
+    `📍 *الاسم:* ${order.customerName}`,
+    `📞 *الهاتف:* ${order.customerPhone}`,
+    `🏙️ *المحافظة:* ${order.governorate}`,
+    `🏠 *العنوان:* ${order.address}`,
     ``,
-    `* تفاصيل الشحن: *`,
-    `- *طريقة التوصيل:* ${order.deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : 'شحن ضمن المحافظات'}`,
-    order.deliveryType === 'shipping' ? `- *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}` : ``,
+    `🚚 *تفاصيل الشحن*`,
+    `🚀 *النوع:* ${order.deliveryType === 'delivery' ? 'توصيل عادى (حلب)' : 'شحن للمحافظات'}`,
+    order.deliveryType === 'shipping' ? `🏢 *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}` : ``,
     ``,
-    `* المنتجات المطلوبة: *`,
+    `🛍️ *المنتجات المطلوبة*`,
   ]
 
   order.items.forEach((item, i) => {
@@ -59,48 +59,46 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
       ? formatPrice(item.discount_price_syp ?? item.price_syp, 'SYP')
       : formatPrice(item.discount_price_usd ?? item.price_usd, 'USD')
 
-    lines.push(`------------------------------------------`)
-    lines.push(`${i + 1}. *${item.name}*`)
-    if (item.color) lines.push(`   *اللون:* ${item.color_name || item.color}`)
+    lines.push(`┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈`)
+    lines.push(`${i + 1}️⃣ *${item.name}*`)
+    if (item.color) lines.push(`   🎨 *اللون:* ${item.color_name || item.color}`)
     if (item.size) {
       const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ' (قالب نظامي)'
-      lines.push(`   *المقاس:* ${item.size}${moldNotice}`)
+      lines.push(`   📏 *المقاس:* ${item.size}${moldNotice}`)
     }
-    lines.push(`   *الكمية:* ${item.quantity} x ${price}`)
+    lines.push(`   🔢 *الكمية:* ${item.quantity} x ${price}`)
   })
 
-  lines.push(`------------------------------------------`)
+  lines.push(`━━━━━━━━━━━━━━━━━━━━`)
 
   const subtotal = currency === 'SYP'
     ? formatPrice(order.subtotalSyp, 'SYP')
     : formatPrice(order.subtotalUsd, 'USD')
 
-  lines.push(`*المجموع الفرعي:* ${subtotal}`)
+  lines.push(`💵 *المجموع الفرعي:* ${subtotal}`)
 
   if (order.couponCode && (order.discountSyp || order.discountUsd)) {
     const discount = currency === 'SYP'
       ? formatPrice(order.discountSyp!, 'SYP')
       : formatPrice(order.discountUsd!, 'USD')
-    lines.push(`*خصم (${order.couponCode}):* -${discount}`)
+    lines.push(`🏷️ *خصم (${order.couponCode}):* -${discount}`)
   }
 
   if (order.loyaltyDiscountSyp || order.loyaltyDiscountUsd) {
     const loyaltyDisc = currency === 'SYP'
       ? formatPrice(order.loyaltyDiscountSyp!, 'SYP')
       : formatPrice(order.loyaltyDiscountUsd!, 'USD')
-    lines.push(`*خصم الولاء 🎁:* -${loyaltyDisc}`)
+    lines.push(`🎁 *خصم الولاء:* -${loyaltyDisc}`)
   }
 
-  const multiDiscountSyp = order.items.reduce((acc, item) => acc + (item.multi_discount_syp || 0), 0);
-
   if (order.shippingFeeDetermined) {
-    const feeLabel = order.deliveryType === 'delivery' ? 'اجرة التوصيل' : 'اجرة الشحن'
-    lines.push(`*${feeLabel}:* (يتم تحديد السعر مع البائع في الواتس اب)`)
+    const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
+    lines.push(`🚚 *${feeLabel}:* (يتم تحديدها مع البائع)`)
   } else {
     const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
     if (shippingFee > 0) {
-      const feeLabel = order.deliveryType === 'delivery' ? 'اجرة التوصيل' : 'اجرة الشحن'
-      lines.push(`*${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
+      const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
+      lines.push(`🚚 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
     }
   }
 
@@ -109,42 +107,43 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     : formatPrice(order.totalUsd, 'USD')
 
   lines.push(``)
-  lines.push(`*الاجمالي النهائي: ${total}*`)
+  lines.push(`💰 *الإجمالي النهائي: ${total}*`)
   
   lines.push(``)
-  lines.push(`🎁 *مبروك! لقد كسبت نقطة ولاء من هذا الطلب.*`)
-  lines.push(`(سيتم تفعيل وبدء حساب النقطة في رصيدك فور استلام الطلب والتأكد منه)`)
+  lines.push(`✨ *مبروك! لقد كسبت نقطة ولاء من هذا الطلب* 🎁`)
+  lines.push(`_(سيتم تفعيل النقطة فور استلام الطلب)_`)
   
   if (typeof order.loyaltyPointsCount === 'number') {
     const currentPoints = order.loyaltyPointsCount
     const remaining = Math.max(0, 3 - currentPoints)
     
     lines.push(``)
-    lines.push(`* نظام الولاء المكافآت 🎁: *`)
-    lines.push(`- النقاط المكتسبة من هذا الطلب: 1 نقطة ✨`)
-    lines.push(`- رصيد نقاطك المؤكدة حالياً: ${currentPoints} نقطة`)
+    lines.push(`⭐ *نظام المكافآت* ⭐`)
+    lines.push(`• النقاط المكتسبة من هذا الطلب: 1 نقطة`)
+    lines.push(`• رصيد نقاطك حالياً: ${currentPoints} نقطة`)
     
     if (remaining > 0) {
-      lines.push(`- بقي لك ${remaining} طلبات مؤكدة لتصل للطلب الرابع وتحصل على خصم 1000 ليرة سورية!`)
+      lines.push(`💡 بقي لك ${remaining} طلبات مؤكدة للحصول على خصم 1000 ل.س!`)
     } else {
-      lines.push(`- مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض (1000 ل.س) 🥳`)
+      lines.push(`🎉 مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض!`)
     }
   }
 
   const pMethod = order.paymentMethod === 'sham_cash' ? 'شام كاش (تم التحويل)' : 'الدفع عند الاستلام'
-  lines.push(`*طريقة الدفع:* ${pMethod}`)
+  lines.push(``)
+  lines.push(`💳 *طريقة الدفع:* ${pMethod}`)
 
   if (order.paymentMethod === 'sham_cash' && order.shamCashNumber) {
-    lines.push(`*رقم محفظة شام كاش:* ${order.shamCashNumber}`)
+    lines.push(`📱 *رقم محفظة شام كاش:* ${order.shamCashNumber}`)
   }
 
   if (order.paymentMethod === 'sham_cash' && order.paymentTransactionId) {
-    lines.push(`*رمز/رقم عملية التحويل:* ${order.paymentTransactionId}`)
+    lines.push(`🔢 *رقم العملية:* ${order.paymentTransactionId}`)
   }
 
   lines.push(``)
-  lines.push(`شكرا لتسوقكم من كزورا!`)
-  lines.push(`سيتم تاكيد طلبكم قريبا...`)
+  lines.push(`🙏 *شكراً لتسوقكم من كزورا!*`)
+  lines.push(`✅ *سيتم تأكيد طلبكم قريباً...*`)
 
   const message = lines.join('\n')
   const encoded = encodeURIComponent(message)
