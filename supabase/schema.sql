@@ -521,22 +521,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ============================================================
--- MIGRATIONS (Append new columns here for easy copy-paste)
--- ============================================================
 
--- Added Mold Type
-ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS mold_type TEXT DEFAULT 'normal' CHECK (mold_type IN ('chinese','normal'));
-
--- Added Variants
-CREATE TABLE IF NOT EXISTS product_variants (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  color TEXT DEFAULT '',
-  size NUMERIC DEFAULT 0,
-  quantity INTEGER NOT NULL DEFAULT 0,
-  UNIQUE(product_id, color, size)
-);
-ALTER TABLE product_variants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "public_read_product_variants" ON product_variants FOR SELECT TO anon USING (true);
-CREATE POLICY "service_role_all_product_variants" ON product_variants FOR ALL TO service_role USING (true) WITH CHECK (true);
