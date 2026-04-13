@@ -72,7 +72,14 @@ export async function PUT(
     ]
 
     for (const key of allowed) {
-      if (body[key] !== undefined) updateFields[key] = body[key]
+      if (body[key] !== undefined) {
+        // Convert null to empty string for image fields to avoid DB constraint error
+        if ((key === 'image_url' || key === 'image_public_id') && body[key] === null) {
+          updateFields[key] = ''
+        } else {
+          updateFields[key] = body[key]
+        }
+      }
     }
 
     const { data: category, error } = await supabaseAdmin

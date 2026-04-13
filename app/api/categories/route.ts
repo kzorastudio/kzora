@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
       .insert({
         name_ar,
         slug,
-        image_url: image_url || null,
-        image_public_id: image_public_id || null,
+        image_url: image_url || '',
+        image_public_id: image_public_id || '',
         description: description || '',
         sort_order: sort_order ?? 0,
         is_active: is_active ?? true,
