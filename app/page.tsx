@@ -60,7 +60,7 @@ function PromoBanner({ settings }: PromoBannerProps) {
   return (
     <section className="px-4 md:px-8 py-8 md:py-12 overflow-hidden">
       <ScrollReveal direction="none" duration={0.8} delay={0.1}>
-        <div className="max-w-screen-xl mx-auto relative h-[340px] md:h-[400px] rounded-2xl overflow-hidden bg-[#785600] shadow-2xl group">
+        <div className="max-w-screen-xl mx-auto relative min-h-[420px] md:min-h-[450px] rounded-3xl overflow-hidden bg-[#785600] shadow-2xl group flex flex-col items-center justify-center py-12 md:py-20">
           <Image
             src={settings.promo_banner_url}
             alt="خصومات الموسم"
@@ -68,7 +68,7 @@ function PromoBanner({ settings }: PromoBannerProps) {
             sizes="100vw"
             className="object-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
           />
-          <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-8" dir="rtl">
+          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 md:px-12" dir="rtl">
             <ScrollReveal direction="down" delay={0.2}>
               <span className="bg-white text-[#785600] px-5 py-1.5 rounded-full text-xs font-arabic font-bold mb-6 tracking-widest uppercase inline-block shadow-lg">
                 عروض حصرية

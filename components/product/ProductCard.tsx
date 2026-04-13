@@ -3,7 +3,8 @@
 import { useState, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingBag, X, Star } from 'lucide-react'
+import { ShoppingBag, X, Star, Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { formatPrice, getDiscountPercent } from '@/lib/utils'
 import { useCurrencyStore } from '@/store/currencyStore'
@@ -32,6 +33,7 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
   const [isHovered, setIsHovered] = useState(false)
   const [showSizeBar, setShowSizeBar] = useState(false)
   const [hoveredColor, setHoveredColor] = useState<string | null>(null)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   const isEntirelyOutOfStock = product.stock_status === 'out_of_stock' || 
     (product.variants && product.variants.length > 0 
@@ -66,9 +68,11 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
   const handleNavigate = useCallback(
     (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest('[data-no-navigate]')) return
+      if (isNavigating) return
+      setIsNavigating(true)
       router.push(`/product/${product.slug}`)
     },
-    [router, product.slug]
+    [router, product.slug, isNavigating]
   )
 
   const handleQuickAdd = useCallback(
@@ -170,14 +174,17 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
   const priorityTag = product.tags?.find((t) => t === 'new' || t === 'best_seller' || t === 'on_sale')
 
   return (
-    <article
+    <motion.article
       dir="rtl"
+      layout
+      whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
       className={cn(
         'group relative cursor-pointer flex flex-col h-full',
         'rounded-2xl transition-all duration-300',
         isActuallyOutOfStock 
           ? 'bg-[#F9F9F9] opacity-80 hover:opacity-100 grayscale-[0.2] shadow-none border border-transparent hover:border-[#E8E3DB]' 
-          : 'bg-white shadow-sm hover:shadow-md',
+          : 'bg-white shadow-sm hover:shadow-md border border-transparent hover:border-primary/10',
+        isNavigating && 'opacity-70 pointer-events-none',
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -206,6 +213,13 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
           <div className="flex flex-col items-center gap-3 opacity-20 group-hover:opacity-30 transition-opacity">
             <ShoppingBag size={48} strokeWidth={1} className="text-[#785600]" />
             <span className="text-[10px] font-arabic font-bold uppercase tracking-widest text-[#785600]">K Z O R A</span>
+          </div>
+        )}
+
+        {/* Loading Overlay */}
+        {isNavigating && (
+          <div className="absolute inset-0 z-30 bg-white/20 backdrop-blur-[2px] flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
         )}
 
@@ -404,6 +418,6 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
           )}
         </div>
       </div>
-    </article>
+    </motion.article>
   )
 }

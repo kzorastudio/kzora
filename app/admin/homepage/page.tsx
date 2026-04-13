@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import SlideManager from './SlideManager'
 import ImageUploader, { type UploadedImage } from '@/components/admin/ImageUploader'
-import { Loader2, Save, LayoutDashboard, Image as ImageIcon, ShieldCheck, Truck } from 'lucide-react'
+import { Loader2, Save, LayoutDashboard, Image as ImageIcon, ShieldCheck, Truck, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
-import type { HomepageSettings } from '@/types'
+import type { HomepageSettings, Category } from '@/types'
+import { supabase } from '@/lib/supabase'
 
 const SECTION_TOGGLES: { key: keyof HomepageSettings; label: string; description: string }[] = [
   {
@@ -40,6 +41,13 @@ const SECTION_TOGGLES: { key: keyof HomepageSettings; label: string; description
     label:       'إحصائيات النجاح',
     description: 'عرض أرقام الزبائن والرضا (Social Proof)',
   },
+]
+
+const MAIN_LINK_OPTIONS = [
+  { label: 'الصفحة الرئيسية', value: '/' },
+  { label: 'المنتجات الأكثر مبيعاً', value: '/products?tag=best_seller' },
+  { label: 'وصل حديثاً', value: '/products?tag=new' },
+  { label: 'عروض حصرية (تخفيضات)', value: '/products?tag=on_sale' },
 ]
 
 const DEFAULT_SETTINGS: HomepageSettings = {
@@ -97,6 +105,7 @@ export default function HomepagePage() {
   const [bannerImages, setBannerImages] = useState<UploadedImage[]>([])
   const [shamCashImages, setShamCashImages] = useState<UploadedImage[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
 
   const fetchSettings = useCallback(async () => {
     setLoading(true)
@@ -131,7 +140,15 @@ export default function HomepagePage() {
     }
   }, [])
 
-  useEffect(() => { fetchSettings() }, [fetchSettings])
+  const fetchCategories = useCallback(async () => {
+    const { data } = await supabase.from('categories').select('*').eq('is_active', true).order('name_ar')
+    if (data) setCategories(data)
+  }, [])
+
+  useEffect(() => { 
+    fetchSettings()
+    fetchCategories()
+  }, [fetchSettings, fetchCategories])
 
   function toggleSection(key: keyof HomepageSettings) {
     setSettings((prev) => {
@@ -363,6 +380,29 @@ export default function HomepagePage() {
                         onChange={(e) => { setSettings({ ...settings, promo_banner_heading: e.target.value }); setDirty(true); }}
                         className="w-full px-4 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm outline-none"
                       />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-secondary">رابط البانر (الوجهة)</label>
+                      <div className="relative">
+                        <select
+                          value={settings.promo_banner_link || ''}
+                          onChange={(e) => { setSettings({ ...settings, promo_banner_link: e.target.value }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm outline-none appearance-none cursor-pointer focus:border-primary transition-colors"
+                        >
+                          <option value="">-- اختر الوجهة --</option>
+                          <optgroup label="المناطق الرئيسية">
+                            {MAIN_LINK_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="الأقسام">
+                            {categories.map(cat => (
+                              <option key={cat.id} value={`/products?category=${cat.slug}`}>{cat.name_ar}</option>
+                            ))}
+                          </optgroup>
+                        </select>
+                        <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-secondary">نص الزر</label>
