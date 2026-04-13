@@ -89,44 +89,57 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
 
   // Watchers for compatibility checks
   useEffect(() => {
-    // When governorate changes, clear address to ensure it's re-entered/selected
-    setValue('address', '')
-  }, [governorate, setValue])
-
-  useEffect(() => {
-    // When company changes, check if current governorate is still supported
-    if (shippingCompany && governorate) {
-       const company = shippingMethods.find(m => m.slug === shippingCompany)
-       const supported = company?.governorates?.some((g: any) => g.name === governorate)
-       if (!supported) {
-          setValue('governorate', '')
-          setValue('address', '')
+    // When governorate changes
+    if (governorate) {
+       if (governorate === 'حلب') {
+         setValue('shipping_company', 'delivery', { shouldValidate: true })
+         setValue('delivery_type', 'delivery')
        } else {
-         // Even if governorate is supported, address might not be
-         setValue('address', '')
+         // If switching away from Aleppo, clear delivery if it was set
+         if (shippingCompany === 'delivery') {
+           setValue('shipping_company', '', { shouldValidate: true })
+           setValue('delivery_type', 'shipping')
+         }
+         // Check if current company supports this gov
+         const company = shippingMethods.find(m => m.slug === shippingCompany)
+         const supported = company?.governorates?.some((g: any) => g.name === governorate)
+         if (!supported && shippingCompany !== '') {
+           setValue('shipping_company', '', { shouldValidate: true })
+         }
        }
+       setValue('address', '') // Always clear address when gov changes
     }
-  }, [shippingCompany, setValue, shippingMethods])
+  }, [governorate, setValue, shippingMethods, shippingCompany])
 
-  // Get governorates (all if none selected, or specific to company)
-  const selectedCompanyGovernorates = useMemo(() => {
-    if (deliveryType === 'delivery') {
-      return ['حلب']
+  // Get governorates available across all shipping methods
+  const allAvailableGovernorates = useMemo(() => {
+    const all = new Set<string>()
+    // Add Aleppo manually as it's always available for delivery
+    all.add('حلب')
+    shippingMethods.forEach(m => m.governorates?.forEach((g: any) => all.add(g.name)))
+    return Array.from(all).sort()
+  }, [shippingMethods])
+
+  // Get filtered shipping companies based on selected governorate
+  const filteredShippingCompanies = useMemo(() => {
+    if (!governorate) return []
+    
+    if (governorate === 'حلب') {
+      return [{
+        id: 'delivery-special',
+        slug: 'delivery',
+        name: '🚀 توصيل عادي (حلب)',
+        description: 'توصيل لباب المنزل عبر مندوب كزورا.',
+        badge: 'الأسرع'
+      }]
     }
-    if (!shippingCompany) {
-      // Return ALL governorates that are active in at least one shipping method
-      const all = new Set<string>()
-      shippingMethods.forEach(m => m.governorates?.forEach((g: any) => all.add(g.name)))
-      return Array.from(all).sort()
-    }
-    const company = shippingMethods.find(m => m.slug === shippingCompany)
-    const names = company?.governorates?.map((g: any) => g.name) || []
-    // Aleppo is only for delivery
-    if (shippingCompany && shippingCompany !== 'delivery') {
-      return names.filter((n: string) => n !== 'حلب')
-    }
-    return names
-  }, [deliveryType, shippingCompany, shippingMethods])
+
+    return shippingMethods.filter(m => 
+      m.slug !== 'delivery' && 
+      m.slug !== 'توصيل عادي' &&
+      m.governorates?.some((g: any) => g.name === governorate)
+    )
+  }, [governorate, shippingMethods])
 
   // Get branch addresses (aggregated if none selected, or specific to company + gov)
   const selectedCompanyGovernorateBranches = useMemo(() => {
@@ -162,65 +175,21 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       noValidate
       className="space-y-0"
     >
-      {/* ═══ Section 1: Shipping Method (Unified) ═══════════════════════════════════ */}
+      {/* ═══ Section 1: Region & Contact Info ══════════════════════════════════════ */}
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
-        <SectionHeading icon={Truck} title="طريقة التوصيل أو الشحن" />
-        <ShippingCompanySelector
-          companies={[
-            {
-              id: 'delivery-special',
-              slug: 'delivery',
-              name: '🚀 توصيل عادي (حلب)',
-              description: 'توصيل لباب المنزل عبر مندوب كزورا.',
-              badge: 'الأسرع'
-            },
-            ...shippingMethods.filter(m => m.slug !== 'delivery' && m.slug !== 'توصيل عادي')
-          ]}
-          selected={shippingCompany ?? ''}
-          onChange={(id) => {
-            setValue('shipping_company', id, { shouldValidate: true })
-            if (id === 'delivery') {
-              setValue('delivery_type', 'delivery')
-              if (governorate !== 'حلب') {
-                setValue('governorate', '')
-                setValue('address', '')
-              }
-            } else {
-              setValue('delivery_type', 'shipping')
-            }
-          }}
-          error={errors.shipping_company?.message}
-        />
-      </div>
-
-      {/* ═══ Section 2: Shipping Info ══════════════════════════════════════ */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
-        <SectionHeading icon={MapPin} title="معلومات الشحن" />
+        <SectionHeading icon={MapPin} title="المنطقة ومعلومات الاتصال" />
 
         <div className="space-y-5">
-          {/* Governorate + Full Name — side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Governorate */}
-            <div>
-              <GovernorateDropdown
-                governorates={selectedCompanyGovernorates}
-                shippingCompanySelected={deliveryType === 'delivery' || !!shippingCompany}
-                value={governorate ?? ''}
-                onChange={(gov) => {
-                  setValue('governorate', gov, { shouldValidate: true })
-                  if (gov === 'حلب') {
-                    setValue('shipping_company', 'delivery', { shouldValidate: true })
-                    setValue('delivery_type', 'delivery')
-                    // Clear address if previous mode was different (textarea vs select)
-                    const isWritingMode = true; // Aleppo is always writing
-                    if (address && !isWritingMode) {
-                       setValue('address', '')
-                    }
-                  }
-                }}
-                error={errors.governorate?.message}
-              />
-            </div>
+            <GovernorateDropdown
+              governorates={allAvailableGovernorates}
+              value={governorate ?? ''}
+              onChange={(gov) => {
+                setValue('governorate', gov, { shouldValidate: true })
+              }}
+              error={errors.governorate?.message}
+            />
 
             {/* Full Name */}
             <div>
@@ -250,7 +219,6 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                 errors.phone ? 'border-[#BA1A1A]' : 'border-[#E8E3DB] focus-within:border-[#785600] focus-within:ring-1 focus-within:ring-[#785600]/20'
               )}
             >
-              {/* Flag + code — left side */}
               <span
                 dir="ltr"
                 className="flex items-center gap-1.5 px-3 text-sm font-body font-medium text-[#6B6560] border-r border-[#E8E3DB] select-none shrink-0"
@@ -258,7 +226,6 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                 <span className="text-base">🇸🇾</span>
                 +963
               </span>
-              {/* Input — right side, RTL */}
               <input
                 id="phone"
                 type="tel"
@@ -275,61 +242,93 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
               />
             </div>
             <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E8F5E9]/60 border border-[#4CAF50]/20 rounded-lg w-fit">
-              <svg 
-                viewBox="0 0 24 24" 
-                className="w-3.5 h-3.5 fill-[#2E7D32]"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#2E7D32]" xmlns="http://www.w3.org/2000/svg">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .012 5.403.01 12.039c0 2.12.553 4.189 1.602 6.039L0 24l6.135-1.61a11.81 11.81 0 005.912 1.586h.005c6.635 0 12.036-5.402 12.039-12.037a11.85 11.85 0 00-3.539-8.514z"/>
               </svg>
               <p className="text-[11px] font-arabic font-bold text-[#2E7D32]">يجب أن يكون الرقم مفعّل على واتساب</p>
             </div>
             {errors.phone && <p className={errorBase}>{errors.phone.message}</p>}
           </div>
+        </div>
+      </div>
 
-          {/* Address */}
-          <div>
-            <label htmlFor="address" className={labelBase}>
-              العنوان بالتفصيل <span className="text-[#BA1A1A]">*</span>
-            </label>
-            
-            {deliveryType === 'delivery' || governorate === 'حلب' ? (
-              <textarea
-                id="address"
-                rows={2}
-                placeholder="أدخل عنوانك بالتفصيل (الحي، الشارع، البناية، الطابق)..."
-                className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
-                {...register('address')}
-              />
-            ) : (
-              <div className="relative">
-                <select
-                  id="address"
-                  className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
-                  {...register('address')}
-                >
-                  {!governorate ? (
-                    <option value="">يرجى اختيار المحافظة أولاً...</option>
-                  ) : selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
-                    <>
-                      <option value="">اختر أقرب مركز استلام...</option>
-                      {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
-                        <option key={idx} value={branch}>
-                          {branch}
-                        </option>
-                      ))}
-                    </>
-                  ) : (
-                    <option value="">لا تتوفر مراكز شحن حالياً في هذه المحافظة</option>
-                  )}
-                </select>
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
-                  <ChevronDown size={16} />
-                </div>
-              </div>
-            )}
-            {errors.address && <p className={errorBase}>{errors.address.message}</p>}
+      {/* ═══ Section 2: Shipping Method ═══════════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+        <SectionHeading icon={Truck} title="طريقة التوصيل أو الشحن" />
+        
+        {!governorate ? (
+          <div className="p-8 text-center border-2 border-dashed border-[#E8E3DB] rounded-2xl bg-[#FAF8F5]">
+            <Truck size={32} className="mx-auto text-[#9E9890] mb-3 opacity-50" />
+            <p className="font-arabic text-sm text-[#6B6560]">يرجى اختيار المحافظة أولاً لعرض طرق الشحن المتاحة.</p>
           </div>
+        ) : (
+          <ShippingCompanySelector
+            companies={filteredShippingCompanies}
+            selected={shippingCompany ?? ''}
+            onChange={(id) => {
+              setValue('shipping_company', id, { shouldValidate: true })
+              if (id === 'delivery') {
+                setValue('delivery_type', 'delivery')
+              } else {
+                setValue('delivery_type', 'shipping')
+              }
+            }}
+            error={errors.shipping_company?.message}
+          />
+        )}
+      </div>
+
+      {/* ═══ Section 3: Detailed Address / Branch ═════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+        <SectionHeading icon={MapPin} title="العنوان بالتفصيل" />
+
+        <div className="space-y-4">
+          <label htmlFor="address" className={labelBase}>
+            {deliveryType === 'delivery' ? 'عنوان المنزل بالتفصيل' : 'فرع شركة الشحن'} <span className="text-[#BA1A1A]">*</span>
+          </label>
+          
+          {deliveryType === 'delivery' || governorate === 'حلب' ? (
+            <textarea
+              id="address"
+              rows={2}
+              placeholder="أدخل عنوانك بالتفصيل (الحي، الشارع، البناية، الطابق)..."
+              className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+              {...register('address')}
+            />
+          ) : (
+            <div className="relative">
+              {!shippingCompany ? (
+                <div className="p-4 bg-[#FAF8F5] border border-[#E8E3DB] rounded-xl text-xs text-[#9E9890] font-arabic">
+                  يرجى اختيار شركة الشحن لعرض الفروع المتاحة...
+                </div>
+              ) : (
+                <>
+                  <select
+                    id="address"
+                    className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
+                    {...register('address')}
+                  >
+                    {selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
+                      <>
+                        <option value="">اختر أقرب مركز استلام...</option>
+                        {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
+                          <option key={idx} value={branch}>
+                            {branch}
+                          </option>
+                        ))}
+                      </>
+                    ) : (
+                      <option value="">لا تتوفر مراكز شحن حالياً في هذه المحافظة</option>
+                    )}
+                  </select>
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
+                    <ChevronDown size={16} />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {errors.address && <p className={errorBase}>{errors.address.message}</p>}
         </div>
       </div>
 

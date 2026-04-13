@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 
 interface GovernorateDropdownProps {
   governorates: string[]
-  shippingCompanySelected: boolean
   value: string
   onChange: (governorate: string) => void
   error?: string
@@ -14,13 +13,12 @@ interface GovernorateDropdownProps {
 
 export function GovernorateDropdown({
   governorates,
-  shippingCompanySelected,
   value,
   onChange,
   error,
   className,
 }: GovernorateDropdownProps) {
-  const isDisabled = !shippingCompanySelected || governorates.length === 0
+  const isDisabled = governorates.length === 0
 
   return (
     <div dir="rtl" className={cn('space-y-1.5', className)}>
