@@ -26,7 +26,7 @@ export default function VisitTracker() {
           localStorage.setItem('kzora_visitor_id', visitorId)
         }
 
-        fetch('/api/analytics/track', {
+        fetch('/api/system/ping', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -37,12 +37,10 @@ export default function VisitTracker() {
       } catch (e) {}
     }
 
-    // Delay the tracking to avoid counting "hits and leaves"
+    // Delay the tracking slightly to ensure page load but avoid adblocker drops
     const timer = setTimeout(() => {
-      // If after 3 seconds they haven't moved but are still on page, count them?
-      // Better to wait for an interaction or just a longer delay
       trackVisit()
-    }, 3000)
+    }, 1000)
 
     // Also track on interaction for faster confirmation
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
