@@ -22,21 +22,21 @@ export const SHIPPING_COMPANIES = [
     name: 'كرم (Karam)',
     description: 'توصيل سريع خلال 24-48 ساعة لكافة المحافظات.',
     badge: 'الأفضل',
-    governorates: GOVERNORATES,
+    governorates: GOVERNORATES.filter(g => g !== 'حلب'), // Removed Aleppo city from shipping
   },
   {
     id: 'qadmous',
     name: 'قدموس (Qadmous)',
     description: 'توصيل اقتصادي إلى مراكز المحافظات.',
     badge: null,
-    governorates: ['دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس'],
+    governorates: ['دمشق', 'ريف دمشق', 'ريف حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس'],
   },
   {
     id: 'masarat',
     name: 'مسارات (Masarat)',
     description: 'توصيل مباشر للمنازل في مناطق محددة.',
     badge: null,
-    governorates: ['دمشق', 'ريف دمشق', 'حلب', 'اللاذقية'],
+    governorates: ['دمشق', 'ريف دمشق', 'ريف حلب', 'اللاذقية'],
   },
 ] as const
 
