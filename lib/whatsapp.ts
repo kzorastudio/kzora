@@ -8,6 +8,7 @@ interface OrderForWhatsApp {
   customerName: string
   customerPhone: string
   governorate: string
+  centerName?: string
   address: string
   deliveryType: 'delivery' | 'shipping'
   shippingCompany: string
@@ -45,6 +46,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     `📍 *الاسم:* ${order.customerName}`,
     `📞 *الهاتف:* ${order.customerPhone}`,
     `🏙️ *المحافظة:* ${order.governorate}`,
+    order.centerName ? `📍 *المنطقة/المركز:* ${order.centerName}` : ``,
     `🏠 *العنوان:* ${order.address}`,
     ``,
     `🚚 *تفاصيل الشحن*`,

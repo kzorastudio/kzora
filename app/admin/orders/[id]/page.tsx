@@ -241,11 +241,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   <span className="text-on-surface font-label" dir="ltr">{order.customer_phone}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-secondary">المحافظة</span>
-                  <span className="text-on-surface">{order.customer_governorate}</span>
+                  <span className="text-secondary">المحافظة والمنطقة</span>
+                  <span className="text-on-surface text-left">
+                    {order.customer_governorate}
+                    {(order as any).center_name && <><br/><span className="text-xs text-secondary">({(order as any).center_name})</span></>}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-secondary">العنوان</span>
+                  <span className="text-secondary">العنوان بالتفصيل</span>
                   <span className="text-on-surface text-xs leading-relaxed bg-surface-container rounded-lg px-3 py-2">
                     {order.customer_address}
                   </span>

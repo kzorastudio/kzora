@@ -27,6 +27,18 @@ export default function AdminShippingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  
+  // Centers state
+  const [centers, setCenters] = useState<any[]>([])
+  const [loadingCenters, setLoadingCenters] = useState(false)
+  const [expandedCenterId, setExpandedCenterId] = useState<string | null>(null)
+  const [savingCenter, setSavingCenter] = useState<string | null>(null)
+
+  // New center form
+  const [showNewCenter, setShowNewCenter] = useState(false)
+  const [newCenterName, setNewCenterName] = useState('')
+  const [newCenterGov, setNewCenterGov] = useState('حلب')
+  const [newCenterCompanies, setNewCenterCompanies] = useState<string[]>([])
 
   // New company form
   const [showNew, setShowNew] = useState(false)
@@ -51,6 +63,16 @@ export default function AdminShippingPage() {
     return `shipping-${Date.now().toString(36)}`
   }
 
+  async function loadCenters() {
+    setLoadingCenters(true)
+    try {
+      const res = await fetch('/api/admin/shipping/centers')
+      const data = await res.json()
+      setCenters(data.centers || [])
+    } catch { /* ignore */ }
+    setLoadingCenters(false)
+  }
+
   async function loadMethods() {
     setLoading(true)
     try {
@@ -61,7 +83,10 @@ export default function AdminShippingPage() {
     setLoading(false)
   }
 
-  useEffect(() => { loadMethods() }, [])
+  useEffect(() => { 
+    loadMethods()
+    loadCenters()
+  }, [])
 
   async function handleSave(method: ShippingMethod) {
     setSaving(method.id)
@@ -139,6 +164,73 @@ export default function AdminShippingPage() {
     }
   }
 
+  async function handleCreateCenter() {
+    if (!newCenterName.trim()) {
+      toast.error('أدخل اسم المنطقة أو المركز')
+      return
+    }
+    try {
+      const res = await fetch('/api/admin/shipping/centers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          governorate: newCenterGov,
+          name: newCenterName.trim(),
+          supported_companies: newCenterCompanies,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success('تمت إضافة المنطقة/المركز')
+      setShowNewCenter(false)
+      setNewCenterName(''); setNewCenterCompanies([])
+      loadCenters()
+    } catch {
+      toast.error('حدث خطأ')
+    }
+  }
+
+  async function handleSaveCenter(center: any) {
+    setSavingCenter(center.id)
+    try {
+      const res = await fetch('/api/admin/shipping/centers', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: center.id,
+          governorate: center.governorate,
+          name: center.name,
+          supported_companies: center.supported_companies,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success('تم حفظ التعديلات')
+      loadCenters()
+    } catch {
+      toast.error('حدث خطأ')
+    }
+    setSavingCenter(null)
+  }
+
+  async function handleDeleteCenter(id: string) {
+    if (!confirm('هل أنت متأكد من حذف هذه المنطقة؟')) return
+    try {
+      const res = await fetch('/api/admin/shipping/centers', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success('تم الحذف')
+      loadCenters()
+    } catch {
+      toast.error('حدث خطأ')
+    }
+  }
+
+  function updateCenter(id: string, partial: any) {
+    setCenters(prev => prev.map(c => c.id === id ? { ...c, ...partial } : c))
+  }
+
   function updateMethod(id: string, partial: Partial<ShippingMethod>) {
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...partial } : m))
   }
@@ -189,8 +281,8 @@ export default function AdminShippingPage() {
     <div className="flex flex-col min-h-screen" dir="rtl">
       <AdminHeader />
       <div className="flex-1 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
+        <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Truck size={22} className="text-primary" />
@@ -409,13 +501,150 @@ export default function AdminShippingPage() {
         })}
       </div>
 
-      {methods.length === 0 && !loading && (
-        <div className="text-center py-16">
-          <Truck size={40} className="text-secondary/30 mx-auto mb-3" />
-          <p className="font-arabic text-secondary">لا توجد شركات شحن. أضف واحدة للبدء.</p>
+      {/* SECTION 2: Shipping Centers */}
+      <div className="pt-10 space-y-6">
+        <div className="flex items-center justify-between border-t border-outline-variant/30 pt-8">
+          <div className="flex items-center gap-3">
+            <Plus size={22} className="text-secondary" />
+            <h2 className="font-arabic text-xl font-bold text-on-surface">إدارة المناطق والمراكز</h2>
+          </div>
+          <button
+            onClick={() => setShowNewCenter(!showNewCenter)}
+            className="h-9 px-4 rounded-lg flex items-center gap-2 text-sm font-arabic font-semibold bg-secondary text-on-secondary hover:bg-secondary/90 transition-all text-white bg-slate-600"
+          >
+            <Plus size={16} />
+            إضافة منطقة
+          </button>
         </div>
-      )}
+
+        {/* New Center Form */}
+        {showNewCenter && (
+          <div className="bg-surface rounded-xl border border-outline-variant/30 p-5 space-y-4">
+            <h3 className="font-arabic font-bold text-on-surface">إضافة منطقة أو مركز جديد</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-arabic text-secondary mb-1 block">المحافظة</label>
+                <select value={newCenterGov} onChange={e => setNewCenterGov(e.target.value)} className={inputCls}>
+                  {ALL_GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-arabic text-secondary mb-1 block">اسم المنطقة / المركز</label>
+                <input value={newCenterName} onChange={e => setNewCenterName(e.target.value)} placeholder="مثال: عفرين (ريف)" className={inputCls} />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-xs font-arabic text-secondary mb-2 block">شركات الشحن المدعومة لهذه المنطقة</label>
+              <div className="flex flex-wrap gap-2">
+                {methods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setNewCenterCompanies(prev => prev.includes(m.slug) ? prev.filter(s => s !== m.slug) : [...prev, m.slug])}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs font-arabic transition-all border',
+                      newCenterCompanies.includes(m.slug) 
+                        ? 'bg-primary/20 border-primary text-primary' 
+                        : 'bg-surface border-outline-variant/30 text-secondary'
+                    )}
+                  >
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] font-arabic text-secondary/60 mt-1">إذا لم يتم اختيار أي شركة في حلب، سيتم اعتبارها منطقة توصيل منزلي فقط.</p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowNewCenter(false)} className="h-9 px-4 rounded-lg text-sm font-arabic">إلغاء</button>
+              <button onClick={handleCreateCenter} className="h-9 px-5 rounded-lg text-sm font-arabic font-bold bg-primary text-white bg-slate-900">حفظ</button>
+            </div>
+          </div>
+        )}
+
+        {/* Centers List */}
+        <div className="grid grid-cols-1 gap-3">
+          {centers.map(center => {
+            const isExp = expandedCenterId === center.id
+            return (
+              <div key={center.id} className="bg-surface rounded-xl border border-outline-variant/20 overflow-hidden">
+                <div 
+                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-surface-variant/10 transition"
+                  onClick={() => setExpandedCenterId(isExp ? null : center.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="px-2 py-0.5 rounded bg-outline-variant/20 text-[10px] font-arabic font-bold text-secondary">{center.governorate}</span>
+                    <span className="font-arabic font-semibold text-on-surface">{center.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-arabic text-secondary/70">
+                      {center.supported_companies?.length || 0} شركات مدعومة
+                    </span>
+                    {isExp ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
+                </div>
+
+                {isExp && (
+                  <div className="p-4 border-t border-outline-variant/10 bg-surface/50 space-y-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-arabic text-secondary mb-1 block">المحافظة</label>
+                          <select value={center.governorate} onChange={e => updateCenter(center.id, { governorate: e.target.value })} className={inputCls}>
+                            {ALL_GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-arabic text-secondary mb-1 block">الاسم</label>
+                          <input value={center.name} onChange={e => updateCenter(center.id, { name: e.target.value })} className={inputCls} />
+                        </div>
+                     </div>
+
+                     <div>
+                        <label className="text-xs font-arabic text-secondary mb-2 block">الشركات المدعومة</label>
+                        <div className="flex flex-wrap gap-2">
+                          {methods.map(m => (
+                            <button
+                              key={m.id}
+                              onClick={() => {
+                                const exist = center.supported_companies?.includes(m.slug)
+                                const next = exist 
+                                  ? center.supported_companies.filter((s: string) => s !== m.slug)
+                                  : [...(center.supported_companies || []), m.slug]
+                                updateCenter(center.id, { supported_companies: next })
+                              }}
+                              className={cn(
+                                'px-3 py-1.5 rounded-full text-[11px] font-arabic transition-all border',
+                                center.supported_companies?.includes(m.slug) 
+                                  ? 'bg-primary/20 border-primary text-primary font-bold' 
+                                  : 'bg-white border-outline-variant/30 text-secondary'
+                              )}
+                            >
+                              {m.name}
+                            </button>
+                          ))}
+                        </div>
+                     </div>
+
+                     <div className="flex items-center justify-between pt-2">
+                        <button onClick={() => handleDeleteCenter(center.id)} className="text-xs font-arabic text-red-500 flex items-center gap-1">
+                          <Trash2 size={12} /> حذف
+                        </button>
+                        <button 
+                          onClick={() => handleSaveCenter(center)} 
+                          disabled={savingCenter === center.id}
+                          className="h-8 px-4 rounded-lg bg-primary text-white text-xs font-arabic font-bold bg-slate-900 disabled:opacity-50"
+                        >
+                          {savingCenter === center.id ? 'جارٍ الحفظ...' : 'حفظ'}
+                        </button>
+                     </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
+        </div>
       </div>
     </div>
   )

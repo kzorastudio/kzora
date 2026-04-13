@@ -55,6 +55,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       delivery_type: 'delivery',
       shipping_company: '',
       governorate: '',
+      center: '',
       full_name: '',
       phone: '',
       address: '',
@@ -65,7 +66,11 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
     },
   })
 
+  const [centers, setCenters] = useState<any[]>([])
+  const [loadingCenters, setLoadingCenters] = useState(false)
+
   const governorate = watch('governorate')
+  const centerId = watch('center')
   const address = watch('address')
   const shippingCompany = watch('shipping_company')
   const deliveryType = watch('delivery_type')
@@ -87,29 +92,44 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
     }
   }, [propShippingMethods])
 
-  // Watchers for compatibility checks
+  // Fetch centers when governorate changes
   useEffect(() => {
-    // When governorate changes
     if (governorate) {
-       if (governorate === 'حلب') {
-         setValue('shipping_company', 'delivery', { shouldValidate: true })
-         setValue('delivery_type', 'delivery')
-       } else {
-         // If switching away from Aleppo, clear delivery if it was set
-         if (shippingCompany === 'delivery') {
-           setValue('shipping_company', '', { shouldValidate: true })
-           setValue('delivery_type', 'shipping')
-         }
-         // Check if current company supports this gov
-         const company = shippingMethods.find(m => m.slug === shippingCompany)
-         const supported = company?.governorates?.some((g: any) => g.name === governorate)
-         if (!supported && shippingCompany !== '') {
-           setValue('shipping_company', '', { shouldValidate: true })
-         }
-       }
-       setValue('address', '') // Always clear address when gov changes
+      setLoadingCenters(true)
+      setValue('center', '')
+      setValue('shipping_company', '')
+      setValue('address', '')
+
+      fetch(`/api/shipping/centers?governorate=${encodeURIComponent(governorate)}`)
+        .then(res => res.json())
+        .then(data => {
+          setCenters(data.centers || [])
+        })
+        .finally(() => setLoadingCenters(false))
+    } else {
+      setCenters([])
+      setValue('center', '')
     }
-  }, [governorate, setValue, shippingMethods, shippingCompany])
+  }, [governorate, setValue])
+
+  // Watch for center changes to auto-select delivery if it's Aleppo city
+  useEffect(() => {
+    if (governorate === 'حلب') {
+      setValue('center', 'city_manual') // Use a dummy value if needed, or leave empty if validated via refine
+      setValue('shipping_company', 'delivery', { shouldValidate: true })
+      setValue('delivery_type', 'delivery')
+    } else if (centerId) {
+      const selectedCenter = centers.find(c => c.id === centerId)
+      // If no supported companies, it's a delivery area
+      if (!selectedCenter?.supported_companies || selectedCenter.supported_companies.length === 0) {
+        setValue('shipping_company', 'delivery', { shouldValidate: true })
+        setValue('delivery_type', 'delivery')
+      } else {
+        setValue('shipping_company', '', { shouldValidate: true })
+        setValue('delivery_type', 'shipping')
+      }
+    }
+  }, [centerId, centers, governorate, setValue])
 
   // Get governorates available across all shipping methods
   const allAvailableGovernorates = useMemo(() => {
@@ -120,26 +140,35 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
     return Array.from(all).sort()
   }, [shippingMethods])
 
-  // Get filtered shipping companies based on selected governorate
+  // Get filtered shipping companies based on selected center
   const filteredShippingCompanies = useMemo(() => {
-    if (!governorate) return []
+    if (!governorate || !centerId) return []
+    
+    const selectedCenter = centers.find(c => c.id === centerId)
     
     if (governorate === 'حلب') {
-      return [{
-        id: 'delivery-special',
-        slug: 'delivery',
-        name: '🚀 توصيل عادي (حلب)',
-        description: 'توصيل لباب المنزل عبر مندوب كزورا.',
-        badge: 'الأسرع'
-      }]
+      // If no supported companies, or it's a city center
+      if (!selectedCenter?.supported_companies || selectedCenter.supported_companies.length === 0) {
+        return [{
+          id: 'delivery-special',
+          slug: 'delivery',
+          name: '🚀 توصيل عادي (حلب)',
+          description: 'توصيل لباب المنزل عبر مندوب كزورا.',
+          badge: 'الأسرع'
+        }]
+      }
     }
 
+    // Filter methods based on center's supported companies
+    const supportedSlugs = selectedCenter?.supported_companies || []
+    
     return shippingMethods.filter(m => 
       m.slug !== 'delivery' && 
       m.slug !== 'توصيل عادي' &&
+      supportedSlugs.includes(m.slug) &&
       m.governorates?.some((g: any) => g.name === governorate)
     )
-  }, [governorate, shippingMethods])
+  }, [governorate, centerId, centers, shippingMethods])
 
   // Get branch addresses (aggregated if none selected, or specific to company + gov)
   const selectedCompanyGovernorateBranches = useMemo(() => {
@@ -159,12 +188,24 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
 
     const company = shippingMethods.find(m => m.slug === shippingCompany)
     const gov = company?.governorates?.find((g: any) => g.name === governorate)
-    if (!gov?.branch_addresses) return []
-    return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
-  }, [shippingCompany, governorate, shippingMethods])
+    
+    let branches: string[] = []
+    if (gov?.branch_addresses) {
+      branches = gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
+    }
+
+    // If no branches defined, use the center name as the branch
+    if (branches.length === 0 && centerId) {
+      const selectedCenter = centers.find(c => c.id === centerId)
+      if (selectedCenter) branches.push(selectedCenter.name)
+    }
+
+    return branches
+  }, [shippingCompany, governorate, shippingMethods, centerId, centers])
 
   const handleFormSubmit = handleSubmit(async (data) => {
-    await onSubmit(data)
+    const selectedCenter = centers.find(c => c.id === data.center)
+    await onSubmit({ ...data, center_name: selectedCenter?.name })
   })
 
   return (
@@ -206,6 +247,44 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
               />
               {errors.full_name && <p className={errorBase}>{errors.full_name.message}</p>}
             </div>
+
+            {/* Region / Center */}
+            {governorate !== 'حلب' && (
+              <div className="sm:col-span-2">
+                <label htmlFor="center" className={labelBase}>
+                  المنطقة / المركز <span className="text-[#BA1A1A]">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    id="center"
+                    disabled={!governorate || loadingCenters}
+                    className={cn(
+                      fieldBase, 
+                      'appearance-none pr-4 pl-10', 
+                      errors.center && 'border-[#BA1A1A] focus:border-[#BA1A1A]',
+                      (!governorate || loadingCenters) && 'opacity-50 cursor-not-allowed'
+                    )}
+                    {...register('center', {
+                      onChange: (e) => {
+                        setValue('shipping_company', '')
+                        setValue('address', '')
+                      }
+                    })}
+                  >
+                    <option value="">{loadingCenters ? 'جارٍ التحميل...' : 'اختر المنطقة أو المركز...'}</option>
+                    {centers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+                {errors.center && <p className={errorBase}>{errors.center.message}</p>}
+              </div>
+            )}
           </div>
 
           {/* Phone */}
@@ -256,10 +335,10 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
         <SectionHeading icon={Truck} title="طريقة التوصيل أو الشحن" />
         
-        {!governorate ? (
+        {(governorate !== 'حلب' && !centerId) ? (
           <div className="p-8 text-center border-2 border-dashed border-[#E8E3DB] rounded-2xl bg-[#FAF8F5]">
             <Truck size={32} className="mx-auto text-[#9E9890] mb-3 opacity-50" />
-            <p className="font-arabic text-sm text-[#6B6560]">يرجى اختيار المحافظة أولاً لعرض طرق الشحن المتاحة.</p>
+            <p className="font-arabic text-sm text-[#6B6560]">يرجى اختيار المحافظة والمنطقة أولاً لعرض طرق الشحن المتاحة.</p>
           </div>
         ) : (
           <ShippingCompanySelector
@@ -287,7 +366,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             {deliveryType === 'delivery' ? 'عنوان المنزل بالتفصيل' : 'فرع شركة الشحن'} <span className="text-[#BA1A1A]">*</span>
           </label>
           
-          {deliveryType === 'delivery' || governorate === 'حلب' ? (
+          {deliveryType === 'delivery' ? (
             <textarea
               id="address"
               rows={2}

@@ -106,6 +106,7 @@ export interface Order {
   customer_phone: string
   customer_governorate: string
   customer_address: string
+  center_name: string | null
   delivery_type: DeliveryType
   shipping_company: string | null
   shipping_fee_syp: number
@@ -330,6 +331,7 @@ export interface CreateOrderPayload {
     phone: string
     governorate: string
     address: string
+    center_name?: string | null
   }
   delivery_type: DeliveryType
   shipping_company?: string | null

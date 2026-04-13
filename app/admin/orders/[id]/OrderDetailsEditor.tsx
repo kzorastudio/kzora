@@ -24,6 +24,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     customer_phone: order.customer_phone,
     customer_governorate: order.customer_governorate,
     customer_address: order.customer_address,
+    center_name: (order as any).center_name || null,
     shipping_company: order.shipping_company,
     delivery_type: (order as any).delivery_type || 'shipping',
     notes: order.notes || '',
@@ -143,21 +144,37 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Governorate */}
+            {/* Governorate & Center */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-arabic font-medium text-secondary flex items-center gap-2">
-                <MapPin size={14} /> المحافظة <span className="text-error">*</span>
+                <MapPin size={14} /> المحافظة المنطقة <span className="text-error">*</span>
               </label>
-              <select
-                value={formData.customer_governorate}
-                onChange={(e) => {
-                  setFormData({ ...formData, customer_governorate: e.target.value, customer_address: '' })
-                }}
-                className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
-              >
-                <option value="">اختر المحافظة...</option>
-                {GOVERNORATES.map(gov => <option key={gov} value={gov}>{gov}</option>)}
-              </select>
+              <div className="grid grid-cols-2 gap-2">
+                 <select
+                   value={formData.customer_governorate}
+                   onChange={(e) => {
+                     setFormData({ ...formData, customer_governorate: e.target.value, customer_address: '', center_name: null })
+                   }}
+                   className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
+                 >
+                   <option value="">اختر المحافظة...</option>
+                   {GOVERNORATES.map(gov => <option key={gov} value={gov}>{gov}</option>)}
+                 </select>
+                 
+                 {formData.customer_governorate !== 'حلب' ? (
+                   <input
+                     type="text"
+                     value={formData.center_name || ''}
+                     onChange={e => setFormData({ ...formData, center_name: e.target.value })}
+                     placeholder="اسم المنطقة (مثال: عفرين)"
+                     className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
+                   />
+                 ) : (
+                   <div className="flex items-center justify-center bg-surface-container/50 px-3 h-11 rounded-xl text-xs font-arabic text-secondary">
+                     مدينة حلب (توصيل منزلي)
+                   </div>
+                 )}
+              </div>
             </div>
 
             {/* Shipping Company — Dynamic */}
@@ -170,10 +187,11 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                 onChange={(e) => {
                   setFormData({ ...formData, delivery_type: e.target.value, shipping_company: e.target.value === 'delivery' ? null : formData.shipping_company, customer_address: '' })
                 }}
-                className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
+                disabled={formData.customer_governorate === 'حلب'}
+                className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition disabled:opacity-50"
               >
-                <option value="delivery">🚀 توصيل عادي (حلب)</option>
-                <option value="shipping">📦 شحن محافظات</option>
+                <option value="delivery">🚀 توصيل عادي</option>
+                <option value="shipping">📦 شحن شركات</option>
               </select>
             </div>
 
@@ -227,9 +245,12 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                         if (branch === formData.customer_address) return null; // Avoid duplicate
                         return <option key={idx} value={branch}>{branch}</option>
                       })}
+                      {formData.center_name && !availableBranches.includes(formData.center_name) && (
+                         <option value={formData.center_name}>{formData.center_name}</option> 
+                      )}
                     </>
                   ) : (
-                    <option value={formData.customer_address}>{formData.customer_address || 'لا تتوفر فروع حالياً لهده الخصائص'}</option>
+                    <option value={formData.customer_address}>{formData.customer_address || (formData.center_name || 'لا تتوفر فروع حالياً لهده الخصائص')}</option>
                   )}
                 </select>
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary/40">

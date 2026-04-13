@@ -334,6 +334,7 @@ export async function POST(request: NextRequest) {
         customer_phone:       customer.phone,
         customer_governorate: customer.governorate,
         customer_address:     customer.address,
+        center_name:          customer.center_name || null,
         delivery_type:        delivery_type || 'shipping',
         shipping_company:     shipping_company || null,
         shipping_fee_syp:     shippingFeeSyp,

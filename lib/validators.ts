@@ -9,12 +9,10 @@ export const checkoutSchema = z.object({
   phone: z
     .string()
     .regex(/^(\+963|0)?9\d{8}$/, 'رقم الهاتف غير صحيح. مثال: 0987654321'),
-  governorate: z
-    .string()
-    .min(1, 'يرجى اختيار المحافظة'),
-  address: z
-    .string()
-    .min(1, 'يرجى اختيار مركز الاستلام أو العنوان'),
+  governorate: z.string().min(1, 'يرجى اختيار المحافظة'),
+  center: z.string().optional(),
+  center_name: z.string().optional(),
+  address: z.string().min(1, 'يرجى اختيار مركز الاستلام أو العنوان'),
   delivery_type: z.enum(['delivery', 'shipping']).default('delivery'),
   shipping_company: z.string().optional().nullable(),
   coupon_code: z.string().optional(),
@@ -22,6 +20,17 @@ export const checkoutSchema = z.object({
   payment_transaction_id: z.string().optional(),
   notes: z.string().max(300, 'الملاحظات طويلة جداً').optional(),
 }).refine(
+  (data) => {
+    if (data.governorate !== 'حلب') {
+      return !!data.center && data.center.length > 0
+    }
+    return true
+  },
+  {
+    message: 'يرجى اختيار المنطقة أو المركز',
+    path: ['center'],
+  }
+).refine(
   (data) => {
     if (data.delivery_type === 'shipping') {
       return !!data.shipping_company && data.shipping_company.length > 0

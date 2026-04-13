@@ -69,6 +69,7 @@ export async function PUT(
       customer_phone, 
       customer_governorate, 
       customer_address, 
+      center_name,
       shipping_company,
       delivery_type,
       payment_method
@@ -103,6 +104,7 @@ export async function PUT(
     if (customer_phone !== undefined) updateFields.customer_phone = customer_phone
     if (customer_governorate !== undefined) updateFields.customer_governorate = customer_governorate
     if (customer_address !== undefined) updateFields.customer_address = customer_address
+    if (center_name !== undefined) updateFields.center_name = center_name
     if (shipping_company !== undefined) updateFields.shipping_company = shipping_company
     if (delivery_type !== undefined) updateFields.delivery_type = delivery_type
     if (payment_method !== undefined) updateFields.payment_method = payment_method
