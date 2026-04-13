@@ -120,6 +120,12 @@ export async function PUT(request: NextRequest) {
       'shipping_fee_3_plus_pieces_usd',
       'delivery_fee_syp',
       'delivery_fee_usd',
+      'delivery_fee_1_piece_syp',
+      'delivery_fee_1_piece_usd',
+      'delivery_fee_2_pieces_syp',
+      'delivery_fee_2_pieces_usd',
+      'delivery_fee_3_plus_pieces_syp',
+      'delivery_fee_3_plus_pieces_usd',
     ]
 
     const updateFields: Record<string, unknown> = {}
