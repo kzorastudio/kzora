@@ -70,14 +70,16 @@ CREATE TABLE IF NOT EXISTS product_colors (
   name_ar         TEXT NOT NULL,
   hex_code        TEXT NOT NULL,
   swatch_url      TEXT DEFAULT NULL,
-  swatch_public_id TEXT DEFAULT NULL
+  swatch_public_id TEXT DEFAULT NULL,
+  is_available    BOOLEAN DEFAULT true
 );
 
 -- Product Sizes
 CREATE TABLE IF NOT EXISTS product_sizes (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id  UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  size        NUMERIC NOT NULL
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id    UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  size          NUMERIC NOT NULL,
+  is_available  BOOLEAN DEFAULT true
 );
 
 -- Product Tags
@@ -109,9 +111,14 @@ CREATE TABLE IF NOT EXISTS orders (
   delivery_type       TEXT NOT NULL DEFAULT 'shipping' CHECK (delivery_type IN ('delivery','shipping')),
   shipping_fee_syp    NUMERIC(12,2) DEFAULT 0,
   shipping_fee_usd    NUMERIC(10,2) DEFAULT 0,
+  shipping_fee_determined BOOLEAN DEFAULT false,
+  payment_method      TEXT DEFAULT 'cod',
+  payment_transaction_id TEXT DEFAULT NULL,
   coupon_code         TEXT DEFAULT NULL,
   discount_amount_syp NUMERIC(12,2) DEFAULT 0,
   discount_amount_usd NUMERIC(10,2) DEFAULT 0,
+  loyalty_discount_syp NUMERIC(12,2) DEFAULT 0,
+  loyalty_discount_usd NUMERIC(10,2) DEFAULT 0,
   subtotal_syp        NUMERIC(12,2) NOT NULL,
   subtotal_usd        NUMERIC(10,2) NOT NULL,
   total_syp           NUMERIC(12,2) NOT NULL,
@@ -221,6 +228,12 @@ CREATE TABLE IF NOT EXISTS homepage_settings (
   shipping_fee_2_pieces_usd   NUMERIC(10,2) DEFAULT 0,
   shipping_fee_3_plus_pieces_syp BIGINT DEFAULT 0,
   shipping_fee_3_plus_pieces_usd NUMERIC(10,2) DEFAULT 0,
+  delivery_fee_1_piece_syp    BIGINT DEFAULT 0,
+  delivery_fee_1_piece_usd    NUMERIC(10,2) DEFAULT 0,
+  delivery_fee_2_pieces_syp   BIGINT DEFAULT 0,
+  delivery_fee_2_pieces_usd   NUMERIC(10,2) DEFAULT 0,
+  delivery_fee_3_plus_pieces_syp BIGINT DEFAULT 0,
+  delivery_fee_3_plus_pieces_usd NUMERIC(10,2) DEFAULT 0,
   created_at                  TIMESTAMPTZ DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -267,7 +280,37 @@ CREATE TABLE IF NOT EXISTS shipping_governorates (
   fee_syp           BIGINT DEFAULT 0,
   fee_usd           NUMERIC(10,2) DEFAULT 0,
   is_active         BOOLEAN DEFAULT true,
+  branch_addresses  TEXT DEFAULT NULL,
   created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Product Reviews
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id    UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  user_name     TEXT NOT NULL,
+  rating        INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment       TEXT DEFAULT '',
+  is_published  BOOLEAN DEFAULT true,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Site Visits (analytics)
+CREATE TABLE IF NOT EXISTS site_visits (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id  TEXT NOT NULL,
+  page_path   TEXT NOT NULL,
+  visited_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Loyalty Points
+CREATE TABLE IF NOT EXISTS loyalty_points (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  customer_phone  VARCHAR(50) NOT NULL,
+  order_id        UUID REFERENCES orders(id) ON DELETE CASCADE,
+  status          VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','confirmed','cancelled')),
+  cycle_used      BOOLEAN DEFAULT false,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ============================================================
@@ -288,6 +331,13 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order    ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_categories_slug      ON categories(slug);
 CREATE INDEX IF NOT EXISTS idx_coupons_code         ON coupons(code);
 CREATE INDEX IF NOT EXISTS idx_shipping_gov_method  ON shipping_governorates(method_id);
+CREATE INDEX IF NOT EXISTS idx_product_reviews_pid   ON product_reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_reviews_pub   ON product_reviews(is_published);
+CREATE INDEX IF NOT EXISTS idx_site_visits_session   ON site_visits(session_id);
+CREATE INDEX IF NOT EXISTS idx_site_visits_visited   ON site_visits(visited_at);
+CREATE INDEX IF NOT EXISTS idx_loyalty_phone          ON loyalty_points(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_loyalty_phone_status   ON loyalty_points(customer_phone, status);
+CREATE INDEX IF NOT EXISTS idx_loyalty_order          ON loyalty_points(order_id);
 
 -- ============================================================
 -- TRIGGERS — auto-update updated_at
@@ -351,6 +401,9 @@ ALTER TABLE static_pages       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admins             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shipping_methods   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shipping_governorates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_reviews    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_visits        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE loyalty_points     ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- PUBLIC READ POLICIES (anon role)
@@ -401,6 +454,17 @@ CREATE POLICY "public_read_shipping_methods" ON shipping_methods
 
 CREATE POLICY "public_read_shipping_governorates" ON shipping_governorates
   FOR SELECT TO anon USING (is_active = true);
+
+-- Product Reviews: public can read published, insert new
+CREATE POLICY "public_read_product_reviews" ON product_reviews
+  FOR SELECT TO anon USING (is_published = true);
+
+CREATE POLICY "public_insert_product_reviews" ON product_reviews
+  FOR INSERT TO anon WITH CHECK (true);
+
+-- Site Visits: public can insert visit tracking, cannot read
+CREATE POLICY "public_insert_site_visits" ON site_visits
+  FOR INSERT TO anon WITH CHECK (true);
 
 -- ============================================================
 -- SERVICE ROLE FULL ACCESS POLICIES
@@ -464,6 +528,15 @@ CREATE POLICY "service_role_all_shipping_methods" ON shipping_methods
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 CREATE POLICY "service_role_all_shipping_governorates" ON shipping_governorates
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "service_role_all_product_reviews" ON product_reviews
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "service_role_all_site_visits" ON site_visits
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "service_role_all_loyalty_points" ON loyalty_points
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ============================================================

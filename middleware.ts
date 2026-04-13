@@ -18,18 +18,19 @@ export async function middleware(req: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production'
   
   // Explicitly tell NextAuth which cookie to look for to bypass Vercel Proxy protocol confusion
-  let token = await getToken({ 
-    req, 
+  let token = await getToken({
+    req,
     secret,
     secureCookie: isProduction
   })
-  
-  // Fallback just in case NEXTAUTH_URL forced a non-secure cookie even in production
+
+  // Fallback: try the opposite secureCookie flag in case NEXTAUTH_URL protocol
+  // differs from the actual request protocol (e.g. https NEXTAUTH_URL in dev).
   if (!token) {
     token = await getToken({
       req,
       secret,
-      secureCookie: false
+      secureCookie: !isProduction
     })
   }
   

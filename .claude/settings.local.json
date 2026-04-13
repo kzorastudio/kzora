@@ -33,7 +33,22 @@
       "Bash(sed:*)",
       "Bash(sed -i \"s/'🚀 توصيل عادي'/'🚀 توصيل عادي \\(حلب\\)'/g\" app/track-order/TrackOrderClient.tsx \"app/order-success/[orderId]/page.tsx\" components/admin/OrderTable.tsx)",
       "Bash(sed -i \"s/توصيل عادي \\(حلب فقط\\)/توصيل عادي \\(حلب\\)/g\" components/checkout/CheckoutForm.tsx)",
-      "Bash(sed -i \"s/'توصيل عادي'/'توصيل عادي \\(حلب\\)'/g\" components/admin/OrderTable.tsx \"app/admin/orders/[id]/page.tsx\" \"app/admin/orders/[id]/OrderDetailsEditor.tsx\")"
+      "Bash(sed -i \"s/'توصيل عادي'/'توصيل عادي \\(حلب\\)'/g\" components/admin/OrderTable.tsx \"app/admin/orders/[id]/page.tsx\" \"app/admin/orders/[id]/OrderDetailsEditor.tsx\")",
+      "Skill(update-config)",
+      "Bash(claude mcp:*)",
+      "Bash(ls C:/Users/moham/Desktop/CODING/Kzora/.env*)",
+      "Bash(python -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\).split\\('HTTP'\\)[0]\\); print\\(json.dumps\\(d[0] if d else {}, ensure_ascii=False, indent=2\\)[:800]\\)\")",
+      "Bash(python -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\(json.dumps\\(d, ensure_ascii=False, indent=2\\)\\)\")",
+      "Bash(python -c \"import sys,json; print\\(json.dumps\\(json.loads\\(sys.stdin.read\\(\\)\\), ensure_ascii=False, indent=2\\)\\)\")",
+      "Bash(node -e \"const bcrypt=require\\('bcryptjs'\\); bcrypt.hash\\('12341234',12\\).then\\(h=>console.log\\(h\\)\\);\")",
+      "Bash(python -c \"import sys,json; print\\(json.dumps\\(json.loads\\(sys.stdin.read\\(\\)\\), ensure_ascii=False\\)\\)\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(python -c \"import json,sys; print\\(json.dumps\\({'query': open\\(r'C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration.sql','r',encoding='utf-8'\\).read\\(\\)}\\)\\)\")",
+      "Bash(python -c \"import sys,json; print\\(json.dumps\\(json.loads\\(sys.stdin.read\\(\\)\\),ensure_ascii=False,indent=2\\)\\)\")",
+      "Bash(python -c \"import json; print\\(json.dumps\\({'query': open\\(r'C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration2.sql','r',encoding='utf-8'\\).read\\(\\)}\\)\\)\")",
+      "Bash(echo \"TSC EXIT: $?\")",
+      "Bash(ls C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration*.sql)",
+      "Bash(python -c \"import json; print\\(json.dumps\\({'query': open\\(r'C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration_meta.sql','r',encoding='utf-8'\\).read\\(\\)}\\)\\)\")"
     ]
   }
 }
