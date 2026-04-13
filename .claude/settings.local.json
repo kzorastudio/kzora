@@ -48,7 +48,10 @@
       "Bash(python -c \"import json; print\\(json.dumps\\({'query': open\\(r'C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration2.sql','r',encoding='utf-8'\\).read\\(\\)}\\)\\)\")",
       "Bash(echo \"TSC EXIT: $?\")",
       "Bash(ls C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration*.sql)",
-      "Bash(python -c \"import json; print\\(json.dumps\\({'query': open\\(r'C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration_meta.sql','r',encoding='utf-8'\\).read\\(\\)}\\)\\)\")"
+      "Bash(python -c \"import json; print\\(json.dumps\\({'query': open\\(r'C:/Users/moham/Desktop/CODING/Kzora/scripts/_migration_meta.sql','r',encoding='utf-8'\\).read\\(\\)}\\)\\)\")",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "Bash(npx tsx:*)"
     ]
   }
 }

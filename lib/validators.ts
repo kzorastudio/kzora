@@ -9,11 +9,13 @@ export const checkoutSchema = z.object({
   phone: z
     .string()
     .regex(/^(\+963|0)?9\d{8}$/, 'رقم الهاتف غير صحيح. مثال: 0987654321'),
-  governorate: z.string().min(1, 'يرجى اختيار المحافظة'),
+  delivery_type: z.enum(['delivery', 'shipping']).default('delivery'),
+  // Delivery (حلب فقط): manual address
+  address: z.string().optional(),
+  // Shipping: governorate + center + company
+  governorate: z.string().optional(),
   center: z.string().optional(),
   center_name: z.string().optional(),
-  address: z.string().min(1, 'يرجى اختيار مركز الاستلام أو العنوان'),
-  delivery_type: z.enum(['delivery', 'shipping']).default('delivery'),
   shipping_company: z.string().optional().nullable(),
   coupon_code: z.string().optional(),
   payment_method: z.enum(['cod', 'sham_cash']).default('cod'),
@@ -21,17 +23,43 @@ export const checkoutSchema = z.object({
   notes: z.string().max(300, 'الملاحظات طويلة جداً').optional(),
 }).refine(
   (data) => {
-    if (data.governorate !== 'حلب') {
+    // Delivery mode: address is required
+    if (data.delivery_type === 'delivery') {
+      return !!data.address && data.address.trim().length >= 5
+    }
+    return true
+  },
+  {
+    message: 'يرجى إدخال عنوانك بالتفصيل (5 أحرف على الأقل)',
+    path: ['address'],
+  }
+).refine(
+  (data) => {
+    // Shipping mode: governorate required
+    if (data.delivery_type === 'shipping') {
+      return !!data.governorate && data.governorate.length > 0
+    }
+    return true
+  },
+  {
+    message: 'يرجى اختيار المحافظة',
+    path: ['governorate'],
+  }
+).refine(
+  (data) => {
+    // Shipping mode: center required
+    if (data.delivery_type === 'shipping') {
       return !!data.center && data.center.length > 0
     }
     return true
   },
   {
-    message: 'يرجى اختيار المنطقة أو المركز',
+    message: 'يرجى اختيار المركز',
     path: ['center'],
   }
 ).refine(
   (data) => {
+    // Shipping mode: shipping company required
     if (data.delivery_type === 'shipping') {
       return !!data.shipping_company && data.shipping_company.length > 0
     }

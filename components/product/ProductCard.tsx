@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { ShoppingBag, X, Star, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { formatPrice, getDiscountPercent } from '@/lib/utils'
@@ -28,7 +29,7 @@ interface ProductCardProps {
 export function ProductCard({ product, className, filterUnavailableLabel }: ProductCardProps) {
   const router = useRouter()
   const { currency } = useCurrencyStore()
-  const { addItem, openCart } = useCartStore()
+  const { addItem } = useCartStore()
 
   const [isHovered, setIsHovered] = useState(false)
   const [showSizeBar, setShowSizeBar] = useState(false)
@@ -126,15 +127,9 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       }
       addItem(item)
       trackAddToCart(product, 1)
-
-      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
-      if (isDesktop) {
-        router.push('/checkout')
-      } else {
-        openCart()
-      }
+      toast.success('تمت إضافة المنتج إلى السلة')
     },
-    [product, imageUrl, addItem, openCart, router, isActuallyOutOfStock]
+    [product, imageUrl, addItem, router, isActuallyOutOfStock]
   )
 
   const handleAddWithSize = useCallback(
@@ -160,15 +155,9 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       addItem(item)
       trackAddToCart(product, 1)
       setShowSizeBar(false)
-
-      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
-      if (isDesktop) {
-        router.push('/checkout')
-      } else {
-        openCart()
-      }
+      toast.success('تمت إضافة المنتج إلى السلة')
     },
-    [product, imageUrl, addItem, openCart, router]
+    [product, imageUrl, addItem, router]
   )
 
   const priorityTag = product.tags?.find((t) => t === 'new' || t === 'best_seller' || t === 'on_sale')

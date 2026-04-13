@@ -179,7 +179,7 @@ export default function CheckoutPage() {
           customer: {
             full_name:   formData.full_name,
             phone:       formData.phone,
-            governorate: formData.governorate,
+            governorate: formData.governorate ?? '',
             address:     formData.address ?? '',
             center_name: formData.center_name ?? null,
           },
@@ -219,7 +219,7 @@ export default function CheckoutPage() {
           orderNumber,
           customerName:    formData.full_name,
           customerPhone:   formData.phone,
-          governorate:     formData.governorate,
+          governorate:     formData.governorate ?? '',
           centerName:      formData.center_name,
           address:         formData.address ?? '',
           deliveryType:    deliveryType,

@@ -6,8 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@/lib/utils'
 import { checkoutSchema, type CheckoutFormData } from '@/lib/validators'
 import { ShippingCompanySelector } from '@/components/checkout/ShippingCompanySelector'
-import { GovernorateDropdown } from '@/components/checkout/GovernorateDropdown'
-import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
+import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown, Package } from 'lucide-react'
 
 import type { HomepageSettings } from '@/types'
 
@@ -28,6 +27,24 @@ const fieldBase =
 const labelBase = 'block text-sm font-arabic font-medium text-[#1A1A1A] mb-1.5'
 const errorBase = 'mt-1.5 text-xs font-arabic text-[#BA1A1A]'
 
+// Syrian governorates (excluding Aleppo city - delivery only)
+const SHIPPING_GOVERNORATES = [
+  'ريف حلب',
+  'دمشق',
+  'ريف دمشق',
+  'حمص',
+  'حماة',
+  'اللاذقية',
+  'طرطوس',
+  'إدلب',
+  'دير الزور',
+  'الرقة',
+  'الحسكة',
+  'القنيطرة',
+  'السويداء',
+  'درعا',
+]
+
 function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div className="flex items-center gap-3 mb-5">
@@ -41,6 +58,8 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
 
 export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippingMethods: propShippingMethods, onDeliveryTypeChange, onPhoneChange }: Props) {
   const [shippingMethods, setShippingMethods] = useState<any[]>(propShippingMethods || [])
+  const [centers, setCenters] = useState<any[]>([])
+  const [loadingCenters, setLoadingCenters] = useState(false)
 
   const {
     register,
@@ -66,39 +85,41 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
     },
   })
 
-  const [centers, setCenters] = useState<any[]>([])
-  const [loadingCenters, setLoadingCenters] = useState(false)
-
-  const governorate = watch('governorate')
-  const centerId = watch('center')
-  const address = watch('address')
+  const deliveryType   = watch('delivery_type')
+  const governorate    = watch('governorate')
+  const centerId       = watch('center')
   const shippingCompany = watch('shipping_company')
-  const deliveryType = watch('delivery_type')
-  const paymentMethod = watch('payment_method')
+  const paymentMethod  = watch('payment_method')
 
+  // Notify parent on delivery type change
   useEffect(() => {
     if (onDeliveryTypeChange) {
       onDeliveryTypeChange(deliveryType)
     }
+    // Reset shipping fields when switching modes
     if (deliveryType === 'delivery') {
+      setValue('governorate', '')
+      setValue('center', '')
       setValue('shipping_company', null)
+      setCenters([])
+    } else {
+      setValue('address', '')
     }
   }, [deliveryType, onDeliveryTypeChange, setValue])
 
-  // Sync shipping methods when parent provides them
+  // Sync shipping methods from parent
   useEffect(() => {
     if (propShippingMethods && propShippingMethods.length > 0) {
       setShippingMethods(propShippingMethods)
     }
   }, [propShippingMethods])
 
-  // Fetch centers when governorate changes
+  // Fetch centers when governorate changes (shipping mode only)
   useEffect(() => {
-    if (governorate) {
+    if (deliveryType === 'shipping' && governorate) {
       setLoadingCenters(true)
       setValue('center', '')
       setValue('shipping_company', '')
-      setValue('address', '')
 
       fetch(`/api/shipping/centers?governorate=${encodeURIComponent(governorate)}`)
         .then(res => res.json())
@@ -110,102 +131,41 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       setCenters([])
       setValue('center', '')
     }
-  }, [governorate, setValue])
+  }, [governorate, deliveryType, setValue])
 
-  // Watch for center changes to auto-select delivery if it's Aleppo city
+  // Reset shipping company when center changes
   useEffect(() => {
-    if (governorate === 'حلب') {
-      setValue('center', 'city_manual') // Use a dummy value if needed, or leave empty if validated via refine
-      setValue('shipping_company', 'delivery', { shouldValidate: true })
-      setValue('delivery_type', 'delivery')
-    } else if (centerId) {
-      const selectedCenter = centers.find(c => c.id === centerId)
-      // If no supported companies, it's a delivery area
-      if (!selectedCenter?.supported_companies || selectedCenter.supported_companies.length === 0) {
-        setValue('shipping_company', 'delivery', { shouldValidate: true })
-        setValue('delivery_type', 'delivery')
-      } else {
-        setValue('shipping_company', '', { shouldValidate: true })
-        setValue('delivery_type', 'shipping')
-      }
-    }
-  }, [centerId, centers, governorate, setValue])
+    setValue('shipping_company', '')
+  }, [centerId, setValue])
 
-  // Get governorates available across all shipping methods
-  const allAvailableGovernorates = useMemo(() => {
-    const all = new Set<string>()
-    // Add Aleppo manually as it's always available for delivery
-    all.add('حلب')
-    shippingMethods.forEach(m => m.governorates?.forEach((g: any) => all.add(g.name)))
-    return Array.from(all).sort()
-  }, [shippingMethods])
-
-  // Get filtered shipping companies based on selected center
-  const filteredShippingCompanies = useMemo(() => {
-    if (!governorate || !centerId) return []
-    
+  // Get available shipping companies for selected center
+  const availableCompanies = useMemo(() => {
+    if (!centerId || !governorate) return []
     const selectedCenter = centers.find(c => c.id === centerId)
-    
-    if (governorate === 'حلب') {
-      // If no supported companies, or it's a city center
-      if (!selectedCenter?.supported_companies || selectedCenter.supported_companies.length === 0) {
-        return [{
-          id: 'delivery-special',
-          slug: 'delivery',
-          name: '🚀 توصيل عادي (حلب)',
-          description: 'توصيل لباب المنزل عبر مندوب كزورا.',
-          badge: 'الأسرع'
-        }]
-      }
-    }
+    if (!selectedCenter?.supported_companies || selectedCenter.supported_companies.length === 0) return []
 
-    // Filter methods based on center's supported companies
-    const supportedSlugs = selectedCenter?.supported_companies || []
-    
-    return shippingMethods.filter(m => 
-      m.slug !== 'delivery' && 
-      m.slug !== 'توصيل عادي' &&
+    const supportedSlugs: string[] = selectedCenter.supported_companies
+
+    return shippingMethods.filter(m =>
       supportedSlugs.includes(m.slug) &&
       m.governorates?.some((g: any) => g.name === governorate)
     )
-  }, [governorate, centerId, centers, shippingMethods])
-
-  // Get branch addresses (aggregated if none selected, or specific to company + gov)
-  const selectedCompanyGovernorateBranches = useMemo(() => {
-    if (!governorate) return []
-    
-    if (!shippingCompany) {
-      // Aggregated branches from all companies for this governorate
-      const all = new Set<string>()
-      shippingMethods.forEach(m => {
-        const gov = m.governorates?.find((g: any) => g.name === governorate)
-        if (gov?.branch_addresses) {
-          gov.branch_addresses.split('\n').forEach((s: string) => all.add(s.trim()))
-        }
-      })
-      return Array.from(all).filter(Boolean).sort()
-    }
-
-    const company = shippingMethods.find(m => m.slug === shippingCompany)
-    const gov = company?.governorates?.find((g: any) => g.name === governorate)
-    
-    let branches: string[] = []
-    if (gov?.branch_addresses) {
-      branches = gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
-    }
-
-    // If no branches defined, use the center name as the branch
-    if (branches.length === 0 && centerId) {
-      const selectedCenter = centers.find(c => c.id === centerId)
-      if (selectedCenter) branches.push(selectedCenter.name)
-    }
-
-    return branches
-  }, [shippingCompany, governorate, shippingMethods, centerId, centers])
+  }, [centerId, centers, governorate, shippingMethods])
 
   const handleFormSubmit = handleSubmit(async (data) => {
     const selectedCenter = centers.find(c => c.id === data.center)
-    await onSubmit({ ...data, center_name: selectedCenter?.name })
+    // For delivery: governorate = Aleppo, address = manual text
+    // For shipping: governorate = selected, address = center name (for order records)
+    const finalGov = data.delivery_type === 'delivery' ? 'حلب' : (data.governorate ?? '')
+    const finalAddress = data.delivery_type === 'delivery'
+      ? (data.address ?? '')
+      : (selectedCenter?.name ?? data.governorate ?? '')
+    await onSubmit({
+      ...data,
+      governorate: finalGov,
+      address: finalAddress,
+      center_name: selectedCenter?.name,
+    })
   })
 
   return (
@@ -216,22 +176,87 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       noValidate
       className="space-y-0"
     >
-      {/* ═══ Section 1: Region & Contact Info ══════════════════════════════════════ */}
+      {/* ═══ Section 1: Delivery Type ══════════════════════════════════════════════ */}
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
-        <SectionHeading icon={MapPin} title="المنطقة ومعلومات الاتصال" />
+        <SectionHeading icon={Truck} title="طريقة الاستلام" />
+
+        <div className="grid grid-cols-2 gap-3">
+          {/* توصيل */}
+          <label className={cn(
+            "flex flex-col items-center gap-3 border-2 rounded-2xl p-5 cursor-pointer transition-all duration-200 text-center",
+            deliveryType === 'delivery'
+              ? "bg-[#FFF9F0] border-[#785600] shadow-sm"
+              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF]"
+          )}>
+            <input
+              type="radio"
+              value="delivery"
+              className="sr-only"
+              {...register('delivery_type')}
+            />
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
+              deliveryType === 'delivery' ? "bg-[#785600]/10" : "bg-[#F0EBE3]"
+            )}>
+              <Truck size={24} className={deliveryType === 'delivery' ? "text-[#785600]" : "text-[#9E9890]"} />
+            </div>
+            <div>
+              <p className={cn("font-arabic font-bold text-sm", deliveryType === 'delivery' ? "text-[#785600]" : "text-[#1A1A1A]")}>
+                توصيل
+              </p>
+              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5 leading-relaxed">
+                لباب المنزل<br/>حلب فقط
+              </p>
+            </div>
+            {deliveryType === 'delivery' && (
+              <div className="w-5 h-5 rounded-full bg-[#785600] flex items-center justify-center">
+                <CheckCircle2 size={12} className="text-white" />
+              </div>
+            )}
+          </label>
+
+          {/* شحن */}
+          <label className={cn(
+            "flex flex-col items-center gap-3 border-2 rounded-2xl p-5 cursor-pointer transition-all duration-200 text-center",
+            deliveryType === 'shipping'
+              ? "bg-[#F0F7ED] border-[#4B6339] shadow-sm"
+              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF]"
+          )}>
+            <input
+              type="radio"
+              value="shipping"
+              className="sr-only"
+              {...register('delivery_type')}
+            />
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
+              deliveryType === 'shipping' ? "bg-[#4B6339]/10" : "bg-[#F0EBE3]"
+            )}>
+              <Package size={24} className={deliveryType === 'shipping' ? "text-[#4B6339]" : "text-[#9E9890]"} />
+            </div>
+            <div>
+              <p className={cn("font-arabic font-bold text-sm", deliveryType === 'shipping' ? "text-[#4B6339]" : "text-[#1A1A1A]")}>
+                شحن
+              </p>
+              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5 leading-relaxed">
+                شركات الشحن<br/>باقي المحافظات
+              </p>
+            </div>
+            {deliveryType === 'shipping' && (
+              <div className="w-5 h-5 rounded-full bg-[#4B6339] flex items-center justify-center">
+                <CheckCircle2 size={12} className="text-white" />
+              </div>
+            )}
+          </label>
+        </div>
+      </div>
+
+      {/* ═══ Section 2: Contact Info ════════════════════════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+        <SectionHeading icon={MapPin} title="معلومات الاتصال" />
 
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Governorate */}
-            <GovernorateDropdown
-              governorates={allAvailableGovernorates}
-              value={governorate ?? ''}
-              onChange={(gov) => {
-                setValue('governorate', gov, { shouldValidate: true })
-              }}
-              error={errors.governorate?.message}
-            />
-
             {/* Full Name */}
             <div>
               <label htmlFor="full_name" className={labelBase}>
@@ -248,186 +273,208 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
               {errors.full_name && <p className={errorBase}>{errors.full_name.message}</p>}
             </div>
 
-            {/* Region / Center */}
-            {governorate !== 'حلب' && (
-              <div className="sm:col-span-2">
-                <label htmlFor="center" className={labelBase}>
-                  المنطقة / المركز <span className="text-[#BA1A1A]">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    id="center"
-                    disabled={!governorate || loadingCenters}
-                    className={cn(
-                      fieldBase, 
-                      'appearance-none pr-4 pl-10', 
-                      errors.center && 'border-[#BA1A1A] focus:border-[#BA1A1A]',
-                      (!governorate || loadingCenters) && 'opacity-50 cursor-not-allowed'
-                    )}
-                    {...register('center', {
-                      onChange: (e) => {
-                        setValue('shipping_company', '')
-                        setValue('address', '')
-                      }
-                    })}
-                  >
-                    <option value="">{loadingCenters ? 'جارٍ التحميل...' : 'اختر المنطقة أو المركز...'}</option>
-                    {centers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
-                    <ChevronDown size={16} />
-                  </div>
-                </div>
-                {errors.center && <p className={errorBase}>{errors.center.message}</p>}
-              </div>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label htmlFor="phone" className={labelBase}>
-              رقم الهاتف <span className="text-[#BA1A1A]">*</span>
-            </label>
-            <div
-              className={cn(
-                'flex flex-row-reverse items-stretch bg-[#F5F1EB] rounded-xl border transition-all duration-150',
-                errors.phone ? 'border-[#BA1A1A]' : 'border-[#E8E3DB] focus-within:border-[#785600] focus-within:ring-1 focus-within:ring-[#785600]/20'
-              )}
-            >
-              <span
-                dir="ltr"
-                className="flex items-center gap-1.5 px-3 text-sm font-body font-medium text-[#6B6560] border-r border-[#E8E3DB] select-none shrink-0"
+            {/* Phone */}
+            <div>
+              <label htmlFor="phone" className={labelBase}>
+                رقم الهاتف <span className="text-[#BA1A1A]">*</span>
+              </label>
+              <div
+                className={cn(
+                  'flex flex-row-reverse items-stretch bg-[#F5F1EB] rounded-xl border transition-all duration-150',
+                  errors.phone ? 'border-[#BA1A1A]' : 'border-[#E8E3DB] focus-within:border-[#785600] focus-within:ring-1 focus-within:ring-[#785600]/20'
+                )}
               >
-                <span className="text-base">🇸🇾</span>
-                +963
-              </span>
-              <input
-                id="phone"
-                type="tel"
-                dir="ltr"
-                inputMode="numeric"
-                autoComplete="tel"
-                placeholder="9xx xxx xxx"
-                className="flex-1 min-w-0 bg-transparent px-3 py-3 text-sm font-body text-[#1A1A1A] text-right focus:outline-none placeholder:text-[#9E9890]"
-                {...register('phone')}
-                onBlur={(e) => {
-                  trigger('phone')
-                  if (onPhoneChange) onPhoneChange(e.target.value)
-                }}
-              />
+                <span
+                  dir="ltr"
+                  className="flex items-center gap-1.5 px-3 text-sm font-body font-medium text-[#6B6560] border-r border-[#E8E3DB] select-none shrink-0"
+                >
+                  <span className="text-base">🇸🇾</span>
+                  +963
+                </span>
+                <input
+                  id="phone"
+                  type="tel"
+                  dir="ltr"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="9xx xxx xxx"
+                  className="flex-1 min-w-0 bg-transparent px-3 py-3 text-sm font-body text-[#1A1A1A] text-right focus:outline-none placeholder:text-[#9E9890]"
+                  {...register('phone')}
+                  onBlur={(e) => {
+                    trigger('phone')
+                    if (onPhoneChange) onPhoneChange(e.target.value)
+                  }}
+                />
+              </div>
+              <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E8F5E9]/60 border border-[#4CAF50]/20 rounded-lg w-fit">
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#2E7D32]" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .012 5.403.01 12.039c0 2.12.553 4.189 1.602 6.039L0 24l6.135-1.61a11.81 11.81 0 005.912 1.586h.005c6.635 0 12.036-5.402 12.039-12.037a11.85 11.85 0 00-3.539-8.514z"/>
+                </svg>
+                <p className="text-[11px] font-arabic font-bold text-[#2E7D32]">يجب أن يكون الرقم مفعّل على واتساب</p>
+              </div>
+              {errors.phone && <p className={errorBase}>{errors.phone.message}</p>}
             </div>
-            <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E8F5E9]/60 border border-[#4CAF50]/20 rounded-lg w-fit">
-              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#2E7D32]" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .012 5.403.01 12.039c0 2.12.553 4.189 1.602 6.039L0 24l6.135-1.61a11.81 11.81 0 005.912 1.586h.005c6.635 0 12.036-5.402 12.039-12.037a11.85 11.85 0 00-3.539-8.514z"/>
-              </svg>
-              <p className="text-[11px] font-arabic font-bold text-[#2E7D32]">يجب أن يكون الرقم مفعّل على واتساب</p>
-            </div>
-            {errors.phone && <p className={errorBase}>{errors.phone.message}</p>}
           </div>
         </div>
       </div>
 
-      {/* ═══ Section 2: Shipping Method ═══════════════════════════════════ */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
-        <SectionHeading icon={Truck} title="طريقة التوصيل أو الشحن" />
-        
-        {(governorate !== 'حلب' && !centerId) ? (
-          <div className="p-8 text-center border-2 border-dashed border-[#E8E3DB] rounded-2xl bg-[#FAF8F5]">
-            <Truck size={32} className="mx-auto text-[#9E9890] mb-3 opacity-50" />
-            <p className="font-arabic text-sm text-[#6B6560]">يرجى اختيار المحافظة والمنطقة أولاً لعرض طرق الشحن المتاحة.</p>
+      {/* ═══ Section 3: Delivery Details (conditional) ══════════════════════════════ */}
+      {deliveryType === 'delivery' ? (
+        /* ── توصيل: Aleppo only, manual address ── */
+        <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+          <SectionHeading icon={MapPin} title="عنوان التوصيل — حلب" />
+
+          {/* Aleppo info banner */}
+          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-[#FFF9F0] border border-[#785600]/20 rounded-xl">
+            <Truck size={18} className="text-[#785600] shrink-0" />
+            <p className="font-arabic text-xs text-[#5D4037] leading-relaxed">
+              خدمة التوصيل متاحة داخل مدينة <strong>حلب فقط</strong> عبر مندوب كزورا.
+            </p>
           </div>
-        ) : (
-          <ShippingCompanySelector
-            companies={filteredShippingCompanies}
-            selected={shippingCompany ?? ''}
-            onChange={(id) => {
-              setValue('shipping_company', id, { shouldValidate: true })
-              if (id === 'delivery') {
-                setValue('delivery_type', 'delivery')
-              } else {
-                setValue('delivery_type', 'shipping')
-              }
-            }}
-            error={errors.shipping_company?.message}
-          />
-        )}
-      </div>
 
-      {/* ═══ Section 3: Detailed Address / Branch ═════════════════════════════ */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
-        <SectionHeading icon={MapPin} title="العنوان بالتفصيل" />
-
-        <div className="space-y-4">
-          <label htmlFor="address" className={labelBase}>
-            {deliveryType === 'delivery' ? 'عنوان المنزل بالتفصيل' : 'فرع شركة الشحن'} <span className="text-[#BA1A1A]">*</span>
-          </label>
-          
-          {deliveryType === 'delivery' ? (
+          <div>
+            <label htmlFor="address" className={labelBase}>
+              العنوان بالتفصيل <span className="text-[#BA1A1A]">*</span>
+            </label>
             <textarea
               id="address"
-              rows={2}
-              placeholder="أدخل عنوانك بالتفصيل (الحي، الشارع، البناية، الطابق)..."
+              rows={3}
+              placeholder="مثال: حي الميدان، شارع النيل، بناية رقم 12، الطابق الثالث..."
               className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
               {...register('address')}
             />
-          ) : (
-            <div className="relative">
-              {!shippingCompany ? (
-                <div className="p-4 bg-[#FAF8F5] border border-[#E8E3DB] rounded-xl text-xs text-[#9E9890] font-arabic">
-                  يرجى اختيار شركة الشحن لعرض الفروع المتاحة...
-                </div>
-              ) : (
-                <>
-                  <select
-                    id="address"
-                    className={cn(fieldBase, 'appearance-none pr-4 pl-10', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
-                    {...register('address')}
-                  >
-                    {selectedCompanyGovernorateBranches && selectedCompanyGovernorateBranches.length > 0 ? (
-                      <>
-                        <option value="">اختر أقرب مركز استلام...</option>
-                        {selectedCompanyGovernorateBranches.map((branch: string, idx: number) => (
-                          <option key={idx} value={branch}>
-                            {branch}
-                          </option>
-                        ))}
-                      </>
-                    ) : (
-                      <option value="">لا تتوفر مراكز شحن حالياً في هذه المحافظة</option>
-                    )}
-                  </select>
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]">
-                    <ChevronDown size={16} />
-                  </div>
-                </>
-              )}
+            {errors.address && <p className={errorBase}>{errors.address.message}</p>}
+          </div>
+        </div>
+      ) : (
+        /* ── شحن: Governorate → Center → Company ── */
+        <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+          <SectionHeading icon={Package} title="تفاصيل الشحن" />
+
+          <div className="space-y-5">
+            {/* Governorate */}
+            <div>
+              <label htmlFor="governorate-select" className={labelBase}>
+                المحافظة <span className="text-[#BA1A1A]">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  id="governorate-select"
+                  className={cn(
+                    fieldBase, 'appearance-none pr-4 pl-10',
+                    errors.governorate && 'border-[#BA1A1A] focus:border-[#BA1A1A]'
+                  )}
+                  {...register('governorate')}
+                >
+                  <option value="">اختر المحافظة...</option>
+                  {SHIPPING_GOVERNORATES.map(gov => (
+                    <option key={gov} value={gov}>{gov}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]" />
+              </div>
+              {errors.governorate && <p className={errorBase}>{errors.governorate.message}</p>}
             </div>
-          )}
-          {errors.address && <p className={errorBase}>{errors.address.message}</p>}
+
+            {/* Center */}
+            <div>
+              <label htmlFor="center" className={labelBase}>
+                المركز / المنطقة <span className="text-[#BA1A1A]">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  id="center"
+                  disabled={!governorate || loadingCenters}
+                  className={cn(
+                    fieldBase, 'appearance-none pr-4 pl-10',
+                    errors.center && 'border-[#BA1A1A] focus:border-[#BA1A1A]',
+                    (!governorate || loadingCenters) && 'opacity-50 cursor-not-allowed'
+                  )}
+                  {...register('center')}
+                >
+                  <option value="">
+                    {!governorate
+                      ? 'اختر المحافظة أولاً...'
+                      : loadingCenters
+                      ? 'جارٍ التحميل...'
+                      : 'اختر المركز...'}
+                  </option>
+                  {centers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9E9890]" />
+              </div>
+              {errors.center && <p className={errorBase}>{errors.center.message}</p>}
+            </div>
+
+            {/* Shipping Company */}
+            {centerId && (
+              <div>
+                <label className={labelBase}>
+                  شركة الشحن <span className="text-[#BA1A1A]">*</span>
+                </label>
+                {availableCompanies.length === 0 ? (
+                  <div className="p-4 bg-[#FAF8F5] border border-[#E8E3DB] rounded-xl text-sm font-arabic text-[#9E9890]">
+                    لا توجد شركات شحن متاحة لهذا المركز حالياً.
+                  </div>
+                ) : (
+                  <ShippingCompanySelector
+                    companies={availableCompanies}
+                    selected={shippingCompany ?? ''}
+                    onChange={(slug) => {
+                      setValue('shipping_company', slug, { shouldValidate: true })
+                    }}
+                    error={errors.shipping_company?.message}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Waiting prompt if no center yet */}
+            {(!centerId && governorate) && (
+              <div className="p-6 text-center border-2 border-dashed border-[#E8E3DB] rounded-2xl bg-[#FAF8F5]">
+                <Package size={28} className="mx-auto text-[#9E9890] mb-2 opacity-50" />
+                <p className="font-arabic text-sm text-[#6B6560]">اختر المركز لعرض شركات الشحن المتاحة.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Notes ══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+        <div>
+          <label htmlFor="notes" className={labelBase}>
+            ملاحظات إضافية <span className="text-[#9E9890] text-xs font-normal">(اختياري)</span>
+          </label>
+          <textarea
+            id="notes"
+            rows={2}
+            placeholder="أي تعليمات خاصة للتوصيل أو الطلب..."
+            className={cn(fieldBase, 'resize-none')}
+            {...register('notes')}
+          />
         </div>
       </div>
 
-      {/* ═══ Section 3: Payment Method ═════════════════════════════════════ */}
+      {/* ═══ Section 4: Payment Method ═══════════════════════════════════════════════ */}
       <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
         <SectionHeading icon={CreditCard} title="طريقة الدفع" />
-        
+
         <div className="space-y-3">
           {/* Cash on Delivery */}
           <label className={cn(
             "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200",
-            paymentMethod === 'cod' 
-              ? "bg-[#F0F7ED] border-[#4B6339] shadow-sm" 
+            paymentMethod === 'cod'
+              ? "bg-[#F0F7ED] border-[#4B6339] shadow-sm"
               : "bg-white border-[#F0EBE3] hover:border-[#E8E3DB]"
           )}>
-            <input 
-              type="radio" 
-              value="cod" 
+            <input
+              type="radio"
+              value="cod"
               className="sr-only"
-              {...register('payment_method')} 
+              {...register('payment_method')}
             />
             <div className={cn(
               "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
@@ -448,15 +495,15 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
           {settings?.sham_cash_enabled && (
             <label className={cn(
               "flex items-center gap-4 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200",
-              paymentMethod === 'sham_cash' 
-                ? "bg-[#FFF9F0] border-[#785600] shadow-sm" 
+              paymentMethod === 'sham_cash'
+                ? "bg-[#FFF9F0] border-[#785600] shadow-sm"
                 : "bg-white border-[#F0EBE3] hover:border-[#E8E3DB]"
             )}>
-              <input 
-                type="radio" 
-                value="sham_cash" 
+              <input
+                type="radio"
+                value="sham_cash"
                 className="sr-only"
-                {...register('payment_method')} 
+                {...register('payment_method')}
               />
               <div className={cn(
                 "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
@@ -495,15 +542,15 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             {settings.sham_cash_image_url && (
               <div className="mt-4 flex flex-col items-center gap-3">
                 <p className="font-arabic text-[10px] text-[#785600] font-bold">امسح الكود أو استخدم صورة الحساب للتحويل:</p>
-                <img 
-                  src={settings.sham_cash_image_url} 
-                  alt="Sham Cash QR/Account" 
+                <img
+                  src={settings.sham_cash_image_url}
+                  alt="Sham Cash QR/Account"
                   className="max-sm:w-full w-[220px] h-auto rounded-2xl border-4 border-white shadow-lg bg-white"
                 />
               </div>
             )}
 
-            {/* Transaction ID Input */}
+            {/* Transaction ID */}
             <div className="mt-4">
               <label htmlFor="payment_transaction_id" className={labelBase}>
                 رقم/رمز عملية التحويل <span className="text-[#BA1A1A]">*</span>
@@ -525,7 +572,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
         )}
       </div>
 
-      {/* ═══ Warning Banner ════════════════════════════════════════════════ */}
+      {/* ═══ Warning Banner ══════════════════════════════════════════════════════════ */}
       <div className="flex items-start gap-3 bg-[#FFF3E0] border border-[#FFB74D]/40 rounded-xl p-4 mt-5">
         <AlertTriangle size={18} className="text-[#E65100] shrink-0 mt-0.5" />
         <p className="font-arabic text-xs text-[#5D4037] leading-relaxed">
