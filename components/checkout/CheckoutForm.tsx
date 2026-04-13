@@ -411,9 +411,6 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             {/* Shipping Company */}
             {centerId && (
               <div>
-                <label className={labelBase}>
-                  شركة الشحن <span className="text-[#BA1A1A]">*</span>
-                </label>
                 {availableCompanies.length === 0 ? (
                   <div className="p-4 bg-[#FAF8F5] border border-[#E8E3DB] rounded-xl text-sm font-arabic text-[#9E9890]">
                     لا توجد شركات شحن متاحة لهذا المركز حالياً.
