@@ -1,1 +1,0 @@
-{"query": "-- Add meta JSONB column to static_pages if missing\nALTER TABLE public.static_pages\n  ADD COLUMN IF NOT EXISTS meta JSONB DEFAULT NULL;\n\n-- Delete the wrong slug\nDELETE FROM public.static_pages WHERE slug = 'return-policy';\n\nSELECT column_name FROM information_schema.columns\nWHERE table_schema='public' AND table_name='static_pages' AND column_name='meta';\n"}

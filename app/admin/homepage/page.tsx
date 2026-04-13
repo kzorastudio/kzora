@@ -547,37 +547,104 @@ export default function HomepagePage() {
                 أسعار التوصيل والشحن
               </h2>
               
-              {/* Regular Delivery Flat Fee */}
+              {/* Delivery Fee per pieces */}
               <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
-                <h3 className="text-sm font-arabic font-bold text-on-surface mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-arabic font-bold text-on-surface mb-2 flex items-center gap-2">
                   <Truck size={16} className="text-[#2E7D32]" />
-                  أجرة التوصيل العادي (حلب فقط - سعر ثابت)
+                  أجرة التوصيل العادي (حلب فقط - حسب عدد القطع)
                 </h3>
-                <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-arabic text-secondary">السعر بالليرة السورية الجديدة (ل.س)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={settings.delivery_fee_syp || 0}
-                        onChange={(e) => { setSettings({ ...settings, delivery_fee_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-arabic text-secondary">السعر بالدولار ($)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={settings.delivery_fee_usd || 0}
-                        onChange={(e) => { setSettings({ ...settings, delivery_fee_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
-                      />
+                <p className="text-xs font-arabic text-secondary mb-4">يتم حساب تكلفة التوصيل داخل حلب بناءً على إجمالي عدد القطع في سلة المشتريات.</p>
+                
+                <div className="space-y-4">
+                  {/* 1 piece */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعة واحدة (1)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_1_piece_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_1_piece_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <p className="text-[10px] font-arabic text-secondary/60 mt-3">هذا السعر ثابت مهما زاد عدد المنتجات في السلة عند اختيار التوصيل داخل حلب.</p>
+                  {/* 2 pieces */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعتين (2)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_2_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_2_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* 3 pieces */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود 3 قطع فقط</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_3_plus_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_3_plus_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Note for more than 3 */}
+                  <div className="p-4 rounded-2xl bg-[#E8F5E9] border border-[#A5D6A7]">
+                    <p className="text-xs font-arabic font-bold text-[#2E7D32] mb-1">أكثر من 3 قطع:</p>
+                    <p className="text-[11px] font-arabic text-[#1B5E20] leading-relaxed">
+                      عند طلب أكثر من 3 قطع، لا يتم احتساب رسوم التوصيل تلقائياً، وستظهر للزبون رسالة تُفيد بأن التكلفة تُحدَّد بالتواصل المباشر عبر واتساب ليتم الاتفاق على السعر المناسب حسب حجم الطلب.
+                    </p>
+                  </div>
                 </div>
               </div>
 
