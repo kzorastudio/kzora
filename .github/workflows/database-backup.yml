@@ -1,0 +1,42 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Run every Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Allows manual trigger from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create Backup Directory
+        run: mkdir -p ./backups
+
+      - name: Run pg_dump
+        env:
+          # Use the connection string secret
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          filename="backups/kzora_backup_$(date +'%Y-%m-%d_%H-%M-%S').sql"
+          # Run pg_dump with the connection string
+          pg_dump "$DB_URL" > "$filename"
+          # Compress the backup
+          gzip "$filename"
+          echo "BACKUP_PATH=${filename}.gz" >> $GITHUB_ENV
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-db-backup
+          path: ${{ env.BACKUP_PATH }}
+          retention-days: 30 # Keep for 30 days
