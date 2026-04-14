@@ -399,6 +399,8 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                       ? 'اختر المحافظة أولاً...'
                       : loadingCenters
                       ? 'جارٍ التحميل...'
+                      : centers.length === 0
+                      ? 'لا توجد مراكز متوفرة لهذه المحافظة'
                       : 'اختر المركز...'}
                   </option>
                   {centers.map(c => (

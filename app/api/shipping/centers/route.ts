@@ -15,7 +15,7 @@ export async function GET(req: Request) {
         .select('governorate')
       
       if (error) throw error
-      const uniqueGovs = Array.from(new Set((data || []).map(d => d.governorate))).sort()
+      const uniqueGovs = Array.from(new Set((data || []).map(d => (d.governorate || '').trim()))).filter(Boolean).sort()
       return NextResponse.json({ governorates: uniqueGovs })
     }
 
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       .order('name', { ascending: true })
 
     if (governorate) {
-      query = query.eq('governorate', governorate)
+      query = query.ilike('governorate', governorate.trim())
     }
 
     const { data: centers, error } = await query
