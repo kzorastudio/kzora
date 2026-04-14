@@ -84,7 +84,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
   useEffect(() => {
     if (deliveryType === 'shipping') {
       setLoadingGovs(true)
-      fetch('/api/shipping/centers?type=governorates')
+      fetch(`/api/shipping/centers?type=governorates&t=${Date.now()}`, { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           setDynamicGovernorates(data.governorates || [])
@@ -123,7 +123,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       setValue('center', '')
       setValue('shipping_company', '')
 
-      fetch(`/api/shipping/centers?governorate=${encodeURIComponent(governorate)}`)
+      fetch(`/api/shipping/centers?governorate=${encodeURIComponent(governorate)}&t=${Date.now()}`, { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           setCenters(data.centers || [])

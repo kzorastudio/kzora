@@ -79,7 +79,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true)
-    fetch('/api/shipping')
+    fetch(`/api/shipping?t=${Date.now()}`, { cache: 'no-store' })
       .then(r => r.json())
       .then(d => setShippingMethods(d.methods || []))
       .catch(() => {})
