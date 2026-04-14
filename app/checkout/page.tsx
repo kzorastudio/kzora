@@ -35,6 +35,8 @@ export default function CheckoutPage() {
   const [discountUsd,  setDiscountUsd]  = useState(0)
   const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('delivery')
+  const [selectedGovernorate, setSelectedGovernorate] = useState('')
+  const [selectedShippingCompany, setSelectedShippingCompany] = useState('')
 
   // Loyalty state
   const [phone, setPhone] = useState('')
@@ -130,19 +132,30 @@ export default function CheckoutPage() {
       shippingFeeUsd = settings.delivery_fee_usd || settings.delivery_fee_1_piece_usd || 0
       shippingFeeDetermined = false
     } else {
-      if (totalItemsCount === 1) {
-        shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
-        shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
-      } else if (totalItemsCount === 2) {
-        shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
-        shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
-      } else if (totalItemsCount === 3) {
-        shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
-      } else if (totalItemsCount > 3) {
-        shippingFeeDetermined = true
-        shippingFeeSyp = 0
-        shippingFeeUsd = 0
+      // Try to find fee from selected shipping company
+      const method = shippingMethods.find((m: any) => m.slug === selectedShippingCompany)
+      const govFee = method?.governorates?.find((g: any) => g.name === selectedGovernorate)
+
+      if (govFee) {
+        shippingFeeSyp = govFee.fee_syp
+        shippingFeeUsd = govFee.fee_usd
+        shippingFeeDetermined = false
+      } else {
+        // Fallback to pieces-based logic from settings
+        if (totalItemsCount === 1) {
+          shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
+          shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
+        } else if (totalItemsCount === 2) {
+          shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
+          shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
+        } else if (totalItemsCount === 3) {
+          shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+          shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+        } else if (totalItemsCount > 3) {
+          shippingFeeDetermined = true
+          shippingFeeSyp = 0
+          shippingFeeUsd = 0
+        }
       }
     }
   }
@@ -339,6 +352,8 @@ export default function CheckoutPage() {
                 shippingMethods={shippingMethods}
                 onDeliveryTypeChange={setDeliveryType}
                 onPhoneChange={handlePhoneChange}
+                onGovernorateChange={setSelectedGovernorate}
+                onShippingCompanyChange={setSelectedShippingCompany}
               />
             </div>
 

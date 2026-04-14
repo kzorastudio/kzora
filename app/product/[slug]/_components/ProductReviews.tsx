@@ -266,7 +266,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                 <MessageSquare size={40} />
               </div>
               <div className="space-y-2">
-                <h4 className="font-arabic text-xl font-bold text-[#1A1A1A]">لم يتم تقييم هذا المنتج بعد</h4>
+                <h4 className="font-arabic text-xl font-bold text-[#1A1A1A]">لم يتم تقييم المنتج بعد</h4>
                 <p className="text-[#6B655D] max-w-sm font-arabic">
                   كن أول من يشارك تجربته مع هذا المنتج. رأيك يهمنا ويهم المتسوقين الآخرين!
                 </p>

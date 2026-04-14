@@ -14,8 +14,11 @@ export default function VisitTracker() {
       if (tracked) return
       if (pathname.startsWith('/admin')) return
       
-      // Basic bot filter - most automated crawlers set this
-      if (typeof window !== 'undefined' && window.navigator.webdriver) return
+      // Basic bot filter
+      const ua = window.navigator.userAgent.toLowerCase()
+      const isBot = /bot|crawler|spider|google|bing|yandex|slurp|duckduckbot|facebookexternalhit|linkedinbot|embedly|lighthouse|headless|screenshot|preview|whatsapp/i.test(ua)
+      
+      if (typeof window !== 'undefined' && (window.navigator.webdriver || isBot)) return
 
       tracked = true
 

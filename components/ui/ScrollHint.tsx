@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { useCartStore } from '@/store/cartStore'
 
 function MouseIcon() {
   return (
@@ -125,6 +126,7 @@ function SwipeGesture() {
 
 export function ScrollHint() {
   const [visible, setVisible] = useState(false)
+  const isCartOpen = useCartStore(s => s.isOpen)
 
   useEffect(() => {
     const show = setTimeout(() => setVisible(true), 1800)
@@ -153,7 +155,7 @@ export function ScrollHint() {
       }}
     >
       <AnimatePresence>
-        {visible && (
+        {visible && !isCartOpen && (
           /* Inner motion.div: only handles fade/slide — no translate-x here */
           <motion.div
             initial={{ opacity: 0, y: 14 }}

@@ -4,13 +4,22 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, path } = await req.json()
+    const ua = req.headers.get('user-agent') || ''
+    
+    // Basic bot/crawler filtering
+    const isBot = /bot|crawler|spider|google|bing|yandex|slurp|duckduckbot|facebookexternalhit|linkedinbot|embedly|lighthouse|headless|screenshot|preview|whatsapp/i.test(ua)
+    
+    if (isBot) {
+      return NextResponse.json({ success: true, skipped: 'bot' })
+    }
 
     // Simplified visit tracking
     const { error } = await supabaseAdmin
       .from('site_visits')
       .insert({
         session_id: sessionId,
-        page_path: path
+        page_path: path,
+        user_agent: ua
       })
 
     if (error) throw error

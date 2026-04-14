@@ -269,25 +269,49 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Step 2.7: Calculate shipping/delivery fee ───────────────
-    let shippingFeeSyp = 0
-    let shippingFeeUsd = 0
+    let shipping_fee_syp = 0
+    let shipping_fee_usd = 0
 
     if (delivery_type === 'delivery') {
-      shippingFeeSyp = settings?.delivery_fee_syp || 0
-      shippingFeeUsd = settings?.delivery_fee_usd || 0
-    } else {
-      if (totalItemsCount === 1) {
-        shippingFeeSyp = settings?.shipping_fee_1_piece_syp || 0
-        shippingFeeUsd = settings?.shipping_fee_1_piece_usd || 0
-      } else if (totalItemsCount === 2) {
-        shippingFeeSyp = settings?.shipping_fee_2_pieces_syp || 0
-        shippingFeeUsd = settings?.shipping_fee_2_pieces_usd || 0
-      } else if (totalItemsCount === 3) {
-        shippingFeeSyp = settings?.shipping_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings?.shipping_fee_3_plus_pieces_usd || 0
-      } else if (totalItemsCount > 3) {
-        shippingFeeSyp = 0
-        shippingFeeUsd = 0
+      shipping_fee_syp = settings?.delivery_fee_syp || 0
+      shipping_fee_usd = settings?.delivery_fee_usd || 0
+    } else if (delivery_type === 'shipping' && shipping_company) {
+      // Fetch fee from shipping_governorates
+      const { data: shipMethod } = await supabaseAdmin
+        .from('shipping_methods')
+        .select(`
+          id,
+          shipping_governorates (
+            fee_syp,
+            fee_usd
+          )
+        `)
+        .eq('slug', shipping_company)
+        .eq('is_active', true)
+        .eq('shipping_governorates.governorate_name', customer.governorate)
+        .eq('shipping_governorates.is_active', true)
+        .maybeSingle()
+
+      const govFee = shipMethod?.shipping_governorates?.[0]
+
+      if (govFee) {
+        shipping_fee_syp = govFee.fee_syp
+        shipping_fee_usd = govFee.fee_usd
+      } else {
+        // Fallback to settings piece-based fees
+        if (totalItemsCount === 1) {
+          shipping_fee_syp = settings?.shipping_fee_1_piece_syp || 0
+          shipping_fee_usd = settings?.shipping_fee_1_piece_usd || 0
+        } else if (totalItemsCount === 2) {
+          shipping_fee_syp = settings?.shipping_fee_2_pieces_syp || 0
+          shipping_fee_usd = settings?.shipping_fee_2_pieces_usd || 0
+        } else if (totalItemsCount === 3) {
+          shipping_fee_syp = settings?.shipping_fee_3_plus_pieces_syp || 0
+          shipping_fee_usd = settings?.shipping_fee_3_plus_pieces_usd || 0
+        } else if (totalItemsCount > 3) {
+          shipping_fee_syp = 0
+          shipping_fee_usd = 0
+        }
       }
     }
 
@@ -319,8 +343,8 @@ export async function POST(request: NextRequest) {
     const currentRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
     const finalDiscountUsd = parseFloat((discountUsd + ((multiProductDiscountSyp + loyaltyDiscountSyp) * currentRatio)).toFixed(2))
 
-    const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shippingFeeSyp)
-    const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shippingFeeUsd).toFixed(2)))
+    const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
+    const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))
 
     // â”€â”€ Step 5: Generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const orderNumber = await generateOrderNumber()
@@ -337,8 +361,8 @@ export async function POST(request: NextRequest) {
         center_name:          customer.center_name || null,
         delivery_type:        delivery_type || 'shipping',
         shipping_company:     shipping_company || null,
-        shipping_fee_syp:     shippingFeeSyp,
-        shipping_fee_usd:     shippingFeeUsd,
+        shipping_fee_syp:     shipping_fee_syp,
+        shipping_fee_usd:     shipping_fee_usd,
         payment_method:       payment_method || 'cod',
         payment_transaction_id: payment_transaction_id || null,
         shipping_fee_determined: shipping_fee_determined || false,

@@ -130,7 +130,7 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
                   <span className="text-sm font-bold text-[#6B655D]">
                     {reviewsMetadata.totalReviews > 0 
                       ? `${reviewsMetadata.averageRating} (${reviewsMetadata.totalReviews} تقييم)`
-                      : 'لم يقدم أحد المنتج بعد'
+                      : 'لم يتم تقييم المنتج بعد'
                     }
                   </span>
                 </div>

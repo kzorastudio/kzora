@@ -17,6 +17,8 @@ interface Props {
   shippingMethods?: any[]
   onDeliveryTypeChange?: (type: 'delivery' | 'shipping') => void
   onPhoneChange?: (phone: string) => void
+  onGovernorateChange?: (gov: string) => void
+  onShippingCompanyChange?: (slug: string) => void
 }
 
 const fieldBase =
@@ -56,7 +58,7 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
   )
 }
 
-export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippingMethods: propShippingMethods, onDeliveryTypeChange, onPhoneChange }: Props) {
+export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippingMethods: propShippingMethods, onDeliveryTypeChange, onPhoneChange, onGovernorateChange, onShippingCompanyChange }: Props) {
   const [shippingMethods, setShippingMethods] = useState<any[]>(propShippingMethods || [])
   const [centers, setCenters] = useState<any[]>([])
   const [loadingCenters, setLoadingCenters] = useState(false)
@@ -127,16 +129,20 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
           setCenters(data.centers || [])
         })
         .finally(() => setLoadingCenters(false))
+      
+      if (onGovernorateChange) onGovernorateChange(governorate)
     } else {
       setCenters([])
       setValue('center', '')
+      if (onGovernorateChange) onGovernorateChange('')
     }
-  }, [governorate, deliveryType, setValue])
+  }, [governorate, deliveryType, setValue, onGovernorateChange])
 
   // Reset shipping company when center changes
   useEffect(() => {
     setValue('shipping_company', '')
-  }, [centerId, setValue])
+    if (onShippingCompanyChange) onShippingCompanyChange('')
+  }, [centerId, setValue, onShippingCompanyChange])
 
   // Get available shipping companies for selected center
   const availableCompanies = useMemo(() => {
@@ -421,6 +427,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                     selected={shippingCompany ?? ''}
                     onChange={(slug) => {
                       setValue('shipping_company', slug, { shouldValidate: true })
+                      if (onShippingCompanyChange) onShippingCompanyChange(slug)
                     }}
                     error={errors.shipping_company?.message}
                   />

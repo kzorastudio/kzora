@@ -133,8 +133,15 @@ export default function CategoryProductsClient({ products }: Props) {
   const { filtered, filterUnavailableMap } = useMemo(() => {
     let result = [...products]
 
-    if (search) result = result.filter(p => p.name.includes(search))
-    if (selectedTags.length > 0) result = result.filter(p => p.tags.some(t => selectedTags.includes(t)))
+    if (search) {
+      const s = search.toLowerCase().trim()
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(s) || 
+        (p.description || '').toLowerCase().includes(s) ||
+        (p.category?.name_ar || '').toLowerCase().includes(s)
+      )
+    }
+    if (selectedTags.length > 0) result = result.filter(p => (p.tags || []).some(t => selectedTags.includes(t)))
 
     // Size filter: include products that have the size listed, but mark as unavailable
     // if no variant has stock for that size

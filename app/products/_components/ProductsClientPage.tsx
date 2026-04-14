@@ -104,8 +104,8 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
   const { currency } = useCurrencyStore()
 
   // Filter state
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialParams.category ? initialParams.category.split(',') : [])
-  const [selectedTags,      setSelectedTags]      = useState<string[]>(initialParams.tag ? initialParams.tag.split(',') : [])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialParams.category ? initialParams.category.split(',').filter(Boolean) : [])
+  const [selectedTags,      setSelectedTags]      = useState<string[]>(initialParams.tag ? initialParams.tag.split(',').filter(Boolean) : [])
   const [sort,             setSort]             = useState(initialParams.sort ?? 'newest')
   const [search,           setSearch]           = useState(initialParams.search ?? '')
   const [searchInput,      setSearchInput]      = useState(initialParams.search ?? '')
@@ -364,7 +364,17 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => { setSelectedCategories([cat.slug]); setOnSale(false); setSelectedTags([]); setPage(1) }}
+                  onClick={() => { 
+                    const isCurrentlySelected = selectedCategories.length === 1 && selectedCategories[0] === cat.slug
+                    if (isCurrentlySelected) {
+                      setSelectedCategories([]) 
+                    } else {
+                      setSelectedCategories([cat.slug])
+                    }
+                    setOnSale(false)
+                    setSelectedTags([])
+                    setPage(1) 
+                  }}
                   className={cn(
                     'flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-arabic font-bold transition-all duration-300 shrink-0 whitespace-nowrap',
                     isActive

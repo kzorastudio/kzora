@@ -43,25 +43,28 @@ export async function GET(request: NextRequest) {
       )
       .eq('is_published', true)
 
-    // Category filter via slug
+    // Category filter via slug(s)
     if (category) {
-      const { data: cat } = await supabaseAdmin
+      const slugs = category.split(',')
+      const { data: cats } = await supabaseAdmin
         .from('categories')
         .select('id')
-        .eq('slug', category)
-        .single()
+        .in('slug', slugs)
 
-      if (cat) {
-        query = query.eq('category_id', cat.id)
+      if (cats && cats.length > 0) {
+        query = query.in('category_id', cats.map(c => c.id))
+      } else {
+        query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
       }
     }
 
-    // Tag filter — join on product_tags
+    // Tag filter — supports multiple tags
     if (tag) {
+      const tags = (tag as string).split(',').filter(Boolean)
       const { data: taggedIds } = await supabaseAdmin
         .from('product_tags')
         .select('product_id')
-        .eq('tag', tag)
+        .in('tag', tags)
 
       const ids = (taggedIds || []).map((r: { product_id: string }) => r.product_id)
       query = query.in('id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000'])
@@ -177,9 +180,20 @@ export async function GET(request: NextRequest) {
     if (minPrice) query = query.gte('price_syp', parseInt(minPrice, 10))
     if (maxPrice) query = query.lte('price_syp', parseInt(maxPrice, 10))
 
-    // Search
+    // Search in name, description, and category name
     if (search) {
-      query = query.ilike('name', `%${search}%`)
+      const { data: catMatchIds } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .ilike('name_ar', `%${search}%`)
+      
+      const catIds = (catMatchIds || []).map(c => c.id)
+      
+      if (catIds.length > 0) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,category_id.in.(${catIds.join(',')})`)
+      } else {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+      }
     }
 
     // Sort
