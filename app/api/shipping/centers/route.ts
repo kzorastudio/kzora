@@ -7,6 +7,17 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const governorate = searchParams.get('governorate')
+    const type = searchParams.get('type')
+
+    if (type === 'governorates') {
+      const { data, error } = await supabaseAdmin
+        .from('shipping_centers')
+        .select('governorate')
+      
+      if (error) throw error
+      const uniqueGovs = Array.from(new Set((data || []).map(d => d.governorate))).sort()
+      return NextResponse.json({ governorates: uniqueGovs })
+    }
 
     let query = supabaseAdmin
       .from('shipping_centers')

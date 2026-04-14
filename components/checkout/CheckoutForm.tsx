@@ -30,22 +30,7 @@ const labelBase = 'block text-sm font-arabic font-medium text-[#1A1A1A] mb-1.5'
 const errorBase = 'mt-1.5 text-xs font-arabic text-[#BA1A1A]'
 
 // Syrian governorates (excluding Aleppo city - delivery only)
-const SHIPPING_GOVERNORATES = [
-  'ريف حلب',
-  'دمشق',
-  'ريف دمشق',
-  'حمص',
-  'حماة',
-  'اللاذقية',
-  'طرطوس',
-  'إدلب',
-  'دير الزور',
-  'الرقة',
-  'الحسكة',
-  'القنيطرة',
-  'السويداء',
-  'درعا',
-]
+// Dynamic governorates will be fetched from API
 
 function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
@@ -61,7 +46,9 @@ function SectionHeading({ icon: Icon, title }: { icon: React.ElementType; title:
 export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippingMethods: propShippingMethods, onDeliveryTypeChange, onPhoneChange, onGovernorateChange, onShippingCompanyChange }: Props) {
   const [shippingMethods, setShippingMethods] = useState<any[]>(propShippingMethods || [])
   const [centers, setCenters] = useState<any[]>([])
+  const [dynamicGovernorates, setDynamicGovernorates] = useState<string[]>([])
   const [loadingCenters, setLoadingCenters] = useState(false)
+  const [loadingGovs, setLoadingGovs] = useState(false)
 
   const {
     register,
@@ -93,6 +80,19 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
   const shippingCompany = watch('shipping_company')
   const paymentMethod  = watch('payment_method')
 
+  // Fetch dynamic governorates on mount
+  useEffect(() => {
+    if (deliveryType === 'shipping') {
+      setLoadingGovs(true)
+      fetch('/api/shipping/centers?type=governorates')
+        .then(res => res.json())
+        .then(data => {
+          setDynamicGovernorates(data.governorates || [])
+        })
+        .finally(() => setLoadingGovs(false))
+    }
+  }, [deliveryType])
+
   // Notify parent on delivery type change
   useEffect(() => {
     if (onDeliveryTypeChange) {
@@ -102,7 +102,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
     if (deliveryType === 'delivery') {
       setValue('governorate', '')
       setValue('center', '')
-      setValue('shipping_company', null)
+      setValue('shipping_company', '')
       setCenters([])
     } else {
       setValue('address', '')
@@ -148,14 +148,10 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
   const availableCompanies = useMemo(() => {
     if (!centerId || !governorate) return []
     const selectedCenter = centers.find(c => c.id === centerId)
-    if (!selectedCenter?.supported_companies || selectedCenter.supported_companies.length === 0) return []
-
+    if (!selectedCenter?.supported_companies) return []
     const supportedSlugs: string[] = selectedCenter.supported_companies
 
-    return shippingMethods.filter(m =>
-      supportedSlugs.includes(m.slug) &&
-      m.governorates?.some((g: any) => g.name === governorate)
-    )
+    return shippingMethods.filter(m => supportedSlugs.includes(m.slug))
   }, [centerId, centers, governorate, shippingMethods])
 
   const handleFormSubmit = handleSubmit(async (data) => {
@@ -372,8 +368,8 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                   )}
                   {...register('governorate')}
                 >
-                  <option value="">اختر المحافظة...</option>
-                  {SHIPPING_GOVERNORATES.map(gov => (
+                  <option value="">{loadingGovs ? 'جارٍ التحميل...' : 'اختر المحافظة...'}</option>
+                  {dynamicGovernorates.map(gov => (
                     <option key={gov} value={gov}>{gov}</option>
                   ))}
                 </select>
