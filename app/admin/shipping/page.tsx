@@ -286,7 +286,7 @@ export default function AdminShippingPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Truck size={22} className="text-primary" />
-          <h1 className="font-arabic text-xl font-bold text-on-surface">شركات الشحن والمناطق</h1>
+          <h1 className="font-arabic text-xl font-bold text-on-surface">شركات الشحن</h1>
         </div>
         <button
           onClick={() => setShowNew(!showNew)}

@@ -13,6 +13,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, skipped: 'bot' })
     }
 
+    // Cooldown check: Don't record same session+path in last 60 seconds
+    const minuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
+    const { data: recent } = await supabaseAdmin
+      .from('site_visits')
+      .select('id')
+      .eq('session_id', sessionId)
+      .eq('page_path', path)
+      .gte('visited_at', minuteAgo)
+      .limit(1)
+
+    if (recent && recent.length > 0) {
+      return NextResponse.json({ success: true, skipped: 'cooldown' })
+    }
+
     // Simplified visit tracking
     const { error } = await supabaseAdmin
       .from('site_visits')

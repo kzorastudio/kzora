@@ -167,9 +167,9 @@ export default async function AdminDashboardPage() {
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last24h.unique}</span>
-                  <span className="text-xs font-arabic font-bold text-secondary">زائر فريد (شخص)</span>
+                  <span className="text-xs font-arabic font-bold text-secondary">عميل فريد (شخص)</span>
                 </div>
-                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الزيارات: {stats.visitorStats.last24h.total}</span>
+                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي فتح الصفحات (Hits): {stats.visitorStats.last24h.total}</span>
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
@@ -187,9 +187,9 @@ export default async function AdminDashboardPage() {
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last7d.unique}</span>
-                  <span className="text-xs font-arabic font-bold text-secondary">زائر فريد (شخص)</span>
+                  <span className="text-xs font-arabic font-bold text-secondary">عميل فريد (شخص)</span>
                 </div>
-                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الزيارات: {stats.visitorStats.last7d.total}</span>
+                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي فتح الصفحات (Hits): {stats.visitorStats.last7d.total}</span>
               </div>
             </div>
             <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
@@ -207,9 +207,9 @@ export default async function AdminDashboardPage() {
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last30d.unique}</span>
-                  <span className="text-xs font-arabic font-bold text-secondary">زائر فريد (شخص)</span>
+                  <span className="text-xs font-arabic font-bold text-secondary">عميل فريد (شخص)</span>
                 </div>
-                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الزيارات: {stats.visitorStats.last30d.total}</span>
+                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي فتح الصفحات (Hits): {stats.visitorStats.last30d.total}</span>
               </div>
             </div>
           </div>
