@@ -50,7 +50,9 @@ export default function CheckoutPage() {
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/loyalty?phone=${encodeURIComponent(phone)}`)
+        const res = await fetch(`/api/loyalty?phone=${encodeURIComponent(phone)}&t=${Date.now()}`, {
+          cache: 'no-store'
+        })
         if (res.ok) {
           const data = await res.json()
           setLoyaltyInfo({

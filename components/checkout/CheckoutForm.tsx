@@ -79,6 +79,13 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
   const centerId       = watch('center')
   const shippingCompany = watch('shipping_company')
   const paymentMethod  = watch('payment_method')
+  const phoneValue     = watch('phone')
+
+  useEffect(() => {
+    if (onPhoneChange && phoneValue !== undefined) {
+      onPhoneChange(phoneValue)
+    }
+  }, [phoneValue, onPhoneChange])
 
   // Fetch dynamic governorates on mount
   useEffect(() => {
@@ -302,10 +309,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                   placeholder="9xx xxx xxx"
                   className="flex-1 min-w-0 bg-transparent px-3 py-3 text-sm font-body text-[#1A1A1A] text-right focus:outline-none placeholder:text-[#9E9890]"
                   {...register('phone')}
-                  onBlur={(e) => {
-                    trigger('phone')
-                    if (onPhoneChange) onPhoneChange(e.target.value)
-                  }}
+                  onBlur={() => trigger('phone')}
                 />
               </div>
               <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E8F5E9]/60 border border-[#4CAF50]/20 rounded-lg w-fit">
