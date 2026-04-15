@@ -323,16 +323,17 @@ export async function POST(request: NextRequest) {
 
       const govFee = (shipMethod as any)?.shipping_governorates?.[0]
 
-      if (govFee) {
+      // RULE: 4+ items ALWAYS go to WhatsApp regardless of city/gov fees
+      if (totalItemsCount >= 4) {
+        shipping_fee_syp = 0
+        shipping_fee_usd = 0
+        shipping_fee_determined = true
+      } else if (govFee) {
         shipping_fee_syp = govFee.fee_syp ?? 0
         shipping_fee_usd = govFee.fee_usd ?? 0
       } else {
         // Fallback: piece-count-based from settings
-        if (totalItemsCount >= 4) {
-          shipping_fee_syp = 0
-          shipping_fee_usd = 0
-          shipping_fee_determined = true
-        } else if (totalItemsCount === 1) {
+        if (totalItemsCount === 1) {
           shipping_fee_syp = settings?.shipping_fee_1_piece_syp ?? 0
           shipping_fee_usd = settings?.shipping_fee_1_piece_usd ?? 0
         } else if (totalItemsCount === 2) {
