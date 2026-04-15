@@ -84,8 +84,10 @@ export async function POST(request: NextRequest) {
     const {
       items, customer, delivery_type, shipping_company,
       payment_method, payment_transaction_id,
-      shipping_fee_determined, coupon_code, currency_used, notes,
+      coupon_code, currency_used, notes,
     } = body
+
+    let shipping_fee_determined = body.shipping_fee_determined || false
 
     // ── Basic validation ───────────────────────────────────────────────────────
     if (!items || items.length === 0) {
