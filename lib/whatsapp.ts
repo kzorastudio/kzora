@@ -39,35 +39,35 @@ interface OrderForWhatsApp {
 const DIVIDER = '--------------------'
 const SUBDIVIDER = '- - - - - - - - - -'
 
-// Define emoji constants using Unicode escape sequences to ensure correct encoding across all platforms
+// Define emoji constants using literal strings for maximum compatibility
 const EMOJI = {
-  GIFT: '\uD83C\uDF81',
-  ID: '\uD83C\uDD94',
-  CALENDAR: '\uD83D\uDCC5',
-  USER: '\uD83D\uDC64',
-  GREET: '\uD83D\uDE4B',
-  PHONE: '\uD83D\uDCDE',
-  CITY: '\uD83C\uDFD9',
-  HOME: '\uD83C\uDFE0',
-  MAP_PIN: '\uD83D\uDCCD',
-  TRUCK: '\uD83D\uDE9A',
-  ROCKET: '\uD83D\uDE80',
-  OFFICE: '\uD83C\uDFE2',
-  SHOPPING: '\uD83D\uDECD',
-  PALETTE: '\uD83C\uDFA8',
-  RULER: '\uD83D\uDCCF',
-  NUMBERS: '\uD83D\uDD22',
-  CASH: '\uD83D\uDCB5',
-  TAG: '\uD83C\uDFF7',
-  MONEY_BAG: '\uD83D\uDCB0',
-  STAR: '\u2B50',
-  BULB: '\uD83D\uDCA1',
-  CELEBRATION: '\uD83C\uDF89',
-  CARD: '\uD83D\uDCB3',
-  MOBILE: '\uD83D\uDCF1',
-  NOTE: '\uD83D\uDCDD',
-  PRAY: '\uD83D\uDE4F',
-  CHECK: '\u2705',
+  GIFT: '🎁',
+  ID: '🆔',
+  CALENDAR: '📅',
+  USER: '👤',
+  GREET: '👋',
+  PHONE: '📞',
+  CITY: '🏙️',
+  HOME: '🏠',
+  MAP_PIN: '📍',
+  TRUCK: '🚚',
+  ROCKET: '🚀',
+  OFFICE: '🏢',
+  SHOPPING: '🛍️',
+  PALETTE: '🎨',
+  RULER: '📏',
+  NUMBERS: '🔢',
+  CASH: '💵',
+  TAG: '🏷️',
+  MONEY_BAG: '💰',
+  STAR: '⭐',
+  BULB: '💡',
+  CELEBRATION: '🎉',
+  CARD: '💳',
+  MOBILE: '📱',
+  NOTE: '📝',
+  PRAY: '🙏',
+  CHECK: '✅',
 }
 
 export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
@@ -185,7 +185,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     lines.push(`• رصيد نقاطك حالياً: ${currentPoints} نقطة`)
 
     if (remaining > 0) {
-      lines.push(`${EMOJI.BULB} بقي لك ${remaining} طلبات مؤكدة للحصول على خصم 1000 ل.س!`)
+      lines.push(`${EMOJI.BULB} بقي لك ${remaining} طلبات مؤكدة للحصول على خصم مكافأة!`)
     } else {
       lines.push(`${EMOJI.CELEBRATION} مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض!`)
     }
@@ -203,9 +203,10 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     lines.push(`${EMOJI.NUMBERS} *رقم العملية:* ${order.paymentTransactionId}`)
   }
 
-  if (order.notes && order.notes.trim().length > 0) {
+  // Task: Explicitly check and add notes
+  if (order.notes && order.notes.trim()) {
     lines.push(``)
-    lines.push(`${EMOJI.NOTE} *ملاحظات العميل:*`)
+    lines.push(`${EMOJI.NOTE} *ملاحظات الزبون:*`)
     lines.push(order.notes.trim())
   }
 

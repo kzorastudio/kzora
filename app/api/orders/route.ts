@@ -326,16 +326,22 @@ export async function POST(request: NextRequest) {
         shipping_fee_usd = govFee.fee_usd ?? 0
       } else {
         // Fallback: piece-count-based from settings
-        if (totalItemsCount === 1) {
+        if (totalItemsCount >= 4) {
+          shipping_fee_syp = 0
+          shipping_fee_usd = 0
+          shipping_fee_determined = true
+        } else if (totalItemsCount === 1) {
           shipping_fee_syp = settings?.shipping_fee_1_piece_syp ?? 0
           shipping_fee_usd = settings?.shipping_fee_1_piece_usd ?? 0
         } else if (totalItemsCount === 2) {
           shipping_fee_syp = settings?.shipping_fee_2_pieces_syp ?? 0
           shipping_fee_usd = settings?.shipping_fee_2_pieces_usd ?? 0
         } else {
-          // 3 or more pieces
+          // Exactly 3 pieces
           shipping_fee_syp = settings?.shipping_fee_3_plus_pieces_syp ?? 0
           shipping_fee_usd = settings?.shipping_fee_3_plus_pieces_usd ?? 0
+          // If no fee set for 3 pieces, mark as determined
+          if (shipping_fee_syp === 0) shipping_fee_determined = true
         }
       }
     }

@@ -122,28 +122,27 @@ export default function CheckoutPage() {
       // Shipping to Governorates is piece-based
       const method = shippingMethods.find((m: any) => m.slug === selectedShippingCompany)
       const govFee = method?.governorates?.find((g: any) => g.name === selectedGovernorate)
-
       if (govFee) {
         shippingFeeSyp = govFee.fee_syp
         shippingFeeUsd = govFee.fee_usd
       } else {
         // Fallback to pieces-based shipping logic
-        if (totalItemsCount === 1) {
+        if (totalItemsCount >= 4) {
+          shippingFeeSyp = 0
+          shippingFeeUsd = 0
+          shippingFeeDetermined = true
+        } else if (totalItemsCount === 1) {
           shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
           shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
         } else if (totalItemsCount === 2) {
           shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
         } else {
-          // 3 or more pieces
+          // Exactly 3 pieces
           shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+          if (shippingFeeSyp === 0) shippingFeeDetermined = true
         }
-      }
-
-      // Trigger "Determined via WhatsApp" for Shipping (Governorates) if 3+ pieces and fee is 0
-      if (totalItemsCount >= 3 && shippingFeeSyp === 0) {
-        shippingFeeDetermined = true
       }
     }
   }

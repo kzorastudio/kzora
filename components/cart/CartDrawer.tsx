@@ -191,14 +191,39 @@ export function CartDrawer({ className }: CartDrawerProps) {
                   <div className="h-px bg-surface-container-high" />
 
                   {/* Summary */}
-                  <CartSummary
-                    subtotalSyp={subtotalSyp()}
-                    subtotalUsd={subtotalUsd()}
-                    discountSyp={discountSyp}
-                    discountUsd={discountUsd}
-                    couponCode={couponCode}
-                    currency={currency}
-                  />
+                  {(() => {
+                    let multiItemDiscountSyp = 0
+                    let multiItemDiscountUsd = 0
+                    const totalItems = itemCount()
+
+                    if (settings?.discount_multi_items_enabled) {
+                      if (totalItems === 2) {
+                        multiItemDiscountSyp = settings.discount_2_items_syp || 0
+                      } else if (totalItems >= 3) {
+                        multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
+                      }
+
+                      if (multiItemDiscountSyp > 0) {
+                        const syp = subtotalSyp()
+                        const usd = subtotalUsd()
+                        const ratio = syp > 0 ? usd / syp : 0
+                        multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
+                      }
+                    }
+
+                    return (
+                      <CartSummary
+                        subtotalSyp={subtotalSyp()}
+                        subtotalUsd={subtotalUsd()}
+                        discountSyp={discountSyp}
+                        discountUsd={discountUsd}
+                        multiItemDiscountSyp={multiItemDiscountSyp}
+                        multiItemDiscountUsd={multiItemDiscountUsd}
+                        couponCode={couponCode}
+                        currency={currency}
+                      />
+                    )
+                  })()}
 
                   {/* Checkout CTA */}
                   <button
