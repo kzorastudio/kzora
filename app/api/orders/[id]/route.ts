@@ -145,36 +145,36 @@ export async function PUT(
       }
 
       // Loyalty Points Logic
-      if (status === 'delivered' || status === 'cancelled') {
-        try {
-          const pointStatus = status === 'delivered' ? 'confirmed' : 'cancelled'
-          
-          // Update order point
-          await supabaseAdmin
-            .from('loyalty_points')
-            .update({ status: pointStatus })
-            .eq('order_id', id)
+      try {
+        let pointStatus = 'pending'
+        if (status === 'delivered') pointStatus = 'confirmed'
+        else if (status === 'cancelled') pointStatus = 'cancelled'
+        
+        // Update order point
+        await supabaseAdmin
+          .from('loyalty_points')
+          .update({ status: pointStatus })
+          .eq('order_id', id)
 
-          // Revert points if cancelled and discount was used
-          if (status === 'cancelled' && currentOrder.loyalty_discount_syp > 0) {
-            const { data: pointsToRevert } = await supabaseAdmin
+        // Revert points if cancelled and discount was used
+        if (status === 'cancelled' && currentOrder.loyalty_discount_syp > 0) {
+          const { data: pointsToRevert } = await supabaseAdmin
+            .from('loyalty_points')
+            .select('id')
+            .eq('customer_phone', normalizePhone(currentOrder.customer_phone))
+            .eq('cycle_used', true)
+            .order('created_at', { ascending: false })
+            .limit(3)
+          
+          if (pointsToRevert && pointsToRevert.length > 0) {
+            await supabaseAdmin
               .from('loyalty_points')
-              .select('id')
-              .eq('customer_phone', normalizePhone(currentOrder.customer_phone))
-              .eq('cycle_used', true)
-              .order('created_at', { ascending: false })
-              .limit(3)
-            
-            if (pointsToRevert && pointsToRevert.length > 0) {
-              await supabaseAdmin
-                .from('loyalty_points')
-                .update({ cycle_used: false })
-                .in('id', pointsToRevert.map(p => p.id))
-            }
+              .update({ cycle_used: false })
+              .in('id', pointsToRevert.map(p => p.id))
           }
-        } catch (e) {
-          console.error('[ORDER_UPDATE_API] Loyalty logic soft fail:', e)
         }
+      } catch (e) {
+        console.error('[ORDER_UPDATE_API] Loyalty logic soft fail:', e)
       }
     }
 
