@@ -17,8 +17,6 @@ interface Props {
   couponCode?: string
   currency: Currency
   isSubmitting?: boolean
-  multiProductDiscountSyp?: number
-  multiProductDiscountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
   shippingFeeDetermined?: boolean
@@ -36,8 +34,6 @@ export default function OrderSummaryPanel({
   couponCode,
   currency,
   isSubmitting = false,
-  multiProductDiscountSyp = 0,
-  multiProductDiscountUsd = 0,
   shippingFeeSyp = 0,
   shippingFeeUsd = 0,
   shippingFeeDetermined = false,
@@ -48,10 +44,9 @@ export default function OrderSummaryPanel({
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
   const discount = currency === 'SYP' ? (discountSyp ?? 0) : (discountUsd ?? 0)
-  const multiDiscount = currency === 'SYP' ? (multiProductDiscountSyp ?? 0) : (multiProductDiscountUsd ?? 0)
   const loyaltyDiscount = currency === 'SYP' ? (loyaltyDiscountSyp ?? 0) : (loyaltyDiscountUsd ?? 0)
   const shippingFee = currency === 'SYP' ? (shippingFeeSyp ?? 0) : (shippingFeeUsd ?? 0)
-  const total = subtotal - discount - multiDiscount - loyaltyDiscount + shippingFee
+  const total = subtotal - discount - loyaltyDiscount + shippingFee
 
   const hasDiscount = discount > 0
 
@@ -196,14 +191,6 @@ export default function OrderSummaryPanel({
               </span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
                 {formatPrice(discount, currency)}
-              </span>
-            </div>
-          )}
-          {multiDiscount > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-arabic text-[#6B6560]">خصم تعدد المنتجات</span>
-              <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
-                {formatPrice(multiDiscount, currency)}
               </span>
             </div>
           )}

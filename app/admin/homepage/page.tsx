@@ -531,54 +531,6 @@ export default function HomepagePage() {
               )}
             </section>
 
-            {/* إعدادات الخصم المتعدد */}
-            <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-base font-arabic font-bold text-on-surface flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-[#B8860B] rounded-full" />
-                  خصم تعدد المنتجات (Multi-Product Discount)
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => { setSettings({ ...settings, discount_multi_items_enabled: !settings.discount_multi_items_enabled }); setDirty(true); }}
-                  className={cn(
-                    'relative h-6 w-11 rounded-full transition-colors',
-                    settings.discount_multi_items_enabled ? 'bg-[#B8860B]' : 'bg-surface-container-high'
-                  )}
-                >
-                  <span className={cn(
-                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
-                    settings.discount_multi_items_enabled ? 'translate-x-5' : 'translate-x-0.5'
-                  )} />
-                </button>
-              </div>
-
-              {settings.discount_multi_items_enabled && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="space-y-2">
-                    <label className="text-sm font-arabic font-bold text-secondary">خصم منتجين (ل.س)</label>
-                    <input
-                      type="number"
-                      value={settings.discount_2_items_syp || 0}
-                      onChange={(e) => { setSettings({ ...settings, discount_2_items_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#B8860B] outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-arabic font-bold text-secondary">خصم 3 منتجات فأكثر (ل.س)</label>
-                    <input
-                      type="number"
-                      value={settings.discount_3_items_plus_syp || 0}
-                      onChange={(e) => { setSettings({ ...settings, discount_3_items_plus_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                      className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-[#B8860B] outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              )}
-              {!settings.discount_multi_items_enabled && (
-                <p className="text-xs font-arabic text-secondary/60">خصم تعدد المنتجات معطل حالياً.</p>
-              )}
-            </section>
 
             {/* أسعار التوصيل والشحن */}
             <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
@@ -590,27 +542,17 @@ export default function HomepagePage() {
               {/* Delivery Fee per pieces */}
               <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
                 <div className="space-y-4">
-                  {/* Flat Delivery Fee */}
+                  {/* 1 piece Delivery */}
                   <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
-                    <p className="text-xs font-arabic font-bold text-secondary mb-3">أجرة التوصيل الثابتة (لكافة الطلبات داخل حلب)</p>
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعة واحدة (1) — داخل حلب</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[11px] font-arabic text-secondary">ل.س</label>
                         <input
                           type="number"
                           min={0}
-                          value={settings.delivery_fee_syp || 0}
-                          onChange={(e) => { 
-                            const val = parseInt(e.target.value) || 0;
-                            setSettings({ 
-                              ...settings, 
-                              delivery_fee_syp: val,
-                              delivery_fee_1_piece_syp: val,
-                              delivery_fee_2_pieces_syp: val,
-                              delivery_fee_3_plus_pieces_syp: val
-                            }); 
-                            setDirty(true); 
-                          }}
+                          value={settings.delivery_fee_1_piece_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
                           className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
                         />
                       </div>
@@ -620,28 +562,68 @@ export default function HomepagePage() {
                           type="number"
                           min={0}
                           step={0.01}
-                          value={settings.delivery_fee_usd || 0}
-                          onChange={(e) => { 
-                            const val = parseFloat(e.target.value) || 0;
-                            setSettings({ 
-                              ...settings, 
-                              delivery_fee_usd: val,
-                              delivery_fee_1_piece_usd: val,
-                              delivery_fee_2_pieces_usd: val,
-                              delivery_fee_3_plus_pieces_usd: val
-                            }); 
-                            setDirty(true); 
-                          }}
+                          value={settings.delivery_fee_1_piece_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_1_piece_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
                           className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
                         />
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="p-4 rounded-2xl bg-[#E8F5E9] border border-[#A5D6A7]">
-                    <p className="text-[11px] font-arabic text-[#1B5E20] leading-relaxed">
-                      يتم احتساب هذه الأجرة بشكل ثابت لجميع الطلبات داخل مدينة حلب، بغض النظر عن عدد القطع في السلة.
-                    </p>
+
+                  {/* 2 pieces Delivery */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود قطعتين (2) — داخل حلب</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_2_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_2_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_2_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3+ pieces Delivery */}
+                  <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
+                    <p className="text-xs font-arabic font-bold text-secondary mb-3">عند وجود 3 قطع فأكثر — داخل حلب</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">ل.س</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={settings.delivery_fee_3_plus_pieces_syp || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-arabic text-secondary">$</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={settings.delivery_fee_3_plus_pieces_usd || 0}
+                          onChange={(e) => { setSettings({ ...settings, delivery_fee_3_plus_pieces_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                          className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#2E7D32] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

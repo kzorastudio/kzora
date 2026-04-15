@@ -175,25 +175,8 @@ export default function ProductActions({ product, settings, activeColorName, onC
   const displayPrice = currency === 'SYP' ? currentPriceSyp : currentPriceUsd
   const originalPrice = currency === 'SYP' ? product.price_syp : product.price_usd
 
-  // Multi-product discount calculation (Live)
-  const multiDiscSyp = useMemo(() => {
-    if (!settings?.discount_multi_items_enabled) return 0
-    if (quantity >= 3) return settings.discount_3_items_plus_syp
-    if (quantity >= 2) return settings.discount_2_items_syp
-    return 0
-  }, [quantity, settings])
-
-  const multiDiscUsd = useMemo(() => {
-    if (multiDiscSyp === 0) return 0
-    const ratio = product.price_syp > 0 ? product.price_usd / product.price_syp : 0
-    return parseFloat((multiDiscSyp * ratio).toFixed(2))
-  }, [multiDiscSyp, product.price_syp, product.price_usd])
-
-  const currentMultiDisc = currency === 'SYP' ? multiDiscSyp : multiDiscUsd
-  
-  // Note: We removed the currentFee from here to avoid user confusion.
-  // The fee is added at checkout globally.
-  const totalPrice = (displayPrice * quantity) - currentMultiDisc
+  // Note: We removed the multi-product discount logic as requested.
+  const totalPrice = (displayPrice * quantity)
 
   const handleAddToCart = useCallback(() => {
     if (outOfStock) return
@@ -226,7 +209,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
       discount_price_syp: product.discount_price_syp ?? null,
       discount_price_usd: product.discount_price_usd ?? null,
       mold_type:          product.mold_type,
-      multi_discount_syp: multiDiscSyp,
+      multi_discount_syp: 0,
       max_stock:          currentAvailableStock,
     }
     addItem(item)
@@ -257,27 +240,32 @@ export default function ProductActions({ product, settings, activeColorName, onC
               {formatPrice(originalPrice, currency)}
             </span>
           )}
-          {multiDiscSyp > 0 && quantity > 1 && (
-             <span className="text-[#B8860B] font-arabic text-sm font-bold flex items-center gap-1.5 animate-pulse">
-               <span className="w-2 h-2 rounded-full bg-[#B8860B]" />
-               عرض خاص: خصم إضافي {formatPrice(currentMultiDisc, currency)}
-             </span>
-          )}
 
-          {/* 🚚 Delivery/Shipping Fee Notice */}
           {settings && (
             <div className="flex flex-col gap-0.5 mt-1 border-t border-black/5 pt-2">
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
                 <span className="opacity-80">🚀 توصيل عادي (حلب):</span>
                 <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {formatPrice(currency === 'SYP' ? (settings.delivery_fee_syp || 0) : (settings.delivery_fee_usd || 0), currency)}
+                  {formatPrice(
+                    currency === 'SYP' 
+                      ? (quantity === 1 ? (settings.delivery_fee_1_piece_syp || settings.delivery_fee_syp) : quantity === 2 ? settings.delivery_fee_2_pieces_syp : settings.delivery_fee_3_plus_pieces_syp)
+                      : (quantity === 1 ? (settings.delivery_fee_1_piece_usd || settings.delivery_fee_usd) : quantity === 2 ? settings.delivery_fee_2_pieces_usd : settings.delivery_fee_3_plus_pieces_usd),
+                    currency
+                  )}
                 </span>
+                <span className="text-[10px] opacity-60">({quantity} قطع)</span>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
                 <span className="opacity-80">📦 شحن محافظات:</span>
                 <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {formatPrice(currency === 'SYP' ? (settings.shipping_fee_1_piece_syp || 0) : (settings.shipping_fee_1_piece_usd || 0), currency)}
+                  {formatPrice(
+                    currency === 'SYP'
+                      ? (quantity === 1 ? settings.shipping_fee_1_piece_syp : quantity === 2 ? settings.shipping_fee_2_pieces_syp : settings.shipping_fee_3_plus_pieces_syp)
+                      : (quantity === 1 ? settings.shipping_fee_1_piece_usd : quantity === 2 ? settings.shipping_fee_2_pieces_usd : settings.shipping_fee_3_plus_pieces_usd),
+                    currency
+                  )}
                 </span>
+                <span className="text-[10px] opacity-60">({quantity} قطع)</span>
               </div>
             </div>
           )}

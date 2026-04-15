@@ -103,33 +103,27 @@ export default function CheckoutPage() {
   const sub_syp = subtotalSyp()
   const sub_usd = subtotalUsd()
 
-  // Multi-product discount calculation
-  let multiProductDiscountSyp = 0
-  let multiProductDiscountUsd = 0
+
   const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0)
-
-  if (settings?.discount_multi_items_enabled) {
-    if (totalItemsCount >= 3) {
-      multiProductDiscountSyp = settings.discount_3_items_plus_syp
-    } else if (totalItemsCount >= 2) {
-      multiProductDiscountSyp = settings.discount_2_items_syp
-    }
-
-    if (multiProductDiscountSyp > 0) {
-      const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
-      multiProductDiscountUsd = parseFloat((multiProductDiscountSyp * ratio).toFixed(2))
-    }
-  }
 
   // Shipping fee calculation for both display and submission
   let shippingFeeSyp = 0
   let shippingFeeUsd = 0
   let shippingFeeDetermined = false
 
+  // Shipping/Delivery fee calculation
   if (settings) {
     if (deliveryType === 'delivery') {
-      shippingFeeSyp = settings.delivery_fee_syp || settings.delivery_fee_1_piece_syp || 0
-      shippingFeeUsd = settings.delivery_fee_usd || settings.delivery_fee_1_piece_usd || 0
+      if (totalItemsCount === 1) {
+        shippingFeeSyp = settings.delivery_fee_1_piece_syp || settings.delivery_fee_syp || 0
+        shippingFeeUsd = settings.delivery_fee_1_piece_usd || settings.delivery_fee_usd || 0
+      } else if (totalItemsCount === 2) {
+        shippingFeeSyp = settings.delivery_fee_2_pieces_syp || 0
+        shippingFeeUsd = settings.delivery_fee_2_pieces_usd || 0
+      } else {
+        shippingFeeSyp = settings.delivery_fee_3_plus_pieces_syp || 0
+        shippingFeeUsd = settings.delivery_fee_3_plus_pieces_usd || 0
+      }
       shippingFeeDetermined = false
     } else {
       // Try to find fee from selected shipping company
@@ -149,10 +143,13 @@ export default function CheckoutPage() {
           shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
         } else {
-          // 3+ pieces → will be negotiated via WhatsApp
-          shippingFeeSyp = 0
-          shippingFeeUsd = 0
-          shippingFeeDetermined = true
+          shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
+          shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
+
+          // If 3+ pieces doesn't have a fee in dashboard, we mark it as determined later
+          if (shippingFeeSyp === 0 && shippingFeeUsd === 0) {
+            shippingFeeDetermined = true
+          }
         }
       }
     }
@@ -247,8 +244,8 @@ export default function CheckoutPage() {
           shippingFeeDetermined,
           subtotalSyp:     sub_syp,
           subtotalUsd:     sub_usd,
-          totalSyp:        Math.max(0, sub_syp - discountSyp - multiProductDiscountSyp - loyaltyDiscountSyp + shippingFeeSyp),
-          totalUsd:        Math.max(0, parseFloat((sub_usd - discountUsd - multiProductDiscountUsd - loyaltyDiscountUsd + shippingFeeUsd).toFixed(2))),
+          totalSyp:        Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp + shippingFeeSyp),
+          totalUsd:        Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd + shippingFeeUsd).toFixed(2))),
           currency,
           paymentMethod:   formData.payment_method,
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
@@ -282,7 +279,7 @@ export default function CheckoutPage() {
     [
       items, couponCode, discountSyp, discountUsd, currency, clearCart, 
       router, sub_syp, sub_usd, shippingMethods, settings, deliveryType,
-      multiProductDiscountSyp, multiProductDiscountUsd, loyaltyDiscountSyp, loyaltyDiscountUsd, 
+      loyaltyDiscountSyp, loyaltyDiscountUsd, 
       shippingFeeSyp, shippingFeeUsd, shippingFeeDetermined
     ]
   )
@@ -377,8 +374,6 @@ export default function CheckoutPage() {
                   couponCode={couponCode}
                   currency={currency}
                   isSubmitting={isSubmitting}
-                  multiProductDiscountSyp={multiProductDiscountSyp}
-                  multiProductDiscountUsd={multiProductDiscountUsd}
                   shippingFeeSyp={shippingFeeSyp}
                   shippingFeeUsd={shippingFeeUsd}
                   shippingFeeDetermined={shippingFeeDetermined}

@@ -251,15 +251,6 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
     const settings = settingsRaw as any
 
-    // ── Step 5: Multi-product discount ────────────────────────────────────────
-    let multiProductDiscountSyp = 0
-    if (settings?.discount_multi_items_enabled) {
-      if (totalItemsCount >= 3) {
-        multiProductDiscountSyp = settings.discount_3_items_plus_syp ?? 0
-      } else if (totalItemsCount >= 2) {
-        multiProductDiscountSyp = settings.discount_2_items_syp ?? 0
-      }
-    }
 
     // ── Step 6: Coupon validation (NOT increment yet) ─────────────────────────
     let discountSyp = 0
@@ -315,8 +306,16 @@ export async function POST(request: NextRequest) {
       shipping_fee_syp = 0
       shipping_fee_usd = 0
     } else if (delivery_type === 'delivery') {
-      shipping_fee_syp = settings?.delivery_fee_syp ?? 0
-      shipping_fee_usd = settings?.delivery_fee_usd ?? 0
+      if (totalItemsCount === 1) {
+        shipping_fee_syp = settings?.delivery_fee_1_piece_syp || settings?.delivery_fee_syp || 0
+        shipping_fee_usd = settings?.delivery_fee_1_piece_usd || settings?.delivery_fee_usd || 0
+      } else if (totalItemsCount === 2) {
+        shipping_fee_syp = settings?.delivery_fee_2_pieces_syp || 0
+        shipping_fee_usd = settings?.delivery_fee_2_pieces_usd || 0
+      } else {
+        shipping_fee_syp = settings?.delivery_fee_3_plus_pieces_syp || 0
+        shipping_fee_usd = settings?.delivery_fee_3_plus_pieces_usd || 0
+      }
     } else if (delivery_type === 'shipping' && shipping_company) {
       // Try per-governorate fee
       const { data: shipMethod } = await supabaseAdmin
@@ -372,10 +371,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Step 9: Final totals ───────────────────────────────────────────────────
-    const finalDiscountSyp = discountSyp + multiProductDiscountSyp + loyaltyDiscountSyp
+    const finalDiscountSyp = discountSyp + loyaltyDiscountSyp
     const currentRatio     = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
     const finalDiscountUsd = parseFloat(
-      (discountUsd + (multiProductDiscountSyp + loyaltyDiscountSyp) * currentRatio).toFixed(2)
+      (discountUsd + loyaltyDiscountSyp * currentRatio).toFixed(2)
     )
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))

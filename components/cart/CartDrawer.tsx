@@ -191,36 +191,14 @@ export function CartDrawer({ className }: CartDrawerProps) {
                   <div className="h-px bg-surface-container-high" />
 
                   {/* Summary */}
-                  {(() => {
-                    let multiDiscSyp = 0
-                    let multiDiscUsd = 0
-                    const totalQty = itemCount()
-                    const subSyp   = subtotalSyp()
-                    const subUsd   = subtotalUsd()
-
-                    if (settings?.discount_multi_items_enabled) {
-                      if (totalQty >= 3) multiDiscSyp = settings.discount_3_items_plus_syp
-                      else if (totalQty >= 2) multiDiscSyp = settings.discount_2_items_syp
-
-                      if (multiDiscSyp > 0) {
-                        const ratio = subSyp > 0 ? subUsd / subSyp : 0
-                        multiDiscUsd = parseFloat((multiDiscSyp * ratio).toFixed(2))
-                      }
-                    }
-
-                    return (
-                      <CartSummary
-                        subtotalSyp={subSyp}
-                        subtotalUsd={subUsd}
-                        discountSyp={discountSyp}
-                        discountUsd={discountUsd}
-                        multiProductDiscountSyp={multiDiscSyp}
-                        multiProductDiscountUsd={multiDiscUsd}
-                        couponCode={couponCode}
-                        currency={currency}
-                      />
-                    )
-                  })()}
+                  <CartSummary
+                    subtotalSyp={subtotalSyp()}
+                    subtotalUsd={subtotalUsd()}
+                    discountSyp={discountSyp}
+                    discountUsd={discountUsd}
+                    couponCode={couponCode}
+                    currency={currency}
+                  />
 
                   {/* Checkout CTA */}
                   <button

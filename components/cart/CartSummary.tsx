@@ -9,8 +9,6 @@ interface CartSummaryProps {
   subtotalUsd: number
   discountSyp?: number
   discountUsd?: number
-  multiProductDiscountSyp?: number
-  multiProductDiscountUsd?: number
   couponCode?: string
   currency: Currency
   className?: string
@@ -21,19 +19,15 @@ export function CartSummary({
   subtotalUsd,
   discountSyp,
   discountUsd,
-  multiProductDiscountSyp = 0,
-  multiProductDiscountUsd = 0,
   couponCode,
   currency,
   className,
 }: CartSummaryProps) {
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
   const discount = currency === 'SYP' ? (discountSyp ?? 0) : (discountUsd ?? 0)
-  const multiDisc = currency === 'SYP' ? multiProductDiscountSyp : multiProductDiscountUsd
-  const total = Math.max(0, subtotal - discount - multiDisc)
+  const total = Math.max(0, subtotal - discount)
 
   const hasDiscount = discount > 0
-  const hasMultiDisc = multiDisc > 0
 
   return (
     <div dir="rtl" className={cn('space-y-0', className)}>
@@ -62,17 +56,6 @@ export function CartSummary({
         </div>
       )}
 
-      {/* Multi-product discount row */}
-      {hasMultiDisc && (
-        <div className="flex items-center justify-between py-2.5">
-          <span className="font-brand text-sm text-secondary">
-            خصم تعدد المنتجات
-          </span>
-          <span className="font-body text-sm tabular-nums text-[#BA1A1A]" dir="rtl">
-            {formatPrice(multiDisc, currency)}
-          </span>
-        </div>
-      )}
 
       {/* Divider */}
       <div className="h-px bg-surface-container-high my-1" />
