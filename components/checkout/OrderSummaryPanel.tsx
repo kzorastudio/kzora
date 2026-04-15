@@ -205,13 +205,16 @@ export default function OrderSummaryPanel({
           )}
 
           {shippingFeeDetermined ? (
-            <div className="flex flex-col gap-1 py-1 px-3 bg-[#FFF3E0] rounded-lg border border-[#FFB74D]/20">
+            <div className="flex flex-col gap-1 py-1.5 px-3 bg-[#E8F5E9] rounded-lg border border-[#2E7D32]/20 shadow-sm">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-arabic text-[#6B6560]">أجرة الشحن</span>
-                <span className="font-arabic text-[#E65100] font-bold text-[11px]">يتحدد لاحقاً مع البائع</span>
+                <span className="font-arabic text-[#1B5E20] font-bold text-[11px] flex items-center gap-1">
+                  <span>يتم تحديد السعر عبر الواتساب</span>
+                  <span className="text-base">💬</span>
+                </span>
               </div>
-              <p className="text-[10px] font-arabic text-[#E65100]/80 leading-tight">
-                سيتم التواصل معك عبر الواتساب لتحديد تكلفة الشحن حسب منطقتك.
+              <p className="text-[10px] font-arabic text-[#1B5E20]/80 leading-tight">
+                سيقوم فريقنا بالتواصل معك لتأكيد تكلفة التوصيل النهائية بعد مراجعة الطلب.
               </p>
             </div>
           ) : (

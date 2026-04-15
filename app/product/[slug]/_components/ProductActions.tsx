@@ -246,24 +246,18 @@ export default function ProductActions({ product, settings, activeColorName, onC
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
                 <span className="opacity-80">🚀 توصيل عادي (حلب):</span>
                 <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {formatPrice(
-                    currency === 'SYP' 
-                      ? (quantity === 1 ? (settings.delivery_fee_1_piece_syp || settings.delivery_fee_syp) : quantity === 2 ? settings.delivery_fee_2_pieces_syp : settings.delivery_fee_3_plus_pieces_syp)
-                      : (quantity === 1 ? (settings.delivery_fee_1_piece_usd || settings.delivery_fee_usd) : quantity === 2 ? settings.delivery_fee_2_pieces_usd : settings.delivery_fee_3_plus_pieces_usd),
-                    currency
-                  )}
+                  {formatPrice(currency === 'SYP' ? (settings.delivery_fee_syp || 0) : (settings.delivery_fee_usd || 0), currency)}
                 </span>
-                <span className="text-[10px] opacity-60">({quantity} قطع)</span>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
                 <span className="opacity-80">📦 شحن محافظات:</span>
                 <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {formatPrice(
-                    currency === 'SYP'
-                      ? (quantity === 1 ? settings.shipping_fee_1_piece_syp : quantity === 2 ? settings.shipping_fee_2_pieces_syp : settings.shipping_fee_3_plus_pieces_syp)
-                      : (quantity === 1 ? settings.shipping_fee_1_piece_usd : quantity === 2 ? settings.shipping_fee_2_pieces_usd : settings.shipping_fee_3_plus_pieces_usd),
-                    currency
-                  )}
+                  {(() => {
+                    const feeSyp = quantity === 1 ? settings.shipping_fee_1_piece_syp : quantity === 2 ? settings.shipping_fee_2_pieces_syp : settings.shipping_fee_3_plus_pieces_syp
+                    const feeUsd = quantity === 1 ? settings.shipping_fee_1_piece_usd : quantity === 2 ? settings.shipping_fee_2_pieces_usd : settings.shipping_fee_3_plus_pieces_usd
+                    if (quantity >= 3 && (feeSyp === 0 || feeSyp == null)) return <span className="text-[#2E7D32]">يتحدد عبر الواتساب</span>
+                    return formatPrice(currency === 'SYP' ? (feeSyp || 0) : (feeUsd || 0), currency)
+                  })()}
                 </span>
                 <span className="text-[10px] opacity-60">({quantity} قطع)</span>
               </div>

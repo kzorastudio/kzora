@@ -306,16 +306,8 @@ export async function POST(request: NextRequest) {
       shipping_fee_syp = 0
       shipping_fee_usd = 0
     } else if (delivery_type === 'delivery') {
-      if (totalItemsCount === 1) {
-        shipping_fee_syp = settings?.delivery_fee_1_piece_syp || settings?.delivery_fee_syp || 0
-        shipping_fee_usd = settings?.delivery_fee_1_piece_usd || settings?.delivery_fee_usd || 0
-      } else if (totalItemsCount === 2) {
-        shipping_fee_syp = settings?.delivery_fee_2_pieces_syp || 0
-        shipping_fee_usd = settings?.delivery_fee_2_pieces_usd || 0
-      } else {
-        shipping_fee_syp = settings?.delivery_fee_3_plus_pieces_syp || 0
-        shipping_fee_usd = settings?.delivery_fee_3_plus_pieces_usd || 0
-      }
+      shipping_fee_syp = settings?.delivery_fee_syp ?? 0
+      shipping_fee_usd = settings?.delivery_fee_usd ?? 0
     } else if (delivery_type === 'shipping' && shipping_company) {
       // Try per-governorate fee
       const { data: shipMethod } = await supabaseAdmin

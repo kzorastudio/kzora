@@ -114,28 +114,20 @@ export default function CheckoutPage() {
   // Shipping/Delivery fee calculation
   if (settings) {
     if (deliveryType === 'delivery') {
-      if (totalItemsCount === 1) {
-        shippingFeeSyp = settings.delivery_fee_1_piece_syp || settings.delivery_fee_syp || 0
-        shippingFeeUsd = settings.delivery_fee_1_piece_usd || settings.delivery_fee_usd || 0
-      } else if (totalItemsCount === 2) {
-        shippingFeeSyp = settings.delivery_fee_2_pieces_syp || 0
-        shippingFeeUsd = settings.delivery_fee_2_pieces_usd || 0
-      } else {
-        shippingFeeSyp = settings.delivery_fee_3_plus_pieces_syp || 0
-        shippingFeeUsd = settings.delivery_fee_3_plus_pieces_usd || 0
-      }
+      // Aleppo Delivery is ALWAYS a flat fee
+      shippingFeeSyp = settings.delivery_fee_syp || 0
+      shippingFeeUsd = settings.delivery_fee_usd || 0
       shippingFeeDetermined = false
     } else {
-      // Try to find fee from selected shipping company
+      // Shipping to Governorates is piece-based
       const method = shippingMethods.find((m: any) => m.slug === selectedShippingCompany)
       const govFee = method?.governorates?.find((g: any) => g.name === selectedGovernorate)
 
       if (govFee) {
         shippingFeeSyp = govFee.fee_syp
         shippingFeeUsd = govFee.fee_usd
-        shippingFeeDetermined = false
       } else {
-        // Fallback to pieces-based logic from settings
+        // Fallback to pieces-based shipping logic
         if (totalItemsCount === 1) {
           shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
           shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0
@@ -145,12 +137,12 @@ export default function CheckoutPage() {
         } else {
           shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
-
-          // If 3+ pieces doesn't have a fee in dashboard, we mark it as determined later
-          if (shippingFeeSyp === 0 && shippingFeeUsd === 0) {
-            shippingFeeDetermined = true
-          }
         }
+      }
+
+      // Trigger "Determined via WhatsApp" for Shipping (Governorates) if 3+ pieces and fee is 0
+      if (totalItemsCount >= 3 && shippingFeeSyp === 0) {
+        shippingFeeDetermined = true
       }
     }
   }
