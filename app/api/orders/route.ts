@@ -363,10 +363,26 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Step 9: Final totals ───────────────────────────────────────────────────
-    const finalDiscountSyp = discountSyp + loyaltyDiscountSyp
+    // ── Multi-item discount ────────────────────────────────────────────────
+    let multiItemDiscountSyp = 0
+    let multiItemDiscountUsd = 0
+    if (settings?.discount_multi_items_enabled) {
+      if (totalItemsCount === 2) {
+        multiItemDiscountSyp = settings.discount_2_items_syp || 0
+      } else if (totalItemsCount >= 3) {
+        multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
+      }
+
+      if (multiItemDiscountSyp > 0) {
+        const orderRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
+        multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * orderRatio).toFixed(2))
+      }
+    }
+
+    const finalDiscountSyp = discountSyp + loyaltyDiscountSyp + multiItemDiscountSyp
     const currentRatio     = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
     const finalDiscountUsd = parseFloat(
-      (discountUsd + loyaltyDiscountSyp * currentRatio).toFixed(2)
+      (discountUsd + (loyaltyDiscountSyp + multiItemDiscountSyp) * currentRatio).toFixed(2)
     )
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { OrderStatus } from '@/types'
+import { normalizePhone } from '@/lib/utils'
 
 // ─── GET /api/orders/[id] ─────────────────────────────────────────────────────
 // Admin only. Returns full order with items and status history.
@@ -159,7 +160,7 @@ export async function PUT(
             const { data: pointsToRevert } = await supabaseAdmin
               .from('loyalty_points')
               .select('id')
-              .eq('customer_phone', currentOrder.customer_phone)
+              .eq('customer_phone', normalizePhone(currentOrder.customer_phone))
               .eq('cycle_used', true)
               .order('created_at', { ascending: false })
               .limit(3)
@@ -275,7 +276,7 @@ export async function DELETE(
         const { data: pointsToRevert } = await supabaseAdmin
           .from('loyalty_points')
           .select('id')
-          .eq('customer_phone', orderMeta.customer_phone)
+          .eq('customer_phone', normalizePhone(orderMeta.customer_phone))
           .eq('cycle_used', true)
           .order('created_at', { ascending: false })
           .limit(3)

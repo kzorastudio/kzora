@@ -74,9 +74,9 @@ export const SHIPPING_LABELS: Record<string, string> = {
   'karam':   'كرم (Karam)',
   'qadmous': 'قدموس (Qadmous)',
   'masarat': 'مسارات (Masarat)',
-  'delivery': '🚀 توصيل عادي (حلب)',
-  'regular_delivery': '🚀 توصيل عادي (حلب)',
-  'shipping': '📦 شحن للمحافظات',
+  'delivery': '\uD83D\uDE80 توصيل عادي (حلب)',
+  'regular_delivery': '\uD83D\uDE80 توصيل عادي (حلب)',
+  'shipping': '\uD83D\uDCE6 شحن للمحافظات',
 }
 
 // Truncate text

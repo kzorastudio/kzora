@@ -19,6 +19,8 @@ interface OrderForWhatsApp {
   discountUsd?: number
   loyaltyDiscountSyp?: number
   loyaltyDiscountUsd?: number
+  multiItemDiscountSyp?: number
+  multiItemDiscountUsd?: number
   shippingFeeSyp?: number
   shippingFeeUsd?: number
   shippingFeeDetermined?: boolean
@@ -37,46 +39,77 @@ interface OrderForWhatsApp {
 const DIVIDER = '--------------------'
 const SUBDIVIDER = '- - - - - - - - - -'
 
+// Define emoji constants using Unicode escape sequences to ensure correct encoding across all platforms
+const EMOJI = {
+  GIFT: '\uD83C\uDF81',
+  ID: '\uD83C\uDD94',
+  CALENDAR: '\uD83D\uDCC5',
+  USER: '\uD83D\uDC64',
+  GREET: '\uD83D\uDE4B',
+  PHONE: '\uD83D\uDCDE',
+  CITY: '\uD83C\uDFD9',
+  HOME: '\uD83C\uDFE0',
+  MAP_PIN: '\uD83D\uDCCD',
+  TRUCK: '\uD83D\uDE9A',
+  ROCKET: '\uD83D\uDE80',
+  OFFICE: '\uD83C\uDFE2',
+  SHOPPING: '\uD83D\uDECD',
+  PALETTE: '\uD83C\uDFA8',
+  RULER: '\uD83D\uDCCF',
+  NUMBERS: '\uD83D\uDD22',
+  CASH: '\uD83D\uDCB5',
+  TAG: '\uD83C\uDFF7',
+  MONEY_BAG: '\uD83D\uDCB0',
+  STAR: '\u2B50',
+  BULB: '\uD83D\uDCA1',
+  CELEBRATION: '\uD83C\uDF89',
+  CARD: '\uD83D\uDCB3',
+  MOBILE: '\uD83D\uDCF1',
+  NOTE: '\uD83D\uDCDD',
+  PRAY: '\uD83D\uDE4F',
+  CHECK: '\u2705',
+}
+
 export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   const currency = order.currency
   const isAleppoDelivery = order.deliveryType === 'delivery'
 
   const lines: string[] = [
-    `🎁 *طلب جديد من متجر كزورا* 🎁`,
+    `${EMOJI.GIFT} *طلب جديد من متجر كزورا* ${EMOJI.GIFT}`,
     ``,
-    `🆔 *رقم الطلب:* #${order.orderNumber}`,
-    `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-SY')}`,
+    `${EMOJI.ID} *رقم الطلب:* #${order.orderNumber}`,
+    `${EMOJI.CALENDAR} *التاريخ:* ${new Date().toLocaleDateString('ar-SY')}`,
     DIVIDER,
     ``,
-    `👤 *معلومات الزبون*`,
-    `🙋 *الاسم:* ${order.customerName}`,
-    `📞 *الهاتف:* ${order.customerPhone}`,
-    `🏙️ *المحافظة:* ${order.governorate}`,
+    `${EMOJI.USER} *معلومات الزبون*`,
+    `${EMOJI.GREET} *الاسم:* ${order.customerName}`,
+    `${EMOJI.PHONE} *الهاتف:* ${order.customerPhone}`,
+    `${EMOJI.CITY} *المحافظة:* ${order.governorate}`,
   ]
 
   // Task 9: Address formatting based on delivery type
   if (isAleppoDelivery) {
     // Aleppo: show address only, skip center
     if (order.address) {
-      lines.push(`🏠 *العنوان:* ${order.address}`)
+      lines.push(`${EMOJI.HOME} *العنوان:* ${order.address}`)
     }
   } else {
     // Other governorates: show district/center only, skip address
     if (order.centerName) {
-      lines.push(`📍 *المنطقة/المركز:* ${order.centerName}`)
+      lines.push(`${EMOJI.MAP_PIN} *المنطقة/المركز:* ${order.centerName}`)
     }
   }
 
   lines.push(``)
-  lines.push(`🚚 *تفاصيل الشحن*`)
-  lines.push(`🚀 *النوع:* ${isAleppoDelivery ? 'توصيل عادي (حلب)' : 'شحن للمحافظات'}`)
+  lines.push(`${EMOJI.TRUCK} *تفاصيل الشحن*`)
+  lines.push(`${EMOJI.ROCKET} *النوع:* ${isAleppoDelivery ? 'توصيل عادي (حلب)' : 'شحن للمحافظات'}`)
 
   if (!isAleppoDelivery) {
-    lines.push(`🏢 *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}`)
+    lines.push(`${EMOJI.OFFICE} *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}`)
   }
 
   lines.push(``)
-  lines.push(`🛍️ *المنتجات المطلوبة*`)
+  lines.push(`${EMOJI.SHOPPING} *المنتجات المطلوبة*`)
 
   order.items.forEach((item, i) => {
     const price = currency === 'SYP'
@@ -85,12 +118,12 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
     lines.push(SUBDIVIDER)
     lines.push(`${i + 1}. *${item.name}*`)
-    if (item.color) lines.push(`   🎨 *اللون:* ${item.color_name || item.color}`)
+    if (item.color) lines.push(`   ${EMOJI.PALETTE} *اللون:* ${item.color_name || item.color}`)
     if (item.size) {
       const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ' (قالب نظامي)'
-      lines.push(`   📏 *المقاس:* ${item.size}${moldNotice}`)
+      lines.push(`   ${EMOJI.RULER} *المقاس:* ${item.size}${moldNotice}`)
     }
-    lines.push(`   🔢 *الكمية:* ${item.quantity} × ${price}`)
+    lines.push(`   ${EMOJI.NUMBERS} *الكمية:* ${item.quantity} × ${price}`)
   })
 
   lines.push(DIVIDER)
@@ -99,29 +132,36 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     ? formatPrice(order.subtotalSyp, 'SYP')
     : formatPrice(order.subtotalUsd, 'USD')
 
-  lines.push(`💵 *المجموع الفرعي:* ${subtotal}`)
+  lines.push(`${EMOJI.CASH} *المجموع الفرعي:* ${subtotal}`)
 
   if (order.couponCode && (order.discountSyp || order.discountUsd)) {
     const discount = currency === 'SYP'
       ? formatPrice(order.discountSyp!, 'SYP')
       : formatPrice(order.discountUsd!, 'USD')
-    lines.push(`🏷️ *خصم (${order.couponCode}):* -${discount}`)
+    lines.push(`${EMOJI.TAG} *خصم (${order.couponCode}):* -${discount}`)
   }
 
   if (order.loyaltyDiscountSyp || order.loyaltyDiscountUsd) {
     const loyaltyDisc = currency === 'SYP'
       ? formatPrice(order.loyaltyDiscountSyp!, 'SYP')
       : formatPrice(order.loyaltyDiscountUsd!, 'USD')
-    lines.push(`🎁 *خصم الولاء:* -${loyaltyDisc}`)
+    lines.push(`${EMOJI.GIFT} *خصم الولاء:* -${loyaltyDisc}`)
+  }
+  
+  if (order.multiItemDiscountSyp || order.multiItemDiscountUsd) {
+    const multiDisc = currency === 'SYP'
+      ? formatPrice(order.multiItemDiscountSyp!, 'SYP')
+      : formatPrice(order.multiItemDiscountUsd!, 'USD')
+    lines.push(`${EMOJI.CELEBRATION} *حسم تعدد القطع:* -${multiDisc}`)
   }
 
   if (order.shippingFeeDetermined) {
     const feeLabel = isAleppoDelivery ? 'أجرة التوصيل' : 'أجرة الشحن'
-    lines.push(`🚚 *${feeLabel}:* (يتم تحديدها مع البائع)`)
+    lines.push(`${EMOJI.TRUCK} *${feeLabel}:* (يتم تحديدها مع البائع)`)
   } else {
     const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
     const feeLabel = isAleppoDelivery ? 'أجرة التوصيل' : 'أجرة الشحن'
-    lines.push(`🚚 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
+    lines.push(`${EMOJI.TRUCK} *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
   }
 
   const total = currency === 'SYP'
@@ -129,10 +169,10 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     : formatPrice(order.totalUsd, 'USD')
 
   lines.push(``)
-  lines.push(`💰 *الإجمالي النهائي: ${total}*`)
+  lines.push(`${EMOJI.MONEY_BAG} *الإجمالي النهائي: ${total}*`)
 
   lines.push(``)
-  lines.push(`🎁 *مبروك! لقد كسبت نقطة ولاء من هذا الطلب*`)
+  lines.push(`${EMOJI.GIFT} *مبروك! لقد كسبت نقطة ولاء من هذا الطلب*`)
   lines.push(`_(سيتم تفعيل النقطة فور استلام الطلب)_`)
 
   if (typeof order.loyaltyPointsCount === 'number') {
@@ -140,38 +180,38 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     const remaining = Math.max(0, 3 - currentPoints)
 
     lines.push(``)
-    lines.push(`⭐ *نظام المكافآت* ⭐`)
+    lines.push(`${EMOJI.STAR} *نظام المكافآت* ${EMOJI.STAR}`)
     lines.push(`• النقاط المكتسبة من هذا الطلب: 1 نقطة`)
     lines.push(`• رصيد نقاطك حالياً: ${currentPoints} نقطة`)
 
     if (remaining > 0) {
-      lines.push(`💡 بقي لك ${remaining} طلبات مؤكدة للحصول على خصم 1000 ل.س!`)
+      lines.push(`${EMOJI.BULB} بقي لك ${remaining} طلبات مؤكدة للحصول على خصم 1000 ل.س!`)
     } else {
-      lines.push(`🎉 مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض!`)
+      lines.push(`${EMOJI.CELEBRATION} مبروك! هذا هو طلبك الرابع وقد حصلت على التخفيض!`)
     }
   }
 
   const pMethod = order.paymentMethod === 'sham_cash' ? 'شام كاش (تم التحويل)' : 'الدفع عند الاستلام'
   lines.push(``)
-  lines.push(`💳 *طريقة الدفع:* ${pMethod}`)
+  lines.push(`${EMOJI.CARD} *طريقة الدفع:* ${pMethod}`)
 
   if (order.paymentMethod === 'sham_cash' && order.shamCashNumber) {
-    lines.push(`📱 *رقم محفظة شام كاش:* ${order.shamCashNumber}`)
+    lines.push(`${EMOJI.MOBILE} *رقم محفظة شام كاش:* ${order.shamCashNumber}`)
   }
 
   if (order.paymentMethod === 'sham_cash' && order.paymentTransactionId) {
-    lines.push(`🔢 *رقم العملية:* ${order.paymentTransactionId}`)
+    lines.push(`${EMOJI.NUMBERS} *رقم العملية:* ${order.paymentTransactionId}`)
   }
 
   if (order.notes && order.notes.trim().length > 0) {
     lines.push(``)
-    lines.push(`📝 *ملاحظات العميل:*`)
+    lines.push(`${EMOJI.NOTE} *ملاحظات العميل:*`)
     lines.push(order.notes.trim())
   }
 
   lines.push(``)
-  lines.push(`🙏 *شكراً لتسوقكم من كزورا!*`)
-  lines.push(`✅ *سيتم تأكيد طلبكم قريباً...*`)
+  lines.push(`${EMOJI.PRAY} *شكراً لتسوقكم من كزورا!*`)
+  lines.push(`${EMOJI.CHECK} *سيتم تأكيد طلبكم قريباً...*`)
 
   const message = lines.join('\n')
   const encoded = encodeURIComponent(message)

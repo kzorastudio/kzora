@@ -43,9 +43,6 @@ export default function ProductActions({ product, settings, activeColorName, onC
   })
   
   const [selectedSize, setSelectedSize] = useState<number | null>(() => {
-    // If only 1 size available at all, auto select it?
-    // Safer to just leave it null unless there's only 1 size in the whole product.
-    // We defer strict checks to the UI.
     const available = product.sizes.filter(s => {
        const sz = typeof s === 'number' ? s : s.size
        return (typeof s === 'number' ? true : s.is_available)
@@ -61,7 +58,6 @@ export default function ProductActions({ product, settings, activeColorName, onC
     [product.colors, selectedColorId]
   )
 
-  // Sync color from parent (e.g. from gallery swiping)
   useEffect(() => {
     if (!activeColorName) {
       if (selectedColorId !== null && product.colors.length > 1) {
@@ -82,9 +78,6 @@ export default function ProductActions({ product, settings, activeColorName, onC
     }
   }, [activeColorName, product.colors, selectedColor, selectedColorId])
 
-  // NO feedback loop useEffect for onColorChange. 
-  // We call onColorChange directly in handleColorSelect.
-
   const handleColorSelect = (color: ProductColor) => {
     setSelectedColorId(color.id)
     setColorError(false)
@@ -92,20 +85,15 @@ export default function ProductActions({ product, settings, activeColorName, onC
   }
 
   const currentAvailableStock = useMemo(() => {
-    // If we have variants, find the specific stock
     if (product.variants && product.variants.length > 0) {
       const c = selectedColor?.name_ar || ''
       const s = selectedSize || 0
       const v = product.variants.find(v => v.color === c && v.size === s)
       return v ? (v.quantity ?? 0) : 0
     }
-    // If no variants, we must treat it as OUT OF STOCK by default 
-    // unless the admin explicitly marked it as 'in_stock' without variants (old system).
-    // But for Kzora, we use variants for everything.
     return 0 
   }, [product.variants, selectedColor, selectedSize])
 
-  // How many of this exact variant are already in the cart?
   const alreadyInCart = useMemo(() => {
     const c = selectedColor?.name_ar ?? null
     const s = selectedSize ?? null
@@ -115,25 +103,19 @@ export default function ProductActions({ product, settings, activeColorName, onC
     return found ? found.quantity : 0
   }, [cartItems, product.id, selectedColor, selectedSize])
 
-  // Effective max the user can pick on this page (stock minus what's already in cart)
   const effectiveMax = useMemo(() => {
     if (product.variants && product.variants.length > 0) {
-      // If NO selection yet, allow up to the maximum stock any one variant has (of course max 10)
       if (selectedColorId === null || selectedSize === null) {
         const maxAcrossAll = Math.max(...product.variants.map(v => v.quantity ?? 0));
         return Math.min(10, maxAcrossAll);
       }
-      
       const raw = Math.min(10, currentAvailableStock)
       return Math.max(0, raw - alreadyInCart)
     }
-
-    // Default for products without variants (shouldn't happen in Kzora)
     return 10;
   }, [currentAvailableStock, alreadyInCart, product.variants, selectedColorId, selectedSize])
 
   const isComboOutOfStock = useMemo(() => {
-    // If no selection yet, it's NOT 'out of stock' for the UI, just 'unselected'
     if (product.variants && product.variants.length > 0) {
       if (selectedColorId !== null || product.colors.length === 0) {
         if (selectedSize !== null || product.sizes.length === 0) {
@@ -144,28 +126,22 @@ export default function ProductActions({ product, settings, activeColorName, onC
     return false
   }, [product.variants, product.colors.length, product.sizes.length, selectedColorId, selectedSize, currentAvailableStock])
 
-  // A product is entirely out of stock if:
-  // 1. Explicitly marked as such
-  // 2. OR it has variants and ALL of them are 0
   const isEntirelyOutOfStock = useMemo(() => {
     if (outOfStockGlobal) return true
     if (product.variants && product.variants.length > 0) {
       return product.variants.every(v => (v.quantity ?? 0) <= 0)
     }
-    // If it has colors or sizes but NO variants recorded, it's out of stock
     if (product.colors.length > 0 || product.sizes.length > 0) return true
     return false
   }, [outOfStockGlobal, product.variants, product.colors.length, product.sizes.length])
 
   const outOfStock = isEntirelyOutOfStock || isComboOutOfStock
 
-  // Reset quantity when variant changes and current qty exceeds available stock
-  // ONLY if selection is made.
   useEffect(() => {
     if (selectedColorId && selectedSize && effectiveMax > 0 && quantity > effectiveMax) {
       setQuantity(effectiveMax)
     }
-  }, [effectiveMax, selectedColorId, selectedSize])
+  }, [effectiveMax, selectedColorId, selectedSize, quantity])
 
   const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
   const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
@@ -175,8 +151,22 @@ export default function ProductActions({ product, settings, activeColorName, onC
   const displayPrice = currency === 'SYP' ? currentPriceSyp : currentPriceUsd
   const originalPrice = currency === 'SYP' ? product.price_syp : product.price_usd
 
-  // Note: We removed the multi-product discount logic as requested.
-  const totalPrice = (displayPrice * quantity)
+  // Multi-item discount calculation
+  const multiItemDiscountSyp = useMemo(() => {
+    if (!settings?.discount_multi_items_enabled) return 0
+    if (quantity === 2) return settings.discount_2_items_syp || 0
+    if (quantity >= 3) return settings.discount_3_items_plus_syp || 0
+    return 0
+  }, [quantity, settings])
+
+  const multiItemDiscount = useMemo(() => {
+    if (multiItemDiscountSyp <= 0) return 0
+    if (currency === 'SYP') return multiItemDiscountSyp
+    const ratio = currentPriceSyp > 0 ? currentPriceUsd / currentPriceSyp : 0
+    return parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
+  }, [multiItemDiscountSyp, currency, currentPriceSyp, currentPriceUsd])
+
+  const totalPrice = (displayPrice * quantity) - multiItemDiscount
 
   const handleAddToCart = useCallback(() => {
     if (outOfStock) return
@@ -190,7 +180,6 @@ export default function ProductActions({ product, settings, activeColorName, onC
       toast.error('يرجى اختيار المقاس أولاً')
       return
     }
-    // Find the image that belongs to the selected color
     const colorSpecificImage = selectedColor 
       ? product.images.find(img => img.color_variant === selectedColor.name_ar)?.url
       : null;
@@ -217,76 +206,98 @@ export default function ProductActions({ product, settings, activeColorName, onC
     toast.success(`تمت إضافة ${quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى السلة`)
     setQuantity(1)
     openCart()
-  }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, openCart, router])
+  }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, openCart, currentAvailableStock])
 
   return (
     <div dir="rtl" className="space-y-6">
 
       {/* ── Price block ── */}
-      <div className="flex items-center justify-between bg-[#F5F3F0] px-5 py-4 rounded-2xl">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl sm:text-3xl font-bold text-[#785600] tabular-nums whitespace-nowrap">
-              {formatPrice(displayPrice, currency)}
-            </span>
-            {hasDiscount && discountPct > 0 && (
-              <span className="bg-[#FFDAD6] text-[#BA1A1A] px-2 py-0.5 text-xs font-bold rounded-md">
-                خصم {discountPct}%
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between bg-[#F5F3F0] px-5 py-4 rounded-2xl">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl sm:text-3xl font-bold text-[#785600] tabular-nums whitespace-nowrap">
+                {formatPrice(displayPrice, currency)}
+              </span>
+              {hasDiscount && discountPct > 0 && (
+                <span className="bg-[#FFDAD6] text-[#BA1A1A] px-2 py-0.5 text-xs font-bold rounded-md">
+                  خصم {discountPct}%
+                </span>
+              )}
+            </div>
+            {hasDiscount && (
+              <span className="text-[#9E9890] line-through text-base tabular-nums">
+                {formatPrice(originalPrice, currency)}
               </span>
             )}
           </div>
-          {hasDiscount && (
-            <span className="text-[#9E9890] line-through text-base tabular-nums">
-              {formatPrice(originalPrice, currency)}
-            </span>
-          )}
+          {/* Currency toggle */}
+          <div className="flex items-center gap-1 bg-[#E8E4DE] p-1 rounded-full">
+            <button
+              type="button"
+              onClick={() => setCurrency('USD')}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200',
+                currency === 'USD' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
+              )}
+            >
+              USD
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency('SYP')}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 font-arabic',
+                currency === 'SYP' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
+              )}
+            >
+              ل.س
+            </button>
+          </div>
+        </div>
 
-          {settings && (
-            <div className="flex flex-col gap-0.5 mt-1 border-t border-black/5 pt-2">
-              <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
-                <span className="opacity-80">🚀 توصيل عادي (حلب):</span>
-                <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {formatPrice(currency === 'SYP' ? (settings.delivery_fee_syp || 0) : (settings.delivery_fee_usd || 0), currency)}
+        {/* Multi-item discount banner */}
+        {settings?.discount_multi_items_enabled && (
+          <div className="bg-[#E8F5E9] border border-[#2E7D32]/20 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-right-2 duration-500">
+            <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center shrink-0">
+              <span className="text-lg">🔥</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-xs font-arabic font-bold text-[#1B5E20]">وفّر أكثر مع كزورا!</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span className="text-[11px] font-arabic text-[#1B5E20]/80">
+                  حسم <span className="font-bold underline">{formatPrice(currency === 'SYP' ? settings.discount_2_items_syp : (settings.discount_2_items_syp * (currentPriceUsd/currentPriceSyp)), currency)}</span> عند شراء قطعتين
                 </span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-arabic text-[#6B6560]">
-                <span className="opacity-80">📦 شحن محافظات:</span>
-                <span className="font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                  {(() => {
-                    const feeSyp = quantity === 1 ? settings.shipping_fee_1_piece_syp : quantity === 2 ? settings.shipping_fee_2_pieces_syp : settings.shipping_fee_3_plus_pieces_syp
-                    const feeUsd = quantity === 1 ? settings.shipping_fee_1_piece_usd : quantity === 2 ? settings.shipping_fee_2_pieces_usd : settings.shipping_fee_3_plus_pieces_usd
-                    if (quantity >= 3 && (feeSyp === 0 || feeSyp == null)) return <span className="text-[#2E7D32]">يتحدد عبر الواتساب</span>
-                    return formatPrice(currency === 'SYP' ? (feeSyp || 0) : (feeUsd || 0), currency)
-                  })()}
+                <span className="text-[11px] font-arabic text-[#1B5E20]/80">
+                  حسم <span className="font-bold underline">{formatPrice(currency === 'SYP' ? settings.discount_3_items_plus_syp : (settings.discount_3_items_plus_syp * (currentPriceUsd/currentPriceSyp)), currency)}</span> عند شراء 3 قطع+
                 </span>
-                <span className="text-[10px] opacity-60">({quantity} قطع)</span>
               </div>
             </div>
-          )}
-        </div>
-        {/* Currency toggle */}
-        <div className="flex items-center gap-1 bg-[#E8E4DE] p-1 rounded-full">
-          <button
-            type="button"
-            onClick={() => setCurrency('USD')}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200',
-              currency === 'USD' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
-            )}
-          >
-            USD
-          </button>
-          <button
-            type="button"
-            onClick={() => setCurrency('SYP')}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 font-arabic',
-              currency === 'SYP' ? 'bg-[#785600] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#1A1A1A]'
-            )}
-          >
-            ل.س
-          </button>
-        </div>
+          </div>
+        )}
+
+        {/* Shipping info */}
+        {settings && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/50 border border-[#E8E3DB] p-3 rounded-xl">
+              <span className="block text-[10px] font-arabic text-[#9E9890] mb-0.5">🚀 توصيل عادي (حلب)</span>
+              <span className="text-xs font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
+                {formatPrice(currency === 'SYP' ? (settings.delivery_fee_syp || 0) : (settings.delivery_fee_usd || 0), currency)}
+              </span>
+            </div>
+            <div className="bg-white/50 border border-[#E8E3DB] p-3 rounded-xl">
+              <span className="block text-[10px] font-arabic text-[#9E9890] mb-0.5">📦 شحن محافظات ({quantity} قطعة)</span>
+              <span className="text-xs font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
+                {(() => {
+                  const feeSyp = quantity === 1 ? settings.shipping_fee_1_piece_syp : quantity === 2 ? settings.shipping_fee_2_pieces_syp : settings.shipping_fee_3_plus_pieces_syp
+                  const feeUsd = quantity === 1 ? settings.shipping_fee_1_piece_usd : quantity === 2 ? settings.shipping_fee_2_pieces_usd : settings.shipping_fee_3_plus_pieces_usd
+                  if (quantity >= 3 && (feeSyp === 0 || feeSyp == null)) return <span className="text-[#2E7D32]">يتحدد لاحقاً</span>
+                  return formatPrice(currency === 'SYP' ? (feeSyp || 0) : (feeUsd || 0), currency)
+                })()}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Color selector ── */}
@@ -305,7 +316,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
                 "text-xs font-medium italic opacity-70",
                 colorError ? "text-[#BA1A1A] font-bold animate-pulse" : "text-[#9E9890]"
               )}>
-                {colorError ? "يرجى اختيار لون" : "يرجى اختيار لون"}
+                يرجى اختيار لون
               </span>
             )}
           </div>

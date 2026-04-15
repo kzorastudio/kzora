@@ -23,6 +23,8 @@ interface Props {
   deliveryType?: 'delivery' | 'shipping'
   loyaltyDiscountSyp?: number
   loyaltyDiscountUsd?: number
+  multiItemDiscountSyp?: number
+  multiItemDiscountUsd?: number
 }
 
 export default function OrderSummaryPanel({
@@ -40,13 +42,16 @@ export default function OrderSummaryPanel({
   deliveryType = 'delivery',
   loyaltyDiscountSyp = 0,
   loyaltyDiscountUsd = 0,
+  multiItemDiscountSyp = 0,
+  multiItemDiscountUsd = 0,
 }: Props) {
   const { updateQuantity, removeItem } = useCartStore()
   const subtotal = currency === 'SYP' ? subtotalSyp : subtotalUsd
   const discount = currency === 'SYP' ? (discountSyp ?? 0) : (discountUsd ?? 0)
   const loyaltyDiscount = currency === 'SYP' ? (loyaltyDiscountSyp ?? 0) : (loyaltyDiscountUsd ?? 0)
+  const multiItemDiscount = currency === 'SYP' ? (multiItemDiscountSyp ?? 0) : (multiItemDiscountUsd ?? 0)
   const shippingFee = currency === 'SYP' ? (shippingFeeSyp ?? 0) : (shippingFeeUsd ?? 0)
-  const total = subtotal - discount - loyaltyDiscount + shippingFee
+  const total = subtotal - discount - loyaltyDiscount - multiItemDiscount + shippingFee
 
   const hasDiscount = discount > 0
 
@@ -200,6 +205,15 @@ export default function OrderSummaryPanel({
               <span className="font-arabic text-[#6B6560]">خصم الولاء 🎁</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
                 {formatPrice(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0), currency)}
+              </span>
+            </div>
+          )}
+
+          {(currency === 'SYP' ? (multiItemDiscountSyp || 0) : (multiItemDiscountUsd || 0)) > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-arabic text-[#6B6560]">حسم تعدد القطع 🔥</span>
+              <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
+                {formatPrice(currency === 'SYP' ? (multiItemDiscountSyp || 0) : (multiItemDiscountUsd || 0), currency)}
               </span>
             </div>
           )}

@@ -135,6 +135,7 @@ export default function CheckoutPage() {
           shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
         } else {
+          // 3 or more pieces
           shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
         }
@@ -144,6 +145,22 @@ export default function CheckoutPage() {
       if (totalItemsCount >= 3 && shippingFeeSyp === 0) {
         shippingFeeDetermined = true
       }
+    }
+  }
+
+  // Multi-item discount calculation
+  let multiItemDiscountSyp = 0
+  let multiItemDiscountUsd = 0
+  if (settings?.discount_multi_items_enabled) {
+    if (totalItemsCount === 2) {
+      multiItemDiscountSyp = settings.discount_2_items_syp || 0
+    } else if (totalItemsCount >= 3) {
+      multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
+    }
+
+    if (multiItemDiscountSyp > 0) {
+      const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
+      multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
     }
   }
 
@@ -231,13 +248,15 @@ export default function CheckoutPage() {
           discountUsd:     discountUsd || undefined,
           loyaltyDiscountSyp,
           loyaltyDiscountUsd,
+          multiItemDiscountSyp,
+          multiItemDiscountUsd,
           shippingFeeSyp,
           shippingFeeUsd,
           shippingFeeDetermined,
           subtotalSyp:     sub_syp,
           subtotalUsd:     sub_usd,
-          totalSyp:        Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp + shippingFeeSyp),
-          totalUsd:        Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd + shippingFeeUsd).toFixed(2))),
+          totalSyp:        Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp - multiItemDiscountSyp + shippingFeeSyp),
+          totalUsd:        Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2))),
           currency,
           paymentMethod:   formData.payment_method,
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
@@ -272,6 +291,7 @@ export default function CheckoutPage() {
       items, couponCode, discountSyp, discountUsd, currency, clearCart, 
       router, sub_syp, sub_usd, shippingMethods, settings, deliveryType,
       loyaltyDiscountSyp, loyaltyDiscountUsd, 
+      multiItemDiscountSyp, multiItemDiscountUsd,
       shippingFeeSyp, shippingFeeUsd, shippingFeeDetermined
     ]
   )
@@ -372,6 +392,8 @@ export default function CheckoutPage() {
                   deliveryType={deliveryType}
                   loyaltyDiscountSyp={loyaltyDiscountSyp}
                   loyaltyDiscountUsd={loyaltyDiscountUsd}
+                  multiItemDiscountSyp={multiItemDiscountSyp}
+                  multiItemDiscountUsd={multiItemDiscountUsd}
                 />
 
                 {/* Coupon */}

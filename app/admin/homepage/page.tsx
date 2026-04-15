@@ -283,6 +283,57 @@ export default function HomepagePage() {
               </div>
             </section>
 
+            {/* حسم تعدد القطع */}
+            <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-base font-arabic font-bold text-on-surface flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-tertiary rounded-full" />
+                  حسم تعدد القطع (Multi-Item Discount)
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => { setSettings({ ...settings, discount_multi_items_enabled: !settings.discount_multi_items_enabled }); setDirty(true); }}
+                  className={cn(
+                    'relative h-6 w-11 rounded-full transition-colors',
+                    settings.discount_multi_items_enabled ? 'bg-tertiary' : 'bg-surface-container-high'
+                  )}
+                >
+                  <span className={cn(
+                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                    settings.discount_multi_items_enabled ? 'translate-x-5' : 'translate-x-0.5'
+                  )} />
+                </button>
+              </div>
+
+              {settings.discount_multi_items_enabled && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="text-xs font-arabic text-secondary">يتم تطبيق الحسم تلقائياً عند وصول عدد القطع في السلة للحد المطلوب.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-arabic font-bold text-secondary">حسم قطعتين (ل.س)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={settings.discount_2_items_syp || 0}
+                        onChange={(e) => { setSettings({ ...settings, discount_2_items_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                        className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-arabic font-bold text-secondary">حسم 3 قطع أو أكثر (ل.س)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={settings.discount_3_items_plus_syp || 0}
+                        onChange={(e) => { setSettings({ ...settings, discount_3_items_plus_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                        className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
             {/* سياسات المتجر */}
             <section className="bg-surface-container-lowest rounded-3xl shadow-ambient p-6 border border-outline-variant/20">
               <h2 className="text-base font-arabic font-bold text-on-surface mb-6 flex items-center gap-2">
@@ -539,10 +590,9 @@ export default function HomepagePage() {
                 أسعار التوصيل والشحن
               </h2>
               
-              {/* Delivery Fee per pieces */}
+              {/* Delivery Fee (Aleppo) - Flat rate */}
               <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
                 <div className="space-y-4">
-                  {/* Flat Delivery Fee */}
                   <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/20">
                     <p className="text-xs font-arabic font-bold text-secondary mb-3">أجرة التوصيل الثابتة (داخل مدينة حلب)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
