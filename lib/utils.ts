@@ -100,14 +100,23 @@ export function isNewProduct(createdAt: string): boolean {
   return diffDays <= 14
 }
 
+const ARABIC_TO_ENGLISH: Record<string, string> = {
+  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+  '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+}
+
 /**
  * Normalizes a phone number (especially Syrian ones) to a standard 9-digit format
  * (e.g., 0936... -> 936...)
  */
 export function normalizePhone(phone: string): string {
   if (!phone) return '';
-  // Remove all non-numeric characters
-  let clean = phone.replace(/\D/g, '');
+  
+  // 1. Convert Arabic numerals to English numerals
+  let clean = phone.replace(/[٠-٩]/g, match => ARABIC_TO_ENGLISH[match]);
+  
+  // 2. Remove all non-numeric characters
+  clean = clean.replace(/\D/g, '');
   
   // Remove country code if present (+963 or 00963)
   if (clean.startsWith('963')) {

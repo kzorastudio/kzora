@@ -7,7 +7,8 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
-import { formatPrice, SHIPPING_LABELS } from '@/lib/utils'
+import { LoyaltyStatus } from '@/components/checkout/LoyaltyStatus'
+import { formatPrice, SHIPPING_LABELS, normalizePhone } from '@/lib/utils'
 import type { OrderFull, OrderItem, HomepageSettings } from '@/types'
 import { CreditCard } from 'lucide-react'
 import TrackPurchase from '@/components/analytics/TrackPurchase'
@@ -145,6 +146,16 @@ export default async function OrderSuccessPage({ params }: PageProps) {
 
   const shippingFee = currency === 'SYP' ? (order.shipping_fee_syp || 0) : (order.shipping_fee_usd || 0)
 
+  const normalizedPhone = normalizePhone(order.customer_phone || '')
+  const { data: loyaltyPoints } = await supabaseAdmin
+    .from('loyalty_points')
+    .select('status, cycle_used')
+    .eq('customer_phone', normalizedPhone)
+
+  const allPoints = loyaltyPoints || []
+  const confirmedCount = allPoints.filter(p => p.status === 'confirmed' && !p.cycle_used).length
+  const pendingCount = allPoints.filter(p => p.status === 'pending').length
+
   const whatsappFollowUp = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `مرحباً، أريد الاستفسار عن طلبي رقم ${order.order_number}`
   )}`
@@ -252,6 +263,24 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     {order.customer_address}
                   </p>
                 </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-surface-container-high" />
+
+              {/* Loyalty Progress */}
+              <div>
+                <h2 className="font-arabic font-semibold text-on-surface mb-4">نقاط الولاء</h2>
+                <LoyaltyStatus 
+                  confirmedCount={confirmedCount}
+                  pendingCount={pendingCount}
+                  hasDiscount={false}
+                  currency={currency}
+                  discountAmountSyp={1000}
+                  discountAmountUsd={0}
+                  showDeliveryNotice={true}
+                  className="shadow-sm"
+                />
               </div>
 
               {/* Divider */}

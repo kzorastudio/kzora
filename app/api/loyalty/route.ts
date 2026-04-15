@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { unstable_noStore as noStore } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase'
 import { normalizePhone } from '@/lib/utils'
 
@@ -7,6 +8,7 @@ import { normalizePhone } from '@/lib/utils'
 // Public. Returns loyalty status for a customer phone number.
 // Returns: confirmed points count, pending points count, has available discount
 export async function GET(request: NextRequest) {
+  noStore();
   try {
     const { searchParams } = new URL(request.url)
     const rawPhone = searchParams.get('phone')?.trim()

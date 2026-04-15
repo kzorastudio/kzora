@@ -13,6 +13,7 @@ interface LoyaltyStatusProps {
   discountAmountSyp: number;
   discountAmountUsd: number;
   className?: string;
+  showDeliveryNotice?: boolean;
 }
 
 export function LoyaltyStatus({ 
@@ -22,7 +23,8 @@ export function LoyaltyStatus({
   currency,
   discountAmountSyp,
   discountAmountUsd,
-  className 
+  className,
+  showDeliveryNotice 
 }: LoyaltyStatusProps) {
   // We only show progress up to 3 points in a cycle
   const currentProgress = hasDiscount ? 3 : (confirmedCount % 3);
@@ -75,6 +77,15 @@ export function LoyaltyStatus({
         <p className="mt-3 text-xs bg-[#bfa15f]/10 text-on-surface p-2 rounded-lg font-medium border border-[#bfa15f]/20 leading-relaxed text-center">
           🎉 مبروك! لقد أتممت 3 طلبات مؤكدة، تم تطبيق خصم <strong className="text-[#bfa15f] font-bold">{formatPrice(displayDiscount, currency)}</strong> على طلبك الحالي تلقائياً.
         </p>
+      )}
+
+      {showDeliveryNotice && !hasDiscount && (
+        <div className="mt-4 p-3 bg-blue-50 text-blue-800 text-[11px] rounded-xl border border-blue-100 flex items-start gap-2 leading-relaxed font-arabic">
+          <span className="text-sm mt-0.5">💡</span>
+          <span>
+            لقد تم حجز هذه النقطة لطلبك. سيتم تأكيد النقطة بشكل رسمي وإضافتها لرصيدك المؤكد فور استلامك وتسديدك لقيمة الطلب (تم التوصيل).
+          </span>
+        </div>
       )}
     </div>
   )
