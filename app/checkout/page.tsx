@@ -263,18 +263,15 @@ export default function CheckoutPage() {
         // Clear cart first (no further UI state depends on it)
         clearCart()
 
-        // Open WhatsApp via synthetic anchor — more reliable than window.open in async flows.
-        // On mobile this hands off to the WhatsApp app; on desktop it opens a new tab.
-        const a = document.createElement('a')
-        a.href = whatsappUrl
-        a.target = '_blank'
-        a.rel = 'noopener noreferrer'
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
+        // Use direct assignment for iOS. Safari often blocks window.open() or a.click() 
+        // if they are called after an 'await' because the user gesture expires.
+        // Direct location modification forces the deep link to process correctly.
+        window.location.href = whatsappUrl
 
-        // Navigate to success page
-        router.push(`/order-success/${orderId}`)
+        // Allow time for iOS to hand off to the WhatsApp App before we navigate the DOM behind it.
+        setTimeout(() => {
+          router.push(`/order-success/${orderId}`)
+        }, 800)
       } catch (err) {
         console.error('Checkout error:', err)
         toast.error('حدث خطأ غير متوقع. يرجى المحاولة مجدداً.')

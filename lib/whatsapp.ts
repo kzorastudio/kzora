@@ -216,5 +216,5 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
   const message = lines.join('\n')
   const encoded = encodeURIComponent(message)
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`
+  return `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encoded}`
 }
