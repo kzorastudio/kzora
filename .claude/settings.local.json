@@ -53,7 +53,8 @@
       "mcp__supabase__execute_sql",
       "Bash(npx tsx:*)",
       "Bash(export SUPABASE_ACCESS_TOKEN=sbp_355a6cc6e1fc99253a38fd9d2a4061fd8ee8eb93)",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(git stash *)"
     ]
   }
 }

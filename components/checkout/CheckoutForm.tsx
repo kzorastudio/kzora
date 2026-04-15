@@ -341,7 +341,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             <textarea
               id="address"
               rows={3}
-              placeholder="مثال: حي الميدان، شارع النيل، بناية رقم 12، الطابق الثالث..."
+              placeholder="مثال: حي الميدان، شارع النيل، بناية رقم 12..."
               className={cn(fieldBase, 'resize-none', errors.address && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
               {...register('address')}
             />

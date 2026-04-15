@@ -232,11 +232,8 @@ export default function OrderSummaryPanel({
               <span className="font-arabic text-[#6B6560]">
                 {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
               </span>
-              <span className={cn(
-                "font-body tabular-nums font-semibold",
-                shippingFee > 0 ? "text-[#2E7D32]" : "text-[#785600] font-arabic"
-              )} dir="rtl">
-                {shippingFee > 0 ? formatPrice(shippingFee, currency) : 'مجاني'}
+              <span className="font-body tabular-nums font-semibold text-[#2E7D32]" dir="rtl">
+                {formatPrice(shippingFee, currency)}
               </span>
             </div>
           )}

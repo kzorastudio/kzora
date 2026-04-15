@@ -6,7 +6,7 @@ import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
 
-// â”€â”€â”€ Helper: generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helper: generate unique order number ──────────────────────────────────────
 async function generateOrderNumber(): Promise<string> {
   const maxAttempts = 10
   for (let i = 0; i < maxAttempts; i++) {
@@ -24,7 +24,7 @@ async function generateOrderNumber(): Promise<string> {
   return 'KZ-' + Date.now().toString().slice(-4)
 }
 
-// â”€â”€â”€ GET /api/orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
 export async function GET(request: NextRequest) {
   try {
@@ -76,30 +76,43 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// â”€â”€â”€ POST /api/orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/orders ──────────────────────────────────────────────────────────
 // Public. Creates a new order with full validation.
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderPayload = await request.json()
-    const { items, customer, delivery_type, shipping_company, payment_method, payment_transaction_id, shipping_fee_determined, coupon_code, currency_used, notes } = body
+    const {
+      items, customer, delivery_type, shipping_company,
+      payment_method, payment_transaction_id,
+      shipping_fee_determined, coupon_code, currency_used, notes,
+    } = body
 
+    // ── Basic validation ───────────────────────────────────────────────────────
     if (!items || items.length === 0) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
+      return NextResponse.json({ error: 'السلة فارغة' }, { status: 400 })
     }
-    if (!customer?.full_name || !customer?.phone || !customer?.governorate || !customer?.address) {
-      return NextResponse.json({ error: 'Missing customer details' }, { status: 400 })
+    if (!customer?.full_name || !customer?.phone) {
+      return NextResponse.json({ error: 'الاسم ورقم الهاتف مطلوبان' }, { status: 400 })
+    }
+    if (!customer?.governorate) {
+      return NextResponse.json({ error: 'المحافظة مطلوبة' }, { status: 400 })
+    }
+    // address is required for delivery (Aleppo); for shipping it's the center name
+    if (delivery_type === 'delivery' && !customer?.address?.trim()) {
+      return NextResponse.json({ error: 'العنوان مطلوب لخدمة التوصيل' }, { status: 400 })
     }
     if (delivery_type === 'shipping' && !shipping_company) {
-      return NextResponse.json({ error: 'Missing shipping company' }, { status: 400 })
+      return NextResponse.json({ error: 'يرجى اختيار شركة الشحن' }, { status: 400 })
     }
 
-    // â”€â”€ Step 1: Validate cart items against DB and get current prices â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Step 1: Fetch DB products ──────────────────────────────────────────────
     const productIds = items.map((i) => i.product_id).filter((v, i, a) => a.indexOf(v) === i)
 
     const { data: dbProducts, error: productsError } = await supabaseAdmin
       .from('products')
       .select(`
-        id, name, price_syp, price_usd, discount_price_syp, discount_price_usd, stock_status, is_published,
+        id, name, price_syp, price_usd, discount_price_syp, discount_price_usd,
+        stock_status, is_published,
         colors:product_colors(name_ar, is_available),
         sizes:product_sizes(size, is_available),
         variants:product_variants(id, color, size, quantity)
@@ -107,31 +120,46 @@ export async function POST(request: NextRequest) {
       .in('id', productIds)
 
     if (productsError) {
-      return NextResponse.json({ error: 'Failed to validate cart items' }, { status: 500 })
+      console.error('Products fetch error:', productsError)
+      return NextResponse.json({ error: 'تعذر التحقق من المنتجات' }, { status: 500 })
     }
 
     const productMap = new Map(
       (dbProducts || []).map((p: any) => [p.id, p])
     )
 
-    // Validate and build sanitized order items with DB prices
-    const sanitizedItems: (typeof items[0] & { variant_id: string | null, available_quantity: number })[] = []
+    // ── Step 2: Validate items & resolve variants ──────────────────────────────
+    const sanitizedItems: (typeof items[0] & {
+      variant_id: string | null
+      available_quantity: number
+      has_variant_tracking: boolean
+    })[] = []
+
     for (const item of items) {
       const dbProduct = productMap.get(item.product_id)
+
       if (!dbProduct) {
         return NextResponse.json(
-          { error: `Product not found: ${item.product_id}` },
-          { status: 400 }
-        )
-      }
-      if (!dbProduct.is_published || dbProduct.stock_status === 'out_of_stock') {
-        return NextResponse.json(
-          { error: `المنتج "${dbProduct.name}" غير متوفر حالياً` },
+          { error: `المنتج المطلوب غير موجود في قاعدة البيانات` },
           { status: 400 }
         )
       }
 
-      // Check specific color availability
+      if (!dbProduct.is_published) {
+        return NextResponse.json(
+          { error: `المنتج "${dbProduct.name}" غير منشور حالياً، يرجى التواصل معنا عبر الواتساب` },
+          { status: 400 }
+        )
+      }
+
+      if (dbProduct.stock_status === 'out_of_stock') {
+        return NextResponse.json(
+          { error: `المنتج "${dbProduct.name}" نفد من المخزن حالياً` },
+          { status: 400 }
+        )
+      }
+
+      // Check color availability
       if (item.color) {
         const color = dbProduct.colors?.find((c: any) => c.name_ar === item.color)
         if (color && !color.is_available) {
@@ -142,7 +170,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Check specific size availability
+      // Check size availability
       if (item.size) {
         const sizeObj = dbProduct.sizes?.find((s: any) => s.size === item.size)
         if (sizeObj && !sizeObj.is_available) {
@@ -153,70 +181,92 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Check variant quantity
-      let variantId = null;
-      let availableQuantity = 0; // Default to 0 for strict inventory management
-      if (dbProduct.variants && dbProduct.variants.length > 0) {
-        const c = item.color || ''
-        const s = item.size || 0
-        const v = dbProduct.variants.find((v: any) => v.color === c && v.size === s)
-        if (v) {
-           variantId = v.id
-           availableQuantity = v.quantity
-        } else {
-           availableQuantity = 0 // Not defined = 0 stock
+      // ── Variant lookup ──────────────────────────────────────────────────────
+      const targetColor = item.color || ''
+      const targetSize  = item.size  || 0
+
+      let variantId: string | null = null
+      let availableQuantity = 0
+      let has_variant_tracking = false
+
+      const variantsList: any[] = dbProduct.variants || []
+
+      if (variantsList.length > 0) {
+        has_variant_tracking = true
+        const found = variantsList.find(
+          (v: any) => (v.color || '') === targetColor && (v.size || 0) === targetSize
+        )
+
+        if (found) {
+          variantId = found.id
+          availableQuantity = found.quantity ?? 0
+
+          if (item.quantity > availableQuantity) {
+            const colorLabel = item.color ? ` - اللون: ${item.color}` : ''
+            const sizeLabel  = item.size  ? ` - المقاس: ${item.size}` : ''
+            return NextResponse.json(
+              {
+                error: `الكمية المطلوبة من "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفرة. الكمية المتاحة: ${availableQuantity} فقط`,
+              },
+              { status: 400 }
+            )
+          }
         }
+        // variant combo not in DB → allow (admin hasn't configured all combinations)
       }
+      // no variants at all → rely on stock_status (checked above)
 
-      if (item.quantity > availableQuantity) {
-         return NextResponse.json(
-            { error: `الكمية المطلوبة من ${item.color || ''} ${item.size || ''} للمنتج "${dbProduct.name}" غير متوفرة. المتاح: ${availableQuantity}` },
-            { status: 400 }
-         )
-      }
-
-      // Use effective (discounted if exists) prices from DB
       sanitizedItems.push({
         ...item,
-        product_name:  dbProduct.name,
+        product_name:   dbProduct.name,
         unit_price_syp: dbProduct.discount_price_syp ?? dbProduct.price_syp,
         unit_price_usd: dbProduct.discount_price_usd ?? dbProduct.price_usd,
-        variant_id: variantId,
+        variant_id:     variantId,
         available_quantity: availableQuantity,
+        has_variant_tracking,
       })
     }
 
-    // â”€â”€ Step 2: Calculate subtotals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    let subtotalSyp = sanitizedItems.reduce(
+    // ── Step 3: Subtotals ──────────────────────────────────────────────────────
+    const subtotalSyp = sanitizedItems.reduce(
       (sum, i) => sum + i.unit_price_syp * i.quantity, 0
     )
-    let subtotalUsd = sanitizedItems.reduce(
+    const subtotalUsd = sanitizedItems.reduce(
       (sum, i) => sum + i.unit_price_usd * i.quantity, 0
     )
 
-    // ─── Step 2.5: Multi-product discount calculation ───────────────────
-    const totalItemsCount = sanitizedItems.reduce((acc, item) => acc + item.quantity, 0)
-    let multiProductDiscountSyp = 0
-    
-    // Fetch settings for multi-item discount and shipping fees
-    const { data: settings } = await supabaseAdmin
+    // ── Step 4: Fetch homepage settings ───────────────────────────────────────
+    const totalItemsCount = sanitizedItems.reduce((acc, i) => acc + i.quantity, 0)
+
+    const { data: settingsRaw } = await supabaseAdmin
       .from('homepage_settings')
-      .select('discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, delivery_fee_syp, delivery_fee_usd, delivery_fee_1_piece_syp, delivery_fee_1_piece_usd, delivery_fee_2_pieces_syp, delivery_fee_2_pieces_usd, delivery_fee_3_plus_pieces_syp, delivery_fee_3_plus_pieces_usd')
+      .select(
+        'discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, ' +
+        'shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, ' +
+        'shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, ' +
+        'shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, ' +
+        'delivery_fee_syp, delivery_fee_usd'
+      )
       .limit(1)
       .maybeSingle()
+    const settings = settingsRaw as any
 
+    // ── Step 5: Multi-product discount ────────────────────────────────────────
+    let multiProductDiscountSyp = 0
     if (settings?.discount_multi_items_enabled) {
       if (totalItemsCount >= 3) {
-        multiProductDiscountSyp = settings.discount_3_items_plus_syp
+        multiProductDiscountSyp = settings.discount_3_items_plus_syp ?? 0
       } else if (totalItemsCount >= 2) {
-        multiProductDiscountSyp = settings.discount_2_items_syp
+        multiProductDiscountSyp = settings.discount_2_items_syp ?? 0
       }
     }
 
-    // â”€â”€ Step 3: Validate coupon if provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Step 6: Coupon validation (NOT increment yet) ─────────────────────────
     let discountSyp = 0
     let discountUsd = 0
     let appliedCouponCode: string | null = null
+    let couponId: string | null = null
+    let couponUsedCount = 0
 
     if (coupon_code) {
       const { data: coupon, error: couponError } = await supabaseAdmin
@@ -229,93 +279,77 @@ export async function POST(request: NextRequest) {
       if (couponError || !coupon) {
         return NextResponse.json({ error: 'الكوبون غير صالح' }, { status: 400 })
       }
-
-      // Check expiry
       if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
         return NextResponse.json({ error: 'انتهت صلاحية الكوبون' }, { status: 400 })
       }
-
-      // Check max uses
       if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
         return NextResponse.json({ error: 'تم استنفاد استخدامات الكوبون' }, { status: 400 })
       }
-
-      // Check minimum order
-      if (subtotalSyp < coupon.min_order_syp) {
+      if (subtotalSyp < (coupon.min_order_syp ?? 0)) {
         return NextResponse.json(
-          { error: `الحد الأدنى للطلب هو ${coupon.min_order_syp.toLocaleString()} ل.س` },
+          { error: `الحد الأدنى للطلب هو ${(coupon.min_order_syp ?? 0).toLocaleString()} ل.س` },
           { status: 400 }
         )
       }
 
-      // Calculate discount
       if (coupon.type === 'percentage') {
         discountSyp = Math.round((subtotalSyp * coupon.value) / 100)
         discountUsd = parseFloat(((subtotalUsd * coupon.value) / 100).toFixed(2))
       } else {
-        // fixed_amount — stored in SYP; approximate USD using ratio
         discountSyp = Math.min(coupon.value, subtotalSyp)
         const ratio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
         discountUsd = parseFloat((discountSyp * ratio).toFixed(2))
       }
 
       appliedCouponCode = coupon.code
-
-      // ─── Step 4: Increment coupon used_count ────────────────────────────────
-      await supabaseAdmin
-        .from('coupons')
-        .update({ used_count: coupon.used_count + 1 })
-        .eq('id', coupon.id)
+      couponId = coupon.id
+      couponUsedCount = coupon.used_count
     }
 
-    // ─── Step 2.7: Calculate shipping/delivery fee ───────────────
+    // ── Step 7: Shipping fee ───────────────────────────────────────────────────
     let shipping_fee_syp = 0
     let shipping_fee_usd = 0
 
-    if (delivery_type === 'delivery') {
-      shipping_fee_syp = settings?.delivery_fee_syp || 0
-      shipping_fee_usd = settings?.delivery_fee_usd || 0
+    if (shipping_fee_determined) {
+      // Fee will be negotiated via WhatsApp — store as 0
+      shipping_fee_syp = 0
+      shipping_fee_usd = 0
+    } else if (delivery_type === 'delivery') {
+      shipping_fee_syp = settings?.delivery_fee_syp ?? 0
+      shipping_fee_usd = settings?.delivery_fee_usd ?? 0
     } else if (delivery_type === 'shipping' && shipping_company) {
-      // Fetch fee from shipping_governorates
+      // Try per-governorate fee
       const { data: shipMethod } = await supabaseAdmin
         .from('shipping_methods')
-        .select(`
-          id,
-          shipping_governorates (
-            fee_syp,
-            fee_usd
-          )
-        `)
+        .select('id, shipping_governorates(fee_syp, fee_usd)')
         .eq('slug', shipping_company)
         .eq('is_active', true)
         .eq('shipping_governorates.governorate_name', customer.governorate)
         .eq('shipping_governorates.is_active', true)
         .maybeSingle()
 
-      const govFee = shipMethod?.shipping_governorates?.[0]
+      const govFee = (shipMethod as any)?.shipping_governorates?.[0]
 
       if (govFee) {
-        shipping_fee_syp = govFee.fee_syp
-        shipping_fee_usd = govFee.fee_usd
+        shipping_fee_syp = govFee.fee_syp ?? 0
+        shipping_fee_usd = govFee.fee_usd ?? 0
       } else {
-        // Fallback to settings piece-based fees
+        // Fallback: piece-count-based from settings
         if (totalItemsCount === 1) {
-          shipping_fee_syp = settings?.shipping_fee_1_piece_syp || 0
-          shipping_fee_usd = settings?.shipping_fee_1_piece_usd || 0
+          shipping_fee_syp = settings?.shipping_fee_1_piece_syp ?? 0
+          shipping_fee_usd = settings?.shipping_fee_1_piece_usd ?? 0
         } else if (totalItemsCount === 2) {
-          shipping_fee_syp = settings?.shipping_fee_2_pieces_syp || 0
-          shipping_fee_usd = settings?.shipping_fee_2_pieces_usd || 0
-        } else if (totalItemsCount === 3) {
-          shipping_fee_syp = settings?.shipping_fee_3_plus_pieces_syp || 0
-          shipping_fee_usd = settings?.shipping_fee_3_plus_pieces_usd || 0
-        } else if (totalItemsCount > 3) {
-          shipping_fee_syp = 0
-          shipping_fee_usd = 0
+          shipping_fee_syp = settings?.shipping_fee_2_pieces_syp ?? 0
+          shipping_fee_usd = settings?.shipping_fee_2_pieces_usd ?? 0
+        } else {
+          // 3 or more pieces
+          shipping_fee_syp = settings?.shipping_fee_3_plus_pieces_syp ?? 0
+          shipping_fee_usd = settings?.shipping_fee_3_plus_pieces_usd ?? 0
         }
       }
     }
 
-    // ─── Step 4.5: Calculate Loyalty Discount ──────────────────────────────
+    // ── Step 8: Loyalty discount ───────────────────────────────────────────────
     let loyaltyDiscountSyp = 0
     let loyaltyDiscountUsd = 0
     let loyaltyPointsToUpdate: string[] = []
@@ -337,57 +371,64 @@ export async function POST(request: NextRequest) {
       loyaltyPointsToUpdate = loyaltyPoints.slice(0, 3).map((p: any) => p.id)
     }
 
-    // Combine all discounts
+    // ── Step 9: Final totals ───────────────────────────────────────────────────
     const finalDiscountSyp = discountSyp + multiProductDiscountSyp + loyaltyDiscountSyp
-    // Calculate USD equivalent using current ratio
-    const currentRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
-    const finalDiscountUsd = parseFloat((discountUsd + ((multiProductDiscountSyp + loyaltyDiscountSyp) * currentRatio)).toFixed(2))
-
+    const currentRatio     = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
+    const finalDiscountUsd = parseFloat(
+      (discountUsd + (multiProductDiscountSyp + loyaltyDiscountSyp) * currentRatio).toFixed(2)
+    )
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))
 
-    // â”€â”€ Step 5: Generate unique order number â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Step 10: Generate order number ────────────────────────────────────────
     const orderNumber = await generateOrderNumber()
 
-    // â”€â”€ Step 6: Insert order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Step 11: Insert order ─────────────────────────────────────────────────
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
-        order_number:         orderNumber,
-        customer_full_name:   customer.full_name,
-        customer_phone:       customer.phone,
-        customer_governorate: customer.governorate,
-        customer_address:     customer.address,
-        center_name:          customer.center_name || null,
-        delivery_type:        delivery_type || 'shipping',
-        shipping_company:     shipping_company || null,
-        shipping_fee_syp:     shipping_fee_syp,
-        shipping_fee_usd:     shipping_fee_usd,
-        payment_method:       payment_method || 'cod',
-        payment_transaction_id: payment_transaction_id || null,
-        shipping_fee_determined: shipping_fee_determined || false,
-        loyalty_discount_syp: loyaltyDiscountSyp,
-        loyalty_discount_usd: loyaltyDiscountUsd,
-        coupon_code:          appliedCouponCode,
-        discount_amount_syp:  finalDiscountSyp,
-        discount_amount_usd:  finalDiscountUsd,
-        subtotal_syp:         subtotalSyp,
-        subtotal_usd:         subtotalUsd,
-        total_syp:            totalSyp,
-        total_usd:            totalUsd,
-        currency_used:        currency_used || 'SYP',
-        status:               'pending',
-        notes:                notes || null,
+        order_number:            orderNumber,
+        customer_full_name:      customer.full_name,
+        customer_phone:          customer.phone,
+        customer_governorate:    customer.governorate,
+        customer_address:        customer.address || null,
+        center_name:             customer.center_name || null,
+        delivery_type:           delivery_type || 'delivery',
+        shipping_company:        shipping_company || null,
+        shipping_fee_syp,
+        shipping_fee_usd,
+        payment_method:          payment_method || 'cod',
+        payment_transaction_id:  payment_transaction_id || null,
+        shipping_fee_determined: shipping_fee_determined ?? false,
+        loyalty_discount_syp:    loyaltyDiscountSyp,
+        loyalty_discount_usd:    loyaltyDiscountUsd,
+        coupon_code:             appliedCouponCode,
+        discount_amount_syp:     finalDiscountSyp,
+        discount_amount_usd:     finalDiscountUsd,
+        subtotal_syp:            subtotalSyp,
+        subtotal_usd:            subtotalUsd,
+        total_syp:               totalSyp,
+        total_usd:               totalUsd,
+        currency_used:           currency_used || 'SYP',
+        status:                  'pending',
+        notes:                   notes || null,
       })
       .select()
       .single()
 
     if (orderError || !order) {
-      console.error('Order insert error:', orderError)
-      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+      console.error('Order insert error:', JSON.stringify(orderError))
+      return NextResponse.json(
+        {
+          error: orderError?.message
+            ? `تعذر إنشاء الطلب: ${orderError.message}`
+            : 'تعذر إنشاء الطلب. يرجى المحاولة مرة أخرى.',
+        },
+        { status: 500 }
+      )
     }
 
-    // â”€â”€ Insert order items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Step 12: Insert order items ───────────────────────────────────────────
     const { error: itemsError } = await supabaseAdmin
       .from('order_items')
       .insert(
@@ -396,8 +437,8 @@ export async function POST(request: NextRequest) {
           product_id:    item.product_id,
           product_name:  item.product_name,
           product_image: item.product_image || null,
-          color:         item.color         || null,
-          size:          item.size          || null,
+          color:         item.color  || null,
+          size:          item.size   || null,
           quantity:      item.quantity,
           unit_price_syp: item.unit_price_syp,
           unit_price_usd: item.unit_price_usd,
@@ -406,46 +447,61 @@ export async function POST(request: NextRequest) {
 
     if (itemsError) {
       console.error('Order items insert error:', itemsError)
+      // Order was created; items failure is logged but we don't abort
     }
 
-    // ✨ Decrement variant quantities & handle out_of_stock
+    // ── Step 13: Decrement variant stock ──────────────────────────────────────
     const productIdsToCheck = new Set<string>()
-    for (const item of sanitizedItems) {
-       if (item.variant_id) {
-          const newQty = Math.max(0, item.available_quantity - item.quantity)
-          await supabaseAdmin
-            .from('product_variants')
-            .update({ quantity: newQty })
-            .eq('id', item.variant_id)
-            
-          productIdsToCheck.add(item.product_id)
-       }
-    }
 
-    // After updating variants, check if any products are now fully out of stock
-    for (const pid of Array.from(productIdsToCheck)) {
-      const { data: variants } = await supabaseAdmin.from('product_variants').select('quantity').eq('product_id', pid);
-      if (variants) {
-         const totalStock = variants.reduce((sum: number, v: any) => sum + v.quantity, 0);
-         if (totalStock <= 0) {
-            await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid);
-            // Revalidate frontend
-            revalidatePath('/')
-            revalidatePath('/products')
-         }
+    for (const item of sanitizedItems) {
+      if (item.variant_id) {
+        const newQty = Math.max(0, item.available_quantity - item.quantity)
+        await supabaseAdmin
+          .from('product_variants')
+          .update({ quantity: newQty })
+          .eq('id', item.variant_id)
+
+        productIdsToCheck.add(item.product_id)
       }
     }
 
-    // ─── Insert initial status history ───────────────────────────────────────
+    // Mark product out_of_stock if all variants reached 0
+    for (const pid of Array.from(productIdsToCheck)) {
+      const { data: variants } = await supabaseAdmin
+        .from('product_variants')
+        .select('quantity')
+        .eq('product_id', pid)
+
+      if (variants) {
+        const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
+        if (totalStock <= 0) {
+          await supabaseAdmin
+            .from('products')
+            .update({ stock_status: 'out_of_stock' })
+            .eq('id', pid)
+          revalidatePath('/')
+          revalidatePath('/products')
+        }
+      }
+    }
+
+    // ── Step 14: Coupon increment (AFTER order succeeds) ──────────────────────
+    if (couponId !== null) {
+      await supabaseAdmin
+        .from('coupons')
+        .update({ used_count: couponUsedCount + 1 })
+        .eq('id', couponId)
+    }
+
+    // ── Step 15: Order status history ─────────────────────────────────────────
     await supabaseAdmin.from('order_status_history').insert({
       order_id:   order.id,
       status:     'pending',
       changed_at: new Date().toISOString(),
     })
 
-    // ─── Step 7: Loyalty Points Management ────────────────────────────────────
-    
-    // 1. Insert a new pending loyalty point for this specific order
+    // ── Step 16: Loyalty points ────────────────────────────────────────────────
+    // Add a pending point for this order
     await supabaseAdmin.from('loyalty_points').insert({
       customer_phone: normalizedPhone,
       order_id:       order.id,
@@ -453,7 +509,7 @@ export async function POST(request: NextRequest) {
       cycle_used:     false,
     })
 
-    // 2. If a loyalty discount was applied, mark the 3 oldest points as used
+    // If a discount was applied, mark the 3 used points
     if (loyaltyPointsToUpdate.length === 3) {
       await supabaseAdmin
         .from('loyalty_points')
@@ -467,7 +523,6 @@ export async function POST(request: NextRequest) {
     )
   } catch (err) {
     console.error('Orders POST unexpected error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.' }, { status: 500 })
   }
 }
-

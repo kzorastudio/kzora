@@ -426,7 +426,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
               <div className="bg-[#25D366]/8 rounded-xl p-4">
                 <p className="font-arabic text-sm text-on-surface leading-relaxed">
                   <span className="font-semibold">تذكير:</span> سيتواصل معك فريقنا عبر واتساب على الرقم{' '}
-                  <span className="font-body" dir="ltr">{order.customer_phone}</span>{' '}
+                  <span className="font-body" dir="ltr">0964514765</span>{' '}
                   خلال ساعات لتأكيد الطلب.
                 </p>
               </div>

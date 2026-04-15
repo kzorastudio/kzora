@@ -31,47 +31,69 @@ interface OrderForWhatsApp {
   paymentTransactionId?: string
   shamCashNumber?: string
   loyaltyPointsCount?: number
+  notes?: string
 }
+
+const DIVIDER = '--------------------'
+const SUBDIVIDER = '- - - - - - - - - -'
 
 export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   const currency = order.currency
+  const isAleppoDelivery = order.deliveryType === 'delivery'
+
   const lines: string[] = [
-    `📦 *طلب جديد من متجر كزورا* 📦`,
+    `🎁 *طلب جديد من متجر كزورا* 🎁`,
     ``,
     `🆔 *رقم الطلب:* #${order.orderNumber}`,
     `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-SY')}`,
-    `━━━━━━━━━━━━━━━━━━━━`,
+    DIVIDER,
     ``,
     `👤 *معلومات الزبون*`,
-    `📍 *الاسم:* ${order.customerName}`,
+    `🙋 *الاسم:* ${order.customerName}`,
     `📞 *الهاتف:* ${order.customerPhone}`,
     `🏙️ *المحافظة:* ${order.governorate}`,
-    order.centerName ? `📍 *المنطقة/المركز:* ${order.centerName}` : ``,
-    `🏠 *العنوان:* ${order.address}`,
-    ``,
-    `🚚 *تفاصيل الشحن*`,
-    `🚀 *النوع:* ${order.deliveryType === 'delivery' ? 'توصيل عادى (حلب)' : 'شحن للمحافظات'}`,
-    order.deliveryType === 'shipping' ? `🏢 *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}` : ``,
-    ``,
-    `🛍️ *المنتجات المطلوبة*`,
   ]
+
+  // Task 9: Address formatting based on delivery type
+  if (isAleppoDelivery) {
+    // Aleppo: show address only, skip center
+    if (order.address) {
+      lines.push(`🏠 *العنوان:* ${order.address}`)
+    }
+  } else {
+    // Other governorates: show district/center only, skip address
+    if (order.centerName) {
+      lines.push(`📍 *المنطقة/المركز:* ${order.centerName}`)
+    }
+  }
+
+  lines.push(``)
+  lines.push(`🚚 *تفاصيل الشحن*`)
+  lines.push(`🚀 *النوع:* ${isAleppoDelivery ? 'توصيل عادي (حلب)' : 'شحن للمحافظات'}`)
+
+  if (!isAleppoDelivery) {
+    lines.push(`🏢 *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}`)
+  }
+
+  lines.push(``)
+  lines.push(`🛍️ *المنتجات المطلوبة*`)
 
   order.items.forEach((item, i) => {
     const price = currency === 'SYP'
       ? formatPrice(item.discount_price_syp ?? item.price_syp, 'SYP')
       : formatPrice(item.discount_price_usd ?? item.price_usd, 'USD')
 
-    lines.push(`┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈`)
-    lines.push(`${i + 1}️⃣ *${item.name}*`)
+    lines.push(SUBDIVIDER)
+    lines.push(`${i + 1}. *${item.name}*`)
     if (item.color) lines.push(`   🎨 *اللون:* ${item.color_name || item.color}`)
     if (item.size) {
       const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ' (قالب نظامي)'
       lines.push(`   📏 *المقاس:* ${item.size}${moldNotice}`)
     }
-    lines.push(`   🔢 *الكمية:* ${item.quantity} x ${price}`)
+    lines.push(`   🔢 *الكمية:* ${item.quantity} × ${price}`)
   })
 
-  lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+  lines.push(DIVIDER)
 
   const subtotal = currency === 'SYP'
     ? formatPrice(order.subtotalSyp, 'SYP')
@@ -94,14 +116,12 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   }
 
   if (order.shippingFeeDetermined) {
-    const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
+    const feeLabel = isAleppoDelivery ? 'أجرة التوصيل' : 'أجرة الشحن'
     lines.push(`🚚 *${feeLabel}:* (يتم تحديدها مع البائع)`)
   } else {
     const shippingFee = currency === 'SYP' ? (order.shippingFeeSyp ?? 0) : (order.shippingFeeUsd ?? 0)
-    if (shippingFee > 0) {
-      const feeLabel = order.deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'
-      lines.push(`🚚 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
-    }
+    const feeLabel = isAleppoDelivery ? 'أجرة التوصيل' : 'أجرة الشحن'
+    lines.push(`🚚 *${feeLabel}:* +${formatPrice(shippingFee, currency)}`)
   }
 
   const total = currency === 'SYP'
@@ -110,20 +130,20 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
   lines.push(``)
   lines.push(`💰 *الإجمالي النهائي: ${total}*`)
-  
+
   lines.push(``)
-  lines.push(`✨ *مبروك! لقد كسبت نقطة ولاء من هذا الطلب* 🎁`)
+  lines.push(`🎁 *مبروك! لقد كسبت نقطة ولاء من هذا الطلب*`)
   lines.push(`_(سيتم تفعيل النقطة فور استلام الطلب)_`)
-  
+
   if (typeof order.loyaltyPointsCount === 'number') {
     const currentPoints = order.loyaltyPointsCount
     const remaining = Math.max(0, 3 - currentPoints)
-    
+
     lines.push(``)
     lines.push(`⭐ *نظام المكافآت* ⭐`)
     lines.push(`• النقاط المكتسبة من هذا الطلب: 1 نقطة`)
     lines.push(`• رصيد نقاطك حالياً: ${currentPoints} نقطة`)
-    
+
     if (remaining > 0) {
       lines.push(`💡 بقي لك ${remaining} طلبات مؤكدة للحصول على خصم 1000 ل.س!`)
     } else {
@@ -143,6 +163,12 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     lines.push(`🔢 *رقم العملية:* ${order.paymentTransactionId}`)
   }
 
+  if (order.notes && order.notes.trim().length > 0) {
+    lines.push(``)
+    lines.push(`📝 *ملاحظات العميل:*`)
+    lines.push(order.notes.trim())
+  }
+
   lines.push(``)
   lines.push(`🙏 *شكراً لتسوقكم من كزورا!*`)
   lines.push(`✅ *سيتم تأكيد طلبكم قريباً...*`)
@@ -151,4 +177,3 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   const encoded = encodeURIComponent(message)
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`
 }
-

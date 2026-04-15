@@ -148,13 +148,11 @@ export default function CheckoutPage() {
         } else if (totalItemsCount === 2) {
           shippingFeeSyp = settings.shipping_fee_2_pieces_syp || 0
           shippingFeeUsd = settings.shipping_fee_2_pieces_usd || 0
-        } else if (totalItemsCount === 3) {
-          shippingFeeSyp = settings.shipping_fee_3_plus_pieces_syp || 0
-          shippingFeeUsd = settings.shipping_fee_3_plus_pieces_usd || 0
-        } else if (totalItemsCount > 3) {
-          shippingFeeDetermined = true
+        } else {
+          // 3+ pieces → will be negotiated via WhatsApp
           shippingFeeSyp = 0
           shippingFeeUsd = 0
+          shippingFeeDetermined = true
         }
       }
     }
@@ -240,6 +238,7 @@ export default function CheckoutPage() {
           shippingCompanyName,
           items,
           couponCode,
+          discountSyp:     discountSyp || undefined,
           discountUsd:     discountUsd || undefined,
           loyaltyDiscountSyp,
           loyaltyDiscountUsd,
@@ -255,13 +254,21 @@ export default function CheckoutPage() {
           paymentTransactionId: formData.payment_transaction_id ?? undefined,
           shamCashNumber:  settings?.sham_cash_number ?? undefined,
           loyaltyPointsCount: loyaltyInfo?.confirmedCount ?? 0,
+          notes:           formData.notes ?? undefined,
         })
 
-        // Open WhatsApp in new tab
-        window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
-
-        // Clear cart
+        // Clear cart first (no further UI state depends on it)
         clearCart()
+
+        // Open WhatsApp via synthetic anchor — more reliable than window.open in async flows.
+        // On mobile this hands off to the WhatsApp app; on desktop it opens a new tab.
+        const a = document.createElement('a')
+        a.href = whatsappUrl
+        a.target = '_blank'
+        a.rel = 'noopener noreferrer'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
 
         // Navigate to success page
         router.push(`/order-success/${orderId}`)

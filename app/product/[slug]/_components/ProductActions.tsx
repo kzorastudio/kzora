@@ -22,7 +22,7 @@ interface Props {
 export default function ProductActions({ product, settings, activeColorName, onColorChange }: Props) {
   const router = useRouter()
   const { currency, setCurrency } = useCurrencyStore()
-  const { addItem, items: cartItems } = useCartStore()
+  const { addItem, openCart, items: cartItems } = useCartStore()
 
   const outOfStockGlobal = product.stock_status === 'out_of_stock'
 
@@ -233,7 +233,8 @@ export default function ProductActions({ product, settings, activeColorName, onC
     trackAddToCart(product, quantity)
     toast.success(`تمت إضافة ${quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى السلة`)
     setQuantity(1)
-  }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, router])
+    openCart()
+  }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, openCart, router])
 
   return (
     <div dir="rtl" className="space-y-6">

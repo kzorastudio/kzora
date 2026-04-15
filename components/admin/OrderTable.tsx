@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ChevronRight, ChevronLeft, Trash2 } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Trash2, Copy } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, formatPrice } from '@/lib/utils'
 import StatusBadge from './StatusBadge'
@@ -53,6 +54,41 @@ export default function OrderTable({
   function openDeleteModal(e: React.MouseEvent, order: Order) {
     e.stopPropagation()
     setPendingDelete({ id: order.id, orderNumber: order.order_number })
+  }
+
+  async function handleCopyOrder(e: React.MouseEvent, order: Order) {
+    e.stopPropagation()
+    const shippingLabel =
+      order.delivery_type === 'delivery'
+        ? 'توصيل عادي (حلب)'
+        : (SHIPPING_DISPLAY[order.shipping_company!] || order.shipping_company || 'شحن للمحافظات')
+    const totalStr =
+      order.currency_used === 'USD'
+        ? formatPrice(order.total_usd, 'USD')
+        : formatPrice(order.total_syp, 'SYP')
+    const pMethod = order.payment_method === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
+
+    const lines = [
+      `رقم الطلب: ${order.order_number}`,
+      `الاسم: ${order.customer_full_name}`,
+      `الهاتف: ${order.customer_phone}`,
+      `المحافظة: ${order.customer_governorate}`,
+      order.center_name ? `المنطقة/المركز: ${order.center_name}` : null,
+      order.customer_address ? `العنوان: ${order.customer_address}` : null,
+      `الشحن: ${shippingLabel}`,
+      `طريقة الدفع: ${pMethod}`,
+      `الإجمالي: ${totalStr}`,
+      `الحالة: ${ORDER_STATUS_OPTIONS.find((o) => o.id === order.status)?.label ?? order.status}`,
+      `التاريخ: ${formatDate(order.created_at)}`,
+    ].filter(Boolean)
+
+    const text = lines.join('\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('تم نسخ تفاصيل الطلب')
+    } catch {
+      toast.error('تعذر النسخ')
+    }
   }
 
   async function handleDeleteOnly() {
@@ -157,7 +193,7 @@ export default function OrderTable({
               </div>
               <span>{formatDate(order.created_at)}</span>
             </div>
-            {/* Row 4: status change + delete */}
+            {/* Row 4: status change + copy + delete */}
             <div className="mt-3 pt-3 border-t border-outline-variant/20 flex gap-2" onClick={(e) => e.stopPropagation()}>
               <select
                 value={order.status}
@@ -168,7 +204,15 @@ export default function OrderTable({
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
               </select>
-              
+
+              <button
+                onClick={(e) => handleCopyOrder(e, order)}
+                className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                title="نسخ تفاصيل الطلب"
+              >
+                <Copy size={18} />
+              </button>
+
               <button
                 onClick={(e) => openDeleteModal(e, order)}
                 className="h-10 w-10 flex items-center justify-center rounded-xl bg-error-container/30 text-error hover:bg-error-container/50 transition-colors"
@@ -245,6 +289,13 @@ export default function OrderTable({
                             <option key={opt.id} value={opt.id}>{opt.label}</option>
                           ))}
                         </select>
+                        <button
+                          onClick={(e) => handleCopyOrder(e, order)}
+                          className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                          title="نسخ تفاصيل الطلب"
+                        >
+                          <Copy size={14} />
+                        </button>
                         <button
                           onClick={(e) => openDeleteModal(e, order)}
                           className="p-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container/40 transition-colors"

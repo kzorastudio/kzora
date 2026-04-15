@@ -29,7 +29,7 @@ interface ProductCardProps {
 export function ProductCard({ product, className, filterUnavailableLabel }: ProductCardProps) {
   const router = useRouter()
   const { currency } = useCurrencyStore()
-  const { addItem } = useCartStore()
+  const { addItem, openCart } = useCartStore()
 
   const [isHovered, setIsHovered] = useState(false)
   const [showSizeBar, setShowSizeBar] = useState(false)
@@ -128,8 +128,9 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       addItem(item)
       trackAddToCart(product, 1)
       toast.success('تمت إضافة المنتج إلى السلة')
+      openCart()
     },
-    [product, imageUrl, addItem, router, isActuallyOutOfStock]
+    [product, imageUrl, addItem, openCart, router, isActuallyOutOfStock]
   )
 
   const handleAddWithSize = useCallback(
@@ -156,8 +157,9 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       trackAddToCart(product, 1)
       setShowSizeBar(false)
       toast.success('تمت إضافة المنتج إلى السلة')
+      openCart()
     },
-    [product, imageUrl, addItem, router]
+    [product, imageUrl, addItem, openCart, router]
   )
 
   const priorityTag = product.tags?.find((t) => t === 'new' || t === 'best_seller' || t === 'on_sale')
