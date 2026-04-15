@@ -6,7 +6,7 @@ import { ArrowRight, Package, MapPin, Truck, CreditCard, Clock } from 'lucide-re
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import StatusBadge from '@/components/admin/StatusBadge'
-import { formatDate, formatPrice, SHIPPING_LABELS } from '@/lib/utils'
+import { formatDate, formatPrice, SHIPPING_LABELS, normalizePhone } from '@/lib/utils'
 import type { OrderFull } from '@/types'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
