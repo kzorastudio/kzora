@@ -119,19 +119,14 @@ export default function CheckoutPage() {
       shippingFeeUsd = settings.delivery_fee_usd || 0
       shippingFeeDetermined = false
     } else {
-      // Shipping to Governorates is piece-based
-      const method = shippingMethods.find((m: any) => m.slug === selectedShippingCompany)
-      const govFee = method?.governorates?.find((g: any) => g.name === selectedGovernorate)
-      // RULE: 4+ items ALWAYS go to WhatsApp regardless of city/gov fees
+      // Shipping to Governorates
+      // RULE: 4+ items go to WhatsApp
       if (totalItemsCount >= 4) {
         shippingFeeSyp = 0
         shippingFeeUsd = 0
         shippingFeeDetermined = true
-      } else if (govFee) {
-        shippingFeeSyp = govFee.fee_syp
-        shippingFeeUsd = govFee.fee_usd
       } else {
-        // Fallback to pieces-based shipping logic
+        // Strict piece-based shipping logic from Admin Panel
         if (totalItemsCount === 1) {
           shippingFeeSyp = settings.shipping_fee_1_piece_syp || 0
           shippingFeeUsd = settings.shipping_fee_1_piece_usd || 0

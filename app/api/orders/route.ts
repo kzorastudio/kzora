@@ -311,28 +311,13 @@ export async function POST(request: NextRequest) {
       shipping_fee_syp = settings?.delivery_fee_syp ?? 0
       shipping_fee_usd = settings?.delivery_fee_usd ?? 0
     } else if (delivery_type === 'shipping' && shipping_company) {
-      // Try per-governorate fee
-      const { data: shipMethod } = await supabaseAdmin
-        .from('shipping_methods')
-        .select('id, shipping_governorates(fee_syp, fee_usd)')
-        .eq('slug', shipping_company)
-        .eq('is_active', true)
-        .eq('shipping_governorates.governorate_name', customer.governorate)
-        .eq('shipping_governorates.is_active', true)
-        .maybeSingle()
-
-      const govFee = (shipMethod as any)?.shipping_governorates?.[0]
-
-      // RULE: 4+ items ALWAYS go to WhatsApp regardless of city/gov fees
+      // RULE: 4+ items go to WhatsApp
       if (totalItemsCount >= 4) {
         shipping_fee_syp = 0
         shipping_fee_usd = 0
         shipping_fee_determined = true
-      } else if (govFee) {
-        shipping_fee_syp = govFee.fee_syp ?? 0
-        shipping_fee_usd = govFee.fee_usd ?? 0
       } else {
-        // Fallback: piece-count-based from settings
+        // Strict piece-count-based from settings
         if (totalItemsCount === 1) {
           shipping_fee_syp = settings?.shipping_fee_1_piece_syp ?? 0
           shipping_fee_usd = settings?.shipping_fee_1_piece_usd ?? 0
