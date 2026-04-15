@@ -394,7 +394,7 @@ export async function POST(request: NextRequest) {
         customer_address:        customer.address || null,
         center_name:             customer.center_name || null,
         delivery_type:           delivery_type || 'delivery',
-        shipping_company:        shipping_company || null,
+        shipping_company:        delivery_type === 'delivery' ? 'delivery' : (shipping_company || ''),
         shipping_fee_syp,
         shipping_fee_usd,
         payment_method:          payment_method || 'cod',
