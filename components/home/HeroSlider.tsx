@@ -143,7 +143,7 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
                           transition={{ duration: 0.5, delay: 0.7 }}
                         >
                           <a
-                            href={slide.cta_link}
+                            href={slide.cta_link === '#' || slide.cta_link === '/' ? '/products' : (slide.cta_link || '/products')}
                             className="group relative inline-flex items-center gap-4 md:gap-6 px-7 py-3.5 md:px-12 md:py-5 rounded-2xl bg-[#1A1A1A] text-white overflow-hidden shadow-2xl transition-all hover:md:pr-14 cursor-pointer z-50"
                           >
                             <span className="relative z-10 font-arabic font-bold text-base md:text-lg">{slide.cta_text}</span>
