@@ -33,7 +33,7 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
         modules={[Autoplay, Navigation]}
         speed={1000}
         autoplay={{ delay: 6000, disableOnInteraction: false }}
-        loop={slides.length > 1}
+        rewind={slides.length > 1}
         simulateTouch={false} // disables mouse drag on desktop
         allowTouchMove={true} // enables touch swipe on mobile
         onSwiper={(swiper) => { swiperRef.current = swiper }}
@@ -142,14 +142,14 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.5, delay: 0.7 }}
                         >
-                          <Link
+                          <a
                             href={slide.cta_link}
-                            className="group relative inline-flex items-center gap-4 md:gap-6 px-7 py-3.5 md:px-12 md:py-5 rounded-2xl bg-[#1A1A1A] text-white overflow-hidden shadow-2xl transition-all hover:md:pr-14"
+                            className="group relative inline-flex items-center gap-4 md:gap-6 px-7 py-3.5 md:px-12 md:py-5 rounded-2xl bg-[#1A1A1A] text-white overflow-hidden shadow-2xl transition-all hover:md:pr-14 cursor-pointer z-50"
                           >
                             <span className="relative z-10 font-arabic font-bold text-base md:text-lg">{slide.cta_text}</span>
                             <span className="relative z-10 text-2xl transition-transform group-hover:-translate-x-2">←</span>
                             <div className="absolute inset-0 bg-gradient-to-r from-[#785600] to-[#B8860B] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          </Link>
+                          </a>
                         </motion.div>
                       )}
                     </div>

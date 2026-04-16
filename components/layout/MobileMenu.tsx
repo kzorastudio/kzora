@@ -221,7 +221,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             <div className="border-t border-[#F0EBE3] px-6 py-5 space-y-4">
               <CurrencyToggle />
               <p className="text-xs font-arabic text-[#B0A89E] text-center leading-5">
-                شحن مجاني للطلبات فوق ٥٠٠٬٠٠٠ ل.س
+                توصيل سريع لكافة المحافظات
               </p>
             </div>
           </motion.aside>
