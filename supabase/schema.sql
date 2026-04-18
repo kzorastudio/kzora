@@ -47,6 +47,11 @@ CREATE TABLE IF NOT EXISTS products (
   is_published          BOOLEAN DEFAULT true,
   sort_order            INTEGER DEFAULT 0,
   view_count            INTEGER DEFAULT 0,
+  multi_discount_enabled     BOOLEAN DEFAULT false,
+  multi_discount_2_items_syp INTEGER DEFAULT 0,
+  multi_discount_2_items_usd NUMERIC(10,2) DEFAULT 0,
+  multi_discount_3_plus_syp  INTEGER DEFAULT 0,
+  multi_discount_3_plus_usd  NUMERIC(10,2) DEFAULT 0,
   created_at            TIMESTAMPTZ DEFAULT NOW(),
   updated_at            TIMESTAMPTZ DEFAULT NOW()
 );

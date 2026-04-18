@@ -153,18 +153,24 @@ export default function ProductActions({ product, settings, activeColorName, onC
 
   // Multi-item discount calculation
   const multiItemDiscountSyp = useMemo(() => {
-    if (!settings?.discount_multi_items_enabled) return 0
-    if (quantity === 2) return settings.discount_2_items_syp || 0
-    if (quantity >= 3) return settings.discount_3_items_plus_syp || 0
+    if (!product.multi_discount_enabled) return 0
+    if (quantity === 2) return product.multi_discount_2_items_syp || 0
+    if (quantity >= 3) return product.multi_discount_3_plus_syp || 0
     return 0
-  }, [quantity, settings])
+  }, [quantity, product])
 
   const multiItemDiscount = useMemo(() => {
     if (multiItemDiscountSyp <= 0) return 0
     if (currency === 'SYP') return multiItemDiscountSyp
+    // Use product-level USD value if set
+    const usdVal = quantity === 2
+      ? (product.multi_discount_2_items_usd || 0)
+      : (product.multi_discount_3_plus_usd || 0)
+    if (usdVal > 0) return usdVal
+    // Fallback: calculate from ratio
     const ratio = currentPriceSyp > 0 ? currentPriceUsd / currentPriceSyp : 0
     return parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
-  }, [multiItemDiscountSyp, currency, currentPriceSyp, currentPriceUsd])
+  }, [multiItemDiscountSyp, currency, currentPriceSyp, currentPriceUsd, quantity, product])
 
   const totalPrice = (displayPrice * quantity) - multiItemDiscount
 
@@ -200,6 +206,12 @@ export default function ProductActions({ product, settings, activeColorName, onC
       mold_type:          product.mold_type,
       multi_discount_syp: 0,
       max_stock:          currentAvailableStock,
+      // Per-product multi-item discount settings
+      multi_discount_enabled:      product.multi_discount_enabled ?? false,
+      multi_discount_2_items_syp:  product.multi_discount_2_items_syp ?? 0,
+      multi_discount_2_items_usd:  product.multi_discount_2_items_usd ?? 0,
+      multi_discount_3_plus_syp:   product.multi_discount_3_plus_syp ?? 0,
+      multi_discount_3_plus_usd:   product.multi_discount_3_plus_usd ?? 0,
     }
     addItem(item)
     trackAddToCart(product, quantity)
@@ -256,8 +268,8 @@ export default function ProductActions({ product, settings, activeColorName, onC
           </div>
         </div>
 
-        {/* Multi-item discount banner */}
-        {settings?.discount_multi_items_enabled && (
+        {/* Multi-item discount banner — per product */}
+        {product.multi_discount_enabled && (
           <div className="bg-[#E8F5E9] border border-[#2E7D32]/20 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-right-2 duration-500">
             <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center shrink-0">
               <span className="text-lg">🔥</span>
@@ -267,12 +279,12 @@ export default function ProductActions({ product, settings, activeColorName, onC
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span className="text-[11px] font-arabic text-[#1B5E20]/80">
                   حسم <span className="font-bold underline">
-                    {formatCurrency(currency === 'SYP' ? (settings.discount_2_items_syp || 0) : ((settings.discount_2_items_syp || 0) * (currentPriceUsd/currentPriceSyp)), currency)}
+                    {formatCurrency(currency === 'SYP' ? (product.multi_discount_2_items_syp || 0) : (product.multi_discount_2_items_usd || ((product.multi_discount_2_items_syp || 0) * (currentPriceUsd/currentPriceSyp))), currency)}
                   </span> عند شراء قطعتين
                 </span>
                 <span className="text-[11px] font-arabic text-[#1B5E20]/80">
                   حسم <span className="font-bold underline">
-                    {formatCurrency(currency === 'SYP' ? (settings.discount_3_items_plus_syp || 0) : ((settings.discount_3_items_plus_syp || 0) * (currentPriceUsd/currentPriceSyp)), currency)}
+                    {formatCurrency(currency === 'SYP' ? (product.multi_discount_3_plus_syp || 0) : (product.multi_discount_3_plus_usd || ((product.multi_discount_3_plus_syp || 0) * (currentPriceUsd/currentPriceSyp))), currency)}
                   </span> عند شراء 3 قطع+
                 </span>
               </div>

@@ -39,6 +39,11 @@ export interface Product {
   is_published: boolean
   sort_order: number
   view_count: number
+  multi_discount_enabled: boolean
+  multi_discount_2_items_syp: number
+  multi_discount_2_items_usd: number
+  multi_discount_3_plus_syp: number
+  multi_discount_3_plus_usd: number
   created_at: string
   updated_at: string
 }
@@ -219,11 +224,12 @@ export interface HomepageSettings {
   sham_cash_image_url: string | null
   sham_cash_public_id: string | null
   sham_cash_instructions: string | null
-  discount_multi_items_enabled: boolean
-  discount_2_items_syp: number
-  discount_2_items_usd: number
-  discount_3_items_plus_syp: number
-  discount_3_items_plus_usd: number
+  // Legacy fields (no longer used — discount is now per-product)
+  discount_multi_items_enabled?: boolean
+  discount_2_items_syp?: number
+  discount_2_items_usd?: number
+  discount_3_items_plus_syp?: number
+  discount_3_items_plus_usd?: number
   // Shipping fees
   shipping_fee_1_piece_syp: number
   shipping_fee_1_piece_usd: number
@@ -290,6 +296,12 @@ export interface CartItem {
   color_name?: string | null
   multi_discount_syp?: number
   max_stock?: number     // available stock for this color+size variant
+  // Per-product multi-item discount settings
+  multi_discount_enabled?: boolean
+  multi_discount_2_items_syp?: number
+  multi_discount_2_items_usd?: number
+  multi_discount_3_plus_syp?: number
+  multi_discount_3_plus_usd?: number
 }
 
 // --- Currency ---
@@ -310,6 +322,11 @@ export interface CreateProductPayload {
   is_featured: boolean
   is_published: boolean
   sort_order: number
+  multi_discount_enabled?: boolean
+  multi_discount_2_items_syp?: number
+  multi_discount_2_items_usd?: number
+  multi_discount_3_plus_syp?: number
+  multi_discount_3_plus_usd?: number
   images: { url: string; public_id: string; color_variant?: string | null; display_order: number; is_main: boolean }[]
   colors: { name_ar: string; hex_code: string; swatch_url?: string; swatch_public_id?: string; is_available: boolean }[]
   sizes: { size: number; is_available: boolean }[]

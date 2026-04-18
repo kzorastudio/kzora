@@ -192,6 +192,7 @@ export function CartDrawer({ className }: CartDrawerProps) {
 
                   {/* Summary */}
                   {(() => {
+                    // Per-product multi-item discount calculation
                     const productQuantities: Record<string, number> = {}
                     items.forEach(item => {
                       productQuantities[item.id] = (productQuantities[item.id] || 0) + item.quantity
@@ -200,25 +201,30 @@ export function CartDrawer({ className }: CartDrawerProps) {
                     let multiItemDiscountSyp = 0
                     let multiItemDiscountUsd = 0
 
-                    if (settings?.discount_multi_items_enabled) {
-                      // Find the product with the highest quantity to determine the discount level
-                      const maxQty = Math.max(0, ...Object.values(productQuantities))
-                      
-                      if (maxQty === 2) {
-                        multiItemDiscountSyp = settings.discount_2_items_syp || 0
-                        multiItemDiscountUsd = settings.discount_2_items_usd || 0
-                      } else if (maxQty >= 3) {
-                        multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
-                        multiItemDiscountUsd = settings.discount_3_items_plus_usd || 0
-                      }
+                    // For each product in cart, check its own discount settings
+                    const processedProducts = new Set<string>()
+                    items.forEach(item => {
+                      if (processedProducts.has(item.id)) return
+                      processedProducts.add(item.id)
 
-                      // Fallback calculation for USD if not explicitly set
-                      if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
-                        const syp = subtotalSyp()
-                        const usd = subtotalUsd()
-                        const ratio = syp > 0 ? usd / syp : 0
-                        multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
+                      if (!item.multi_discount_enabled) return
+
+                      const qty = productQuantities[item.id] || 0
+                      if (qty === 2) {
+                        multiItemDiscountSyp += item.multi_discount_2_items_syp || 0
+                        multiItemDiscountUsd += item.multi_discount_2_items_usd || 0
+                      } else if (qty >= 3) {
+                        multiItemDiscountSyp += item.multi_discount_3_plus_syp || 0
+                        multiItemDiscountUsd += item.multi_discount_3_plus_usd || 0
                       }
+                    })
+
+                    // Fallback calculation for USD if not explicitly set
+                    if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
+                      const syp = subtotalSyp()
+                      const usd = subtotalUsd()
+                      const ratio = syp > 0 ? usd / syp : 0
+                      multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
                     }
 
                     return (

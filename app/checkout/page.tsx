@@ -145,24 +145,32 @@ export default function CheckoutPage() {
     }
   }
 
-  // Multi-item discount calculation
+  // Multi-item discount calculation (per-product)
   let multiItemDiscountSyp = 0
   let multiItemDiscountUsd = 0
-  if (settings?.discount_multi_items_enabled) {
+  {
     const productQuantities: Record<string, number> = {}
     items.forEach(item => {
       productQuantities[item.id] = (productQuantities[item.id] || 0) + item.quantity
     })
 
-    const maxQty = Math.max(0, ...Object.values(productQuantities))
+    // For each unique product, check its own discount settings
+    const processedProducts = new Set<string>()
+    items.forEach(item => {
+      if (processedProducts.has(item.id)) return
+      processedProducts.add(item.id)
 
-    if (maxQty === 2) {
-      multiItemDiscountSyp = settings.discount_2_items_syp || 0
-      multiItemDiscountUsd = settings.discount_2_items_usd || 0
-    } else if (maxQty >= 3) {
-      multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
-      multiItemDiscountUsd = settings.discount_3_items_plus_usd || 0
-    }
+      if (!item.multi_discount_enabled) return
+
+      const qty = productQuantities[item.id] || 0
+      if (qty === 2) {
+        multiItemDiscountSyp += item.multi_discount_2_items_syp || 0
+        multiItemDiscountUsd += item.multi_discount_2_items_usd || 0
+      } else if (qty >= 3) {
+        multiItemDiscountSyp += item.multi_discount_3_plus_syp || 0
+        multiItemDiscountUsd += item.multi_discount_3_plus_usd || 0
+      }
+    })
 
     if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
       const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0

@@ -131,6 +131,11 @@ export const productSchema = z.object({
     size: z.number(),
     quantity: z.number().int().min(0, 'الكمية لا يمكن أن تكون سالبة').default(0),
   })).optional().default([]),
+  multi_discount_enabled: z.boolean().default(false),
+  multi_discount_2_items_syp: z.number().int().min(0).default(0),
+  multi_discount_2_items_usd: z.number().min(0).default(0),
+  multi_discount_3_plus_syp: z.number().int().min(0).default(0),
+  multi_discount_3_plus_usd: z.number().min(0).default(0),
 })
 
 export type ProductFormData = z.infer<typeof productSchema>

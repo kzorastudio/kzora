@@ -115,6 +115,8 @@ export async function POST(request: NextRequest) {
       .select(`
         id, name, price_syp, price_usd, discount_price_syp, discount_price_usd,
         stock_status, is_published,
+        multi_discount_enabled, multi_discount_2_items_syp, multi_discount_2_items_usd,
+        multi_discount_3_plus_syp, multi_discount_3_plus_usd,
         colors:product_colors(name_ar, is_available),
         sizes:product_sizes(size, is_available),
         variants:product_variants(id, color, size, quantity)
@@ -243,7 +245,6 @@ export async function POST(request: NextRequest) {
     const { data: settingsRaw } = await supabaseAdmin
       .from('homepage_settings')
       .select(
-        'discount_multi_items_enabled, discount_2_items_syp, discount_2_items_usd, discount_3_items_plus_syp, discount_3_items_plus_usd, ' +
         'shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, ' +
         'shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, ' +
         'shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, ' +
@@ -357,24 +358,35 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Step 9: Final totals ───────────────────────────────────────────────────
-    // ── Multi-item discount ────────────────────────────────────────────────
+    // ── Multi-item discount (per-product) ────────────────────────────────────
     let multiItemDiscountSyp = 0
     let multiItemDiscountUsd = 0
-    if (settings?.discount_multi_items_enabled) {
+    {
+      // Group quantities by product ID
       const productQuantities: Record<string, number> = {}
       sanitizedItems.forEach(item => {
         productQuantities[item.product_id as string] = (productQuantities[item.product_id as string] || 0) + item.quantity
       })
 
-      const maxQty = Math.max(0, ...Object.values(productQuantities))
+      // For each product, check its own discount settings
+      const processedProducts = new Set<string>()
+      sanitizedItems.forEach(item => {
+        const pid = item.product_id as string
+        if (processedProducts.has(pid)) return
+        processedProducts.add(pid)
 
-      if (maxQty === 2) {
-        multiItemDiscountSyp = settings.discount_2_items_syp || 0
-        multiItemDiscountUsd = settings.discount_2_items_usd || 0
-      } else if (maxQty >= 3) {
-        multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
-        multiItemDiscountUsd = settings.discount_3_items_plus_usd || 0
-      }
+        const dbProduct = productMap.get(pid)
+        if (!dbProduct?.multi_discount_enabled) return
+
+        const qty = productQuantities[pid] || 0
+        if (qty === 2) {
+          multiItemDiscountSyp += dbProduct.multi_discount_2_items_syp || 0
+          multiItemDiscountUsd += dbProduct.multi_discount_2_items_usd || 0
+        } else if (qty >= 3) {
+          multiItemDiscountSyp += dbProduct.multi_discount_3_plus_syp || 0
+          multiItemDiscountUsd += dbProduct.multi_discount_3_plus_usd || 0
+        }
+      })
 
       if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
         const orderRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0

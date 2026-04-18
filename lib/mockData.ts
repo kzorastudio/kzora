@@ -172,6 +172,11 @@ function makeProduct(
     category,
     variants: [],
     mold_type: 'normal',
+    multi_discount_enabled: false,
+    multi_discount_2_items_syp: 0,
+    multi_discount_2_items_usd: 0,
+    multi_discount_3_plus_syp: 0,
+    multi_discount_3_plus_usd: 0,
   }
 }
 

@@ -89,6 +89,11 @@ export async function PUT(
       sizes,
       tags,
       variants,
+      multi_discount_enabled,
+      multi_discount_2_items_syp,
+      multi_discount_2_items_usd,
+      multi_discount_3_plus_syp,
+      multi_discount_3_plus_usd,
     } = body
 
     // 1. Fetch existing product with category slug to handle revalidation
@@ -120,6 +125,11 @@ export async function PUT(
     if (is_featured       !== undefined) updateFields.is_featured        = is_featured
     if (is_published      !== undefined) updateFields.is_published       = is_published
     if (sort_order        !== undefined) updateFields.sort_order         = sort_order
+    if (multi_discount_enabled      !== undefined) updateFields.multi_discount_enabled      = multi_discount_enabled
+    if (multi_discount_2_items_syp  !== undefined) updateFields.multi_discount_2_items_syp  = multi_discount_2_items_syp
+    if (multi_discount_2_items_usd  !== undefined) updateFields.multi_discount_2_items_usd  = multi_discount_2_items_usd
+    if (multi_discount_3_plus_syp   !== undefined) updateFields.multi_discount_3_plus_syp   = multi_discount_3_plus_syp
+    if (multi_discount_3_plus_usd   !== undefined) updateFields.multi_discount_3_plus_usd   = multi_discount_3_plus_usd
 
     // Update product core fields
     const { data: product, error: updateError } = await supabaseAdmin

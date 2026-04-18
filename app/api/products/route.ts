@@ -277,6 +277,11 @@ export async function POST(request: NextRequest) {
       sizes,
       tags,
       variants,
+      multi_discount_enabled,
+      multi_discount_2_items_syp,
+      multi_discount_2_items_usd,
+      multi_discount_3_plus_syp,
+      multi_discount_3_plus_usd,
     } = body
 
     if (!name || !price_syp || !price_usd) {
@@ -312,6 +317,11 @@ export async function POST(request: NextRequest) {
         is_featured: is_featured ?? false,
         is_published: is_published ?? false,
         sort_order: sort_order ?? 0,
+        multi_discount_enabled: multi_discount_enabled ?? false,
+        multi_discount_2_items_syp: multi_discount_2_items_syp ?? 0,
+        multi_discount_2_items_usd: multi_discount_2_items_usd ?? 0,
+        multi_discount_3_plus_syp: multi_discount_3_plus_syp ?? 0,
+        multi_discount_3_plus_usd: multi_discount_3_plus_usd ?? 0,
       })
       .select()
       .single()

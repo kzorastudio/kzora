@@ -68,6 +68,11 @@ export default function ProductForm({
         is_available: c.is_available ?? true,
       })) ?? [],
       variants: initialData?.variants ?? [],
+      multi_discount_enabled: initialData?.multi_discount_enabled ?? false,
+      multi_discount_2_items_syp: initialData?.multi_discount_2_items_syp ?? 0,
+      multi_discount_2_items_usd: initialData?.multi_discount_2_items_usd ?? 0,
+      multi_discount_3_plus_syp: initialData?.multi_discount_3_plus_syp ?? 0,
+      multi_discount_3_plus_usd: initialData?.multi_discount_3_plus_usd ?? 0,
     },
   })
 
@@ -105,6 +110,11 @@ export default function ProductForm({
           is_available: c.is_available ?? true,
         })) || [],
         variants: initialData.variants || [],
+        multi_discount_enabled: initialData.multi_discount_enabled ?? false,
+        multi_discount_2_items_syp: initialData.multi_discount_2_items_syp ?? 0,
+        multi_discount_2_items_usd: initialData.multi_discount_2_items_usd ?? 0,
+        multi_discount_3_plus_syp: initialData.multi_discount_3_plus_syp ?? 0,
+        multi_discount_3_plus_usd: initialData.multi_discount_3_plus_usd ?? 0,
       })
     }
   }, [initialData, reset])
@@ -591,6 +601,85 @@ export default function ProductForm({
           onSetMain={handleImageSetMain}
           colorOptions={colorOptions}
         />
+      </section>
+
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-arabic font-semibold flex items-center gap-2">
+            <span className="text-lg">🔥</span>
+            حسم تعدد القطع
+          </h2>
+          <Controller
+            control={control}
+            name="multi_discount_enabled"
+            render={({ field }) => (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={field.value}
+                onClick={() => field.onChange(!field.value)}
+                className={cn('relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200', field.value ? 'bg-[#2E7D32]' : 'bg-outline-variant')}
+              >
+                <span className={cn('absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200', field.value ? 'translate-x-6' : 'translate-x-1')} />
+              </button>
+            )}
+          />
+        </div>
+        {watch('multi_discount_enabled') && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <p className="text-xs font-arabic text-secondary">حسم يُطبق تلقائياً عند شراء عدة قطع من هذا المنتج.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                <p className="text-[11px] font-arabic font-bold text-[#2E7D32] uppercase tracking-wider">عند شراء قطعتين</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-arabic text-secondary">ل.س</label>
+                    <input
+                      type="number"
+                      min={0}
+                      {...register('multi_discount_2_items_syp', { valueAsNumber: true })}
+                      className={cn(FIELD_CLASS, 'tabular-nums')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-arabic text-secondary">$</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      {...register('multi_discount_2_items_usd', { valueAsNumber: true })}
+                      className={cn(FIELD_CLASS, 'tabular-nums')}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                <p className="text-[11px] font-arabic font-bold text-[#2E7D32] uppercase tracking-wider">عند شراء 3 قطع أو أكثر</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-arabic text-secondary">ل.س</label>
+                    <input
+                      type="number"
+                      min={0}
+                      {...register('multi_discount_3_plus_syp', { valueAsNumber: true })}
+                      className={cn(FIELD_CLASS, 'tabular-nums')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-arabic text-secondary">$</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      {...register('multi_discount_3_plus_usd', { valueAsNumber: true })}
+                      className={cn(FIELD_CLASS, 'tabular-nums')}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
