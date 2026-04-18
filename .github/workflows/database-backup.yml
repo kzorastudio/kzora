@@ -10,11 +10,9 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install PostgreSQL Client
         run: |
@@ -37,7 +35,7 @@ jobs:
           echo "BACKUP_PATH=${filename}.gz" >> $GITHUB_ENV
 
       - name: Upload Backup Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: supabase-db-backup
           path: ${{ env.BACKUP_PATH }}
