@@ -219,7 +219,9 @@ CREATE TABLE IF NOT EXISTS homepage_settings (
   sham_cash_instructions      TEXT DEFAULT '',
   discount_multi_items_enabled BOOLEAN DEFAULT false,
   discount_2_items_syp        INTEGER DEFAULT 2000,
+  discount_2_items_usd        NUMERIC(10,2) DEFAULT 0,
   discount_3_items_plus_syp   INTEGER DEFAULT 3000,
+  discount_3_items_plus_usd   NUMERIC(10,2) DEFAULT 0,
   delivery_fee_syp            BIGINT DEFAULT 0,
   delivery_fee_usd            NUMERIC(10,2) DEFAULT 0,
   shipping_fee_1_piece_syp    BIGINT DEFAULT 0,
@@ -300,6 +302,7 @@ CREATE TABLE IF NOT EXISTS site_visits (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   session_id  TEXT NOT NULL,
   page_path   TEXT NOT NULL,
+  user_agent  TEXT DEFAULT '',
   visited_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
