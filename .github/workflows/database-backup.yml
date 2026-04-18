@@ -25,16 +25,15 @@ jobs:
       - name: Create Backup Directory
         run: mkdir -p ./backups
 
-      - name: Run pg_dump
+      - name: Run pg_dump (Version 17)
         env:
           # Separate the URL and the Password for better handling of special characters
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           filename="backups/kzora_backup_$(date +'%Y-%m-%d_%H-%M-%S').sql"
-          # Extract host, port, user and database from URL but use PGPASSWORD for auth
-          # We use the -v flag for more info if it fails
-          pg_dump "$DB_URL" > "$filename"
+          # Force use of PostgreSQL 17 binary
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" > "$filename"
           # Compress the backup
           gzip "$filename"
           echo "BACKUP_PATH=${filename}.gz" >> $GITHUB_ENV
