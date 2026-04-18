@@ -80,7 +80,9 @@ const DEFAULT_SETTINGS: HomepageSettings = {
   sham_cash_instructions: '',
   discount_multi_items_enabled: false,
   discount_2_items_syp: 2000,
+  discount_2_items_usd: 0.2,
   discount_3_items_plus_syp: 3000,
+  discount_3_items_plus_usd: 0.3,
   shipping_fee_1_piece_syp: 0,
   shipping_fee_1_piece_usd: 0,
   shipping_fee_2_pieces_syp: 0,
@@ -308,26 +310,59 @@ export default function HomepagePage() {
               {settings.discount_multi_items_enabled && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                   <p className="text-xs font-arabic text-secondary">يتم تطبيق الحسم تلقائياً عند وصول عدد القطع في السلة للحد المطلوب.</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-arabic font-bold text-secondary">حسم قطعتين (ل.س)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={settings.discount_2_items_syp || 0}
-                        onChange={(e) => { setSettings({ ...settings, discount_2_items_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                        className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-4">
+                      <p className="text-[11px] font-arabic font-bold text-tertiary uppercase tracking-wider">الحسم عند شراء قطعتين من نفس المنتج</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-arabic text-secondary">بالليرة السورية</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={settings.discount_2_items_syp || 0}
+                            onChange={(e) => { setSettings({ ...settings, discount_2_items_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                            className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-arabic text-secondary">بالدولار ($)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            value={settings.discount_2_items_usd || 0}
+                            onChange={(e) => { setSettings({ ...settings, discount_2_items_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                            className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-arabic font-bold text-secondary">حسم 3 قطع أو أكثر (ل.س)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={settings.discount_3_items_plus_syp || 0}
-                        onChange={(e) => { setSettings({ ...settings, discount_3_items_plus_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
-                        className="w-full px-4 py-3 rounded-2xl bg-surface-container border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
-                      />
+
+                    <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-4">
+                      <p className="text-[11px] font-arabic font-bold text-tertiary uppercase tracking-wider">الحسم عند شراء 3 قطع أو أكثر من نفس المنتج</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-arabic text-secondary">بالليرة السورية</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={settings.discount_3_items_plus_syp || 0}
+                            onChange={(e) => { setSettings({ ...settings, discount_3_items_plus_syp: parseInt(e.target.value) || 0 }); setDirty(true); }}
+                            className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-arabic text-secondary">بالدولار ($)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            value={settings.discount_3_items_plus_usd || 0}
+                            onChange={(e) => { setSettings({ ...settings, discount_3_items_plus_usd: parseFloat(e.target.value) || 0 }); setDirty(true); }}
+                            className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm font-body focus:border-tertiary outline-none transition-all"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

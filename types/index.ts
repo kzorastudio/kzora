@@ -221,7 +221,9 @@ export interface HomepageSettings {
   sham_cash_instructions: string | null
   discount_multi_items_enabled: boolean
   discount_2_items_syp: number
+  discount_2_items_usd: number
   discount_3_items_plus_syp: number
+  discount_3_items_plus_usd: number
   // Shipping fees
   shipping_fee_1_piece_syp: number
   shipping_fee_1_piece_usd: number

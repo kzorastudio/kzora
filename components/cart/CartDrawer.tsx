@@ -192,18 +192,28 @@ export function CartDrawer({ className }: CartDrawerProps) {
 
                   {/* Summary */}
                   {(() => {
+                    const productQuantities: Record<string, number> = {}
+                    items.forEach(item => {
+                      productQuantities[item.id] = (productQuantities[item.id] || 0) + item.quantity
+                    })
+
                     let multiItemDiscountSyp = 0
                     let multiItemDiscountUsd = 0
-                    const totalItems = itemCount()
 
                     if (settings?.discount_multi_items_enabled) {
-                      if (totalItems === 2) {
+                      // Find the product with the highest quantity to determine the discount level
+                      const maxQty = Math.max(0, ...Object.values(productQuantities))
+                      
+                      if (maxQty === 2) {
                         multiItemDiscountSyp = settings.discount_2_items_syp || 0
-                      } else if (totalItems >= 3) {
+                        multiItemDiscountUsd = settings.discount_2_items_usd || 0
+                      } else if (maxQty >= 3) {
                         multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
+                        multiItemDiscountUsd = settings.discount_3_items_plus_usd || 0
                       }
 
-                      if (multiItemDiscountSyp > 0) {
+                      // Fallback calculation for USD if not explicitly set
+                      if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
                         const syp = subtotalSyp()
                         const usd = subtotalUsd()
                         const ratio = syp > 0 ? usd / syp : 0

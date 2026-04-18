@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { cn, formatPrice } from '@/lib/utils'
+import { cn, formatPrice, formatCurrency } from '@/lib/utils'
 import { Trash2, Plus, Minus } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import type { CartItem, Currency } from '@/types'
@@ -165,7 +165,7 @@ export default function OrderSummaryPanel({
                     </div>
 
                     <span className="text-xs font-body text-[#785600] font-bold tabular-nums" dir="rtl">
-                      {formatPrice(itemPrice * item.quantity, currency)}
+                      {formatCurrency(itemPrice * item.quantity, currency)}
                     </span>
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function OrderSummaryPanel({
           <div className="flex items-center justify-between text-sm">
             <span className="font-arabic text-[#6B6560]">المجموع الفرعي</span>
             <span className="font-body tabular-nums text-[#1A1A1A]" dir="rtl">
-              {formatPrice(subtotal, currency)}
+              {formatCurrency(subtotal, currency)}
             </span>
           </div>
 
@@ -195,7 +195,7 @@ export default function OrderSummaryPanel({
                 )}
               </span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
-                {formatPrice(discount, currency)}
+                {formatCurrency(discount, currency)}
               </span>
             </div>
           )}
@@ -204,7 +204,7 @@ export default function OrderSummaryPanel({
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">خصم الولاء 🎁</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
-                {formatPrice(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0), currency)}
+                {formatCurrency(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0), currency)}
               </span>
             </div>
           )}
@@ -213,7 +213,7 @@ export default function OrderSummaryPanel({
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">حسم تعدد القطع 🔥</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
-                {formatPrice(currency === 'SYP' ? (multiItemDiscountSyp || 0) : (multiItemDiscountUsd || 0), currency)}
+                {formatCurrency(currency === 'SYP' ? (multiItemDiscountSyp || 0) : (multiItemDiscountUsd || 0), currency)}
               </span>
             </div>
           )}
@@ -237,7 +237,7 @@ export default function OrderSummaryPanel({
                 {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
               </span>
               <span className="font-body tabular-nums font-semibold text-[#2E7D32]" dir="rtl">
-                {formatPrice(shippingFee, currency)}
+                {formatCurrency(shippingFee, currency)}
               </span>
             </div>
           )}
@@ -248,7 +248,7 @@ export default function OrderSummaryPanel({
               className="font-body font-bold text-lg tabular-nums text-[#785600]"
               dir="rtl"
             >
-              {formatPrice(total, currency)}
+              {formatCurrency(total, currency)}
             </span>
           </div>
         </div>

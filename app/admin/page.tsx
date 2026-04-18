@@ -14,6 +14,7 @@ import type { Order } from '@/types'
 async function getDashboardStats() {
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const last15m = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
   const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
   const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -27,6 +28,7 @@ async function getDashboardStats() {
     { count: lowStockProducts },
     { data: revenueData },
     { data: todayOrders },
+    { data: visits15m },
     { data: visits24h },
     { data: visits7d },
     { data: visits30d },
@@ -42,6 +44,7 @@ async function getDashboardStats() {
     // Orders today
     supabaseAdmin.from('orders').select('total_syp, total_usd').gte('created_at', todayStart),
     // Visitors
+    supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last15m),
     supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last24h),
     supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last7d),
     supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last30d),
@@ -55,6 +58,7 @@ async function getDashboardStats() {
   const todayRevenueUSD = (todayOrders || []).reduce((sum, o) => sum + Number(o.total_usd), 0)
 
   // Unique session IDs
+  const unique15m = new Set((visits15m || []).map(v => v.session_id)).size
   const unique24h = new Set((visits24h || []).map(v => v.session_id)).size
   const unique7d = new Set((visits7d || []).map(v => v.session_id)).size
   const unique30d = new Set((visits30d || []).map(v => v.session_id)).size
@@ -74,6 +78,7 @@ async function getDashboardStats() {
       todayCount: todayOrders?.length || 0
     },
     visitorStats: {
+      activeNow: unique15m,
       last24h: { unique: unique24h, total: visits24h?.length || 0 },
       last7d: { unique: unique7d, total: visits7d?.length || 0 },
       last30d: { unique: unique30d, total: visits30d?.length || 0 }
@@ -160,12 +165,12 @@ export default async function AdminDashboardPage() {
                   <span className="text-2xl font-label font-black text-[#1A1A1A]">{stats.revenue.todayCount}</span>
                   <span className="text-[10px] font-arabic text-[#9E9890]">زيادة إيجابية</span>
                 </div>
-                <div className="bg-[#FAF8F5] p-5 rounded-3xl border border-divider flex flex-col gap-1">
-                  <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">زوار اليوم (الآن)</span>
-                  <span className="text-2xl font-label font-black text-[#1A1A1A]">{stats.visitorStats.last24h.unique}</span>
+                 <div className="bg-[#FAF8F5] p-5 rounded-3xl border border-divider flex flex-col gap-1">
+                  <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">زوار المتجر (الآن)</span>
+                  <span className="text-2xl font-label font-black text-[#1A1A1A]">{stats.visitorStats.activeNow}</span>
                   <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-arabic text-green-600 font-bold">مباشر</span>
+                    <span className="text-[10px] font-arabic text-green-600 font-bold">نشط حالياً</span>
                   </div>
                 </div>
               </div>

@@ -451,13 +451,80 @@ export default function ProductForm({
 
           return (
             <div className="flex flex-col gap-6">
+              {/* Global Quick Entry for ALL colors and sizes */}
+              {validSizes.length > 0 && validColors.length > 0 && (
+                <div className="bg-tertiary/5 border border-tertiary/10 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-6 bg-tertiary rounded-full" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-arabic font-bold text-on-surface">الإدخال السريع الشامل</span>
+                      <span className="text-[10px] font-arabic text-secondary">سيطبق هذا الرقم على جميع الألوان وجميع المقاسات معاً</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="الكمية"
+                      id="global-quick-entry"
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value)
+                        if (!isNaN(val)) {
+                          const currentVariants = getValues('variants') || []
+                          currentVariants.forEach((_, idx) => {
+                            setValue(`variants.${idx}.quantity`, val, { shouldDirty: true, shouldValidate: true })
+                          })
+                        }
+                      }}
+                      className="w-24 bg-white border-2 border-tertiary/20 rounded-xl px-4 py-2 text-sm font-bold text-on-surface focus:border-tertiary outline-none shadow-sm transition-all"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('global-quick-entry') as HTMLInputElement
+                        if (input) input.value = ''
+                      }}
+                      className="text-[10px] font-arabic text-secondary hover:text-primary transition-colors underline"
+                    >
+                      تصفير
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {validColors.map((color) => (
                 <div key={color.value} className="space-y-4">
-                  <div className="flex items-center gap-2 px-1">
-                    <div className="w-1.5 h-4 bg-primary rounded-full" />
-                    <h3 className="text-sm font-arabic font-bold text-on-surface">
-                      اللون: {color.label || <span className="text-secondary/40 italic">أساسي</span>}
-                    </h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-4 bg-primary rounded-full" />
+                      <h3 className="text-sm font-arabic font-bold text-on-surface">
+                        اللون: {color.label || <span className="text-secondary/40 italic">أساسي</span>}
+                      </h3>
+                    </div>
+                    {validSizes.length > 0 && (
+                      <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 px-3 py-1.5 rounded-xl">
+                        <span className="text-[10px] font-arabic font-bold text-primary">الإدخال السريع (لهذا اللون):</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="الكمية"
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value)
+                            if (!isNaN(val)) {
+                              validSizes.forEach(size => {
+                                const variantIdx = (getValues('variants') || []).findIndex(
+                                  (v: any) => v.color === color.value && v.size === size
+                                )
+                                if (variantIdx !== -1) {
+                                  setValue(`variants.${variantIdx}.quantity`, val, { shouldDirty: true, shouldValidate: true })
+                                }
+                              })
+                            }
+                          }}
+                          className="w-16 bg-white border border-primary/20 rounded-lg px-2 py-1 text-xs font-bold text-on-surface focus:ring-2 focus:ring-primary/20 outline-none"
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   {/* Sizes Grid */}

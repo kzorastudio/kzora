@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatCurrency } from '@/lib/utils'
 import type { Currency } from '@/types'
 
 interface CartSummaryProps {
@@ -41,7 +41,7 @@ export function CartSummary({
       <div className="flex items-center justify-between py-2.5">
         <span className="font-brand text-sm text-secondary">المجموع الفرعي</span>
         <span className="font-body text-sm tabular-nums text-on-surface" dir="rtl">
-          {formatPrice(subtotal, currency)}
+          {formatCurrency(subtotal, currency)}
         </span>
       </div>
 
@@ -57,7 +57,7 @@ export function CartSummary({
             )}
           </span>
           <span className="font-body text-sm tabular-nums text-[#BA1A1A]" dir="rtl">
-            {formatPrice(discount, currency)}
+            {formatCurrency(discount, currency)}
           </span>
         </div>
       )}
@@ -67,7 +67,7 @@ export function CartSummary({
         <div className="flex items-center justify-between py-2.5">
           <span className="font-brand text-sm text-secondary">حسم تعدد القطع 🔥</span>
           <span className="font-body text-sm tabular-nums text-green-700" dir="rtl">
-            {formatPrice(multiDiscount, currency)}
+            {formatCurrency(multiDiscount, currency)}
           </span>
         </div>
       )}
@@ -79,7 +79,7 @@ export function CartSummary({
       <div className="flex items-center justify-between py-2.5">
         <span className="font-brand text-base font-semibold text-on-surface">الإجمالي</span>
         <span className="font-body text-base font-bold tabular-nums text-primary" dir="rtl">
-          {formatPrice(total, currency)}
+          {formatCurrency(total, currency)}
         </span>
       </div>
     </div>

@@ -12,17 +12,7 @@ export default function VisitTracker() {
     
     const trackVisit = () => {
       if (tracked) return
-      if (pathname.startsWith('/admin')) return
       
-      // Ignore local development or admin preview traffic
-      if (
-        typeof window !== 'undefined' && (
-          window.location.hostname === 'localhost' || 
-          window.location.hostname === '127.0.0.1' ||
-          window.location.hostname.includes('admin')
-        )
-      ) return
-
       // Basic bot filter
       const ua = window.navigator.userAgent.toLowerCase()
       const isBot = /bot|crawler|spider|google|bing|yandex|slurp|duckduckbot|facebookexternalhit|linkedinbot|embedly|lighthouse|headless|screenshot|preview|whatsapp/i.test(ua)

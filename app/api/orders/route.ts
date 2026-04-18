@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
     const { data: settingsRaw } = await supabaseAdmin
       .from('homepage_settings')
       .select(
-        'discount_multi_items_enabled, discount_2_items_syp, discount_3_items_plus_syp, ' +
+        'discount_multi_items_enabled, discount_2_items_syp, discount_2_items_usd, discount_3_items_plus_syp, discount_3_items_plus_usd, ' +
         'shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, ' +
         'shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, ' +
         'shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, ' +
@@ -361,13 +361,22 @@ export async function POST(request: NextRequest) {
     let multiItemDiscountSyp = 0
     let multiItemDiscountUsd = 0
     if (settings?.discount_multi_items_enabled) {
-      if (totalItemsCount === 2) {
+      const productQuantities: Record<string, number> = {}
+      sanitizedItems.forEach(item => {
+        productQuantities[item.product_id as string] = (productQuantities[item.product_id as string] || 0) + item.quantity
+      })
+
+      const maxQty = Math.max(0, ...Object.values(productQuantities))
+
+      if (maxQty === 2) {
         multiItemDiscountSyp = settings.discount_2_items_syp || 0
-      } else if (totalItemsCount >= 3) {
+        multiItemDiscountUsd = settings.discount_2_items_usd || 0
+      } else if (maxQty >= 3) {
         multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
+        multiItemDiscountUsd = settings.discount_3_items_plus_usd || 0
       }
 
-      if (multiItemDiscountSyp > 0) {
+      if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
         const orderRatio = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
         multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * orderRatio).toFixed(2))
       }

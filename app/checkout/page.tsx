@@ -149,13 +149,22 @@ export default function CheckoutPage() {
   let multiItemDiscountSyp = 0
   let multiItemDiscountUsd = 0
   if (settings?.discount_multi_items_enabled) {
-    if (totalItemsCount === 2) {
+    const productQuantities: Record<string, number> = {}
+    items.forEach(item => {
+      productQuantities[item.id] = (productQuantities[item.id] || 0) + item.quantity
+    })
+
+    const maxQty = Math.max(0, ...Object.values(productQuantities))
+
+    if (maxQty === 2) {
       multiItemDiscountSyp = settings.discount_2_items_syp || 0
-    } else if (totalItemsCount >= 3) {
+      multiItemDiscountUsd = settings.discount_2_items_usd || 0
+    } else if (maxQty >= 3) {
       multiItemDiscountSyp = settings.discount_3_items_plus_syp || 0
+      multiItemDiscountUsd = settings.discount_3_items_plus_usd || 0
     }
 
-    if (multiItemDiscountSyp > 0) {
+    if (multiItemDiscountSyp > 0 && multiItemDiscountUsd === 0) {
       const ratio = sub_syp > 0 ? sub_usd / sub_syp : 0
       multiItemDiscountUsd = parseFloat((multiItemDiscountSyp * ratio).toFixed(2))
     }

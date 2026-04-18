@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Format price with currency
-export function formatPrice(amount: number, currency: Currency): string {
+// Clean currency formatting (no labels)
+export function formatCurrency(amount: number, currency: Currency): string {
   if (currency === 'USD') {
     return new Intl.NumberFormat('en-US', {
       style:    'currency',
@@ -15,9 +15,17 @@ export function formatPrice(amount: number, currency: Currency): string {
       maximumFractionDigits: 2,
     }).format(amount)
   }
-  return 'السعر : ' + new Intl.NumberFormat('ar-SY', {
+  return new Intl.NumberFormat('ar-SY', {
     maximumFractionDigits: 0,
   }).format(amount) + ' ل.س'
+}
+
+// Format price with currency (includes label for SYP)
+export function formatPrice(amount: number, currency: Currency): string {
+  if (currency === 'USD') {
+    return formatCurrency(amount, 'USD')
+  }
+  return 'السعر : ' + formatCurrency(amount, 'SYP')
 }
 
 // Generate slug from Arabic text using transliteration

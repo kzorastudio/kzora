@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { ShoppingBag, Minus, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatPrice, getDiscountPercent } from '@/lib/utils'
+import { formatPrice, formatCurrency, getDiscountPercent } from '@/lib/utils'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { useCartStore } from '@/store/cartStore'
 import type { ProductFull, ProductColor, CartItem, HomepageSettings } from '@/types'
@@ -266,10 +266,14 @@ export default function ProductActions({ product, settings, activeColorName, onC
               <p className="text-xs font-arabic font-bold text-[#1B5E20]">وفّر أكثر مع كزورا!</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span className="text-[11px] font-arabic text-[#1B5E20]/80">
-                  حسم <span className="font-bold underline">{formatPrice(currency === 'SYP' ? settings.discount_2_items_syp : (settings.discount_2_items_syp * (currentPriceUsd/currentPriceSyp)), currency)}</span> عند شراء قطعتين
+                  حسم <span className="font-bold underline">
+                    {formatCurrency(currency === 'SYP' ? (settings.discount_2_items_syp || 0) : ((settings.discount_2_items_syp || 0) * (currentPriceUsd/currentPriceSyp)), currency)}
+                  </span> عند شراء قطعتين
                 </span>
                 <span className="text-[11px] font-arabic text-[#1B5E20]/80">
-                  حسم <span className="font-bold underline">{formatPrice(currency === 'SYP' ? settings.discount_3_items_plus_syp : (settings.discount_3_items_plus_syp * (currentPriceUsd/currentPriceSyp)), currency)}</span> عند شراء 3 قطع+
+                  حسم <span className="font-bold underline">
+                    {formatCurrency(currency === 'SYP' ? (settings.discount_3_items_plus_syp || 0) : ((settings.discount_3_items_plus_syp || 0) * (currentPriceUsd/currentPriceSyp)), currency)}
+                  </span> عند شراء 3 قطع+
                 </span>
               </div>
             </div>
