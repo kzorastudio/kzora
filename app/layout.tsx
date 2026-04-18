@@ -98,6 +98,10 @@ export const metadata: Metadata = {
   verification: {
     google: 'QIzKZwVc9QgD9CyJy0S5u9dsuiRnX43X1_lysapN5Ak',
   },
+  other: {
+    'fb:app_id': '1974751789689405', // Placeholder - User should provide real ID if available
+    'facebook-domain-verification': 'v6q99x699x699x699x699x', // Placeholder for verification
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
