@@ -14,10 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install PostgreSQL Client
+      - name: Install PostgreSQL Client 17
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
 
       - name: Create Backup Directory
         run: mkdir -p ./backups
