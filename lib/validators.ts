@@ -5,11 +5,15 @@ export const checkoutSchema = z.object({
   full_name: z
     .string()
     .min(3, 'الاسم يجب أن يكون 3 أحرف على الأقل')
-    .max(100, 'الاسم طويل جداً'),
+    .max(100, 'الاسم طويل جداً')
+    .regex(/^[\u0600-\u06FF\s]+$/, 'يرجى كتابة الاسم باللغة العربية فقط'),
   phone: z
     .string()
     .regex(/^(\+963|0)?9\d{8}$/, 'رقم الهاتف غير صحيح. مثال: 0987654321'),
-  delivery_type: z.enum(['delivery', 'shipping']).default('delivery'),
+  delivery_type: z.enum(['delivery', 'shipping'], {
+    required_error: 'يرجى اختيار طريقة الاستلام',
+    invalid_type_error: 'يرجى اختيار طريقة الاستلام',
+  }),
   // Delivery (حلب فقط): manual address
   address: z.string().optional(),
   // Shipping: governorate + center + company

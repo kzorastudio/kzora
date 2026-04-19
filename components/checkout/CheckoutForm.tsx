@@ -60,7 +60,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      delivery_type: 'delivery',
+      delivery_type: '' as any,
       shipping_company: '',
       governorate: '',
       center: '',
@@ -111,7 +111,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       setValue('center', '')
       setValue('shipping_company', '')
       setCenters([])
-    } else {
+    } else if (deliveryType === 'shipping') {
       setValue('address', '')
     }
   }, [deliveryType, onDeliveryTypeChange, setValue])
@@ -186,16 +186,22 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       className="space-y-0"
     >
       {/* ═══ Section 1: Delivery Type ══════════════════════════════════════════════ */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
-        <SectionHeading icon={Truck} title="طريقة الاستلام" />
+      <div className="bg-white rounded-3xl p-8 shadow-[0_4px_30px_rgba(120,86,0,0.08)] border-2 border-[#785600]/10 ring-4 ring-[#785600]/5">
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#785600] to-[#B8860B] flex items-center justify-center mb-4 shadow-lg shadow-[#785600]/20">
+            <Truck size={28} className="text-white" />
+          </div>
+          <h2 className="font-arabic text-2xl font-bold text-[#1A1A1A]">طريقة الاستلام</h2>
+          <p className="font-arabic text-sm text-[#6B6560] mt-1">يجب اختيار طريقة الاستلام للمتابعة</p>
+        </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* توصيل */}
           <label className={cn(
-            "flex flex-col items-center gap-3 border-2 rounded-2xl p-5 cursor-pointer transition-all duration-200 text-center",
+            "flex flex-col items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 relative overflow-hidden group",
             deliveryType === 'delivery'
-              ? "bg-[#FFF9F0] border-[#785600] shadow-sm"
-              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF]"
+              ? "bg-[#FFF9F0] border-[#785600] shadow-md ring-2 ring-[#785600]/20"
+              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF] hover:bg-white"
           )}>
             <input
               type="radio"
@@ -204,32 +210,32 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
               {...register('delivery_type')}
             />
             <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
-              deliveryType === 'delivery' ? "bg-[#785600]/10" : "bg-[#F0EBE3]"
+              "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
+              deliveryType === 'delivery' ? "bg-[#785600] rotate-3 scale-110" : "bg-[#F0EBE3] group-hover:scale-105"
             )}>
-              <Truck size={24} className={deliveryType === 'delivery' ? "text-[#785600]" : "text-[#9E9890]"} />
+              <Truck size={32} className={deliveryType === 'delivery' ? "text-white" : "text-[#9E9890]"} />
             </div>
-            <div>
-              <p className={cn("font-arabic font-bold text-sm", deliveryType === 'delivery' ? "text-[#785600]" : "text-[#1A1A1A]")}>
+            <div className="text-center">
+              <p className={cn("font-arabic font-bold text-xl mb-1", deliveryType === 'delivery' ? "text-[#785600]" : "text-[#1A1A1A]")}>
                 توصيل
               </p>
-              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5 leading-relaxed">
-                لباب المنزل<br/>حلب فقط
+              <p className="font-arabic text-sm text-[#6B6560] leading-relaxed">
+                لباب المنزل<br/>مدينة حلب حصراً
               </p>
             </div>
             {deliveryType === 'delivery' && (
-              <div className="w-5 h-5 rounded-full bg-[#785600] flex items-center justify-center">
-                <CheckCircle2 size={12} className="text-white" />
+              <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[#785600] flex items-center justify-center shadow-lg">
+                <CheckCircle2 size={14} className="text-white" />
               </div>
             )}
           </label>
 
           {/* شحن */}
           <label className={cn(
-            "flex flex-col items-center gap-3 border-2 rounded-2xl p-5 cursor-pointer transition-all duration-200 text-center",
+            "flex flex-col items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 relative overflow-hidden group",
             deliveryType === 'shipping'
-              ? "bg-[#F0F7ED] border-[#4B6339] shadow-sm"
-              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF]"
+              ? "bg-[#F0F7ED] border-[#4B6339] shadow-md ring-2 ring-[#4B6339]/20"
+              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF] hover:bg-white"
           )}>
             <input
               type="radio"
@@ -238,26 +244,32 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
               {...register('delivery_type')}
             />
             <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
-              deliveryType === 'shipping' ? "bg-[#4B6339]/10" : "bg-[#F0EBE3]"
+              "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
+              deliveryType === 'shipping' ? "bg-[#4B6339] -rotate-3 scale-110" : "bg-[#F0EBE3] group-hover:scale-105"
             )}>
-              <Package size={24} className={deliveryType === 'shipping' ? "text-[#4B6339]" : "text-[#9E9890]"} />
+              <Package size={32} className={deliveryType === 'shipping' ? "text-white" : "text-[#9E9890]"} />
             </div>
-            <div>
-              <p className={cn("font-arabic font-bold text-sm", deliveryType === 'shipping' ? "text-[#4B6339]" : "text-[#1A1A1A]")}>
+            <div className="text-center">
+              <p className={cn("font-arabic font-bold text-xl mb-1", deliveryType === 'shipping' ? "text-[#4B6339]" : "text-[#1A1A1A]")}>
                 شحن
               </p>
-              <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5 leading-relaxed">
-                شركات الشحن<br/>باقي المحافظات
+              <p className="font-arabic text-sm text-[#6B6560] leading-relaxed">
+                شركات الشحن<br/>لكافة المحافظات
               </p>
             </div>
             {deliveryType === 'shipping' && (
-              <div className="w-5 h-5 rounded-full bg-[#4B6339] flex items-center justify-center">
-                <CheckCircle2 size={12} className="text-white" />
+              <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[#4B6339] flex items-center justify-center shadow-lg">
+                <CheckCircle2 size={14} className="text-white" />
               </div>
             )}
           </label>
         </div>
+        {errors.delivery_type && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-[#BA1A1A] animate-bounce">
+            <AlertTriangle size={16} />
+            <p className="font-arabic text-sm font-bold">{errors.delivery_type.message}</p>
+          </div>
+        )}
       </div>
 
       {/* ═══ Section 2: Contact Info ════════════════════════════════════════════════ */}
@@ -268,16 +280,29 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Full Name */}
             <div>
-              <label htmlFor="full_name" className={labelBase}>
-                الاسم الكامل <span className="text-[#BA1A1A]">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="full_name" className={cn(labelBase, 'mb-0')}>
+                  الاسم الكامل <span className="text-[#BA1A1A]">*</span>
+                </label>
+                <span className="text-[10px] font-arabic px-2 py-0.5 bg-[#785600]/10 text-[#785600] rounded-full font-bold">
+                  الكتابة بالعربي حصراً
+                </span>
+              </div>
               <input
                 id="full_name"
                 type="text"
                 autoComplete="name"
-                placeholder="أدخل اسمك الثلاثي..."
+                placeholder="أدخل اسمك الثلاثي باللغة العربية..."
                 className={cn(fieldBase, errors.full_name && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
                 {...register('full_name')}
+                onInput={(e) => {
+                  const val = e.currentTarget.value;
+                  // Allow only Arabic characters and spaces
+                  const filtered = val.replace(/[^\u0600-\u06FF\s]/g, '');
+                  if (val !== filtered) {
+                    e.currentTarget.value = filtered;
+                  }
+                }}
               />
               {errors.full_name && <p className={errorBase}>{errors.full_name.message}</p>}
             </div>

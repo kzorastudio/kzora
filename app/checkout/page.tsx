@@ -34,7 +34,7 @@ export default function CheckoutPage() {
   const [discountSyp,  setDiscountSyp]  = useState(0)
   const [discountUsd,  setDiscountUsd]  = useState(0)
   const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('delivery')
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping' | null>(null)
   const [selectedGovernorate, setSelectedGovernorate] = useState('')
   const [selectedShippingCompany, setSelectedShippingCompany] = useState('')
 
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
       shippingFeeSyp = settings.delivery_fee_syp || 0
       shippingFeeUsd = settings.delivery_fee_usd || 0
       shippingFeeDetermined = false
-    } else {
+    } else if (deliveryType === 'shipping') {
       // Shipping to Governorates
       // RULE: 4+ items go to WhatsApp
       if (totalItemsCount >= 4) {
@@ -142,6 +142,11 @@ export default function CheckoutPage() {
           if (shippingFeeSyp === 0) shippingFeeDetermined = true
         }
       }
+    } else {
+      // No selection yet
+      shippingFeeSyp = 0
+      shippingFeeUsd = 0
+      shippingFeeDetermined = false
     }
   }
 
@@ -214,7 +219,7 @@ export default function CheckoutPage() {
             address:     formData.address ?? '',
             center_name: formData.center_name ?? null,
           },
-          delivery_type: deliveryType,
+          delivery_type: formData.delivery_type,
           shipping_company: (formData.shipping_company as string) ?? null,
           payment_method:   formData.payment_method,
           payment_transaction_id: formData.payment_transaction_id ?? undefined,
@@ -253,7 +258,7 @@ export default function CheckoutPage() {
           governorate:     formData.governorate ?? '',
           centerName:      formData.center_name,
           address:         formData.address ?? '',
-          deliveryType:    deliveryType,
+          deliveryType:    formData.delivery_type,
           shippingCompany: shippingSlug,
           shippingCompanyName,
           items,

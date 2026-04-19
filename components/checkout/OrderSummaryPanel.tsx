@@ -20,7 +20,7 @@ interface Props {
   shippingFeeSyp?: number
   shippingFeeUsd?: number
   shippingFeeDetermined?: boolean
-  deliveryType?: 'delivery' | 'shipping'
+  deliveryType?: 'delivery' | 'shipping' | null
   loyaltyDiscountSyp?: number
   loyaltyDiscountUsd?: number
   multiItemDiscountSyp?: number
@@ -39,7 +39,7 @@ export default function OrderSummaryPanel({
   shippingFeeSyp = 0,
   shippingFeeUsd = 0,
   shippingFeeDetermined = false,
-  deliveryType = 'delivery',
+  deliveryType = null,
   loyaltyDiscountSyp = 0,
   loyaltyDiscountUsd = 0,
   multiItemDiscountSyp = 0,
@@ -231,7 +231,7 @@ export default function OrderSummaryPanel({
                 سيقوم فريقنا بالتواصل معك لتأكيد تكلفة التوصيل النهائية بعد مراجعة الطلب.
               </p>
             </div>
-          ) : (
+          ) : deliveryType ? (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">
                 {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
@@ -239,6 +239,11 @@ export default function OrderSummaryPanel({
               <span className="font-body tabular-nums font-semibold text-[#2E7D32]" dir="rtl">
                 {formatCurrency(shippingFee, currency)}
               </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-sm py-1 px-3 bg-[#FAF8F5] rounded-lg border border-dashed border-[#E8E3DB]">
+              <span className="font-arabic text-[11px] text-[#9E9890]">تكلفة الشحن/التوصيل</span>
+              <span className="font-arabic text-[11px] text-[#9E9890] font-medium animate-pulse">يرجى الاختيار...</span>
             </div>
           )}
 
