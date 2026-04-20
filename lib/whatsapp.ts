@@ -82,7 +82,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     DIVIDER,
     ``,
     `${EMOJI.USER} *معلومات الزبون*`,
-    `${EMOJI.GREET} *Name:* ${order.customerName}`,
+    `${EMOJI.GREET} *الاسم:* ${order.customerName}`,
     `${EMOJI.PHONE} *الهاتف:* ${order.customerPhone}`,
     `${EMOJI.CITY} *المحافظة:* ${order.governorate}`,
   ]
