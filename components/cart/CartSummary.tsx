@@ -65,7 +65,7 @@ export function CartSummary({
       {/* Multi-item Discount row */}
       {hasMultiDiscount && (
         <div className="flex items-center justify-between py-2.5">
-          <span className="font-brand text-sm text-secondary">حسم تعدد القطع 🔥</span>
+          <span className="font-brand text-sm text-secondary">حسم تعدد القطع</span>
           <span className="font-body text-sm tabular-nums text-green-700" dir="rtl">
             {formatCurrency(multiDiscount, currency)}
           </span>

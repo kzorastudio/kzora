@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const { data: admin, error } = await supabaseAdmin
             .from('admins')
-            .select('id, email, name, password_hash')
+            .select('id, email, name, password_hash, role')
             .eq('email', credentials.email.toLowerCase().trim())
             .single()
 
@@ -51,6 +51,7 @@ export const authOptions: NextAuthOptions = {
             id:    admin.id,
             email: admin.email,
             name:  admin.name,
+            role:  admin.role || 'super_admin',
           }
         } catch (err: any) {
           console.error('[AUTH] Catch-all error:', err.message)
@@ -65,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         token.id    = user.id
         token.email = user.email
         token.name  = user.name
+        token.role  = (user as any).role
       }
       return token
     },
@@ -73,6 +75,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id    = token.id as string
         session.user.email = token.email as string
         session.user.name  = token.name as string
+        session.user.role  = token.role as 'super_admin' | 'employee'
       }
       return session
     },

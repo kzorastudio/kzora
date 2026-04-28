@@ -263,6 +263,7 @@ export interface Admin {
   id: string
   email: string
   name: string
+  role: 'super_admin' | 'employee'
   created_at: string
 }
 

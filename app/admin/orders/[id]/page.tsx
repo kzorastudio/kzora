@@ -11,6 +11,8 @@ import type { OrderFull } from '@/types'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
 import CopyOrderButton from './CopyOrderButton'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 interface OrderDetailPageProps {
   params: { id: string }
@@ -68,6 +70,9 @@ async function getShippingMethodName(slug: string): Promise<string> {
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
+  const session = await getServerSession(authOptions)
+  const isEmployee = session?.user?.role === 'employee'
+
   const order = await getOrder(params.id)
   if (!order) notFound()
 
@@ -163,11 +168,13 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
                     {/* Price */}
                     <div className="text-right shrink-0" dir="rtl">
-                      <p className="text-sm font-label font-semibold text-on-surface">
-                        {order.currency_used === 'USD'
-                          ? formatPrice(item.unit_price_usd * item.quantity, 'USD')
-                          : formatPrice(item.unit_price_syp * item.quantity, 'SYP')}
-                      </p>
+                      {!isEmployee && (
+                        <p className="text-sm font-label font-semibold text-on-surface">
+                          {order.currency_used === 'USD'
+                            ? formatPrice(item.unit_price_usd * item.quantity, 'USD')
+                            : formatPrice(item.unit_price_syp * item.quantity, 'SYP')}
+                        </p>
+                      )}
                       <p className="text-xs font-label text-secondary mt-0.5">
                         {item.quantity} قطعة
                       </p>
@@ -257,31 +264,33 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               </div>
             </div>
 
-            {/* Loyalty info */}
-            <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <Clock size={16} className="text-secondary" />
-                <h3 className="text-sm font-arabic font-semibold text-on-surface">نقاط الولاء للعميل</h3>
+            {/* Loyalty info (hide for employees) */}
+            {!isEmployee && (
+              <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock size={16} className="text-secondary" />
+                  <h3 className="text-sm font-arabic font-semibold text-on-surface">نقاط الولاء للعميل</h3>
+                </div>
+                <div className="flex flex-col gap-2 text-sm font-arabic text-on-surface">
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">الطلبات المؤكدة</span>
+                    <span className="text-[#006E1C] font-bold">{loyalty?.confirmed_orders_count || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-secondary">الطلبات القيد الانتظار</span>
+                    <span className="text-amber-700 font-bold">{loyalty?.pending_orders_count || 0}</span>
+                  </div>
+                  <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-[11px] rounded-xl border border-blue-100 flex items-start gap-1.5 leading-relaxed">
+                    <span className="text-lg">💡</span>
+                    <span className="flex-1 font-arabic">
+                      تزداد النقاط المؤكدة للعميل بشكل فعلي فقط عند تغيير حالة هذا الطلب إلى "تم التوصيل". 
+                      هذا يحمي من كسب النقاط لطلبات غير مستلمة.
+                      عند وصول العدد لـ 3، يحصل العميل على خصم بقيمة 1000 ل.س في طلبه القادم.
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-2 text-sm font-arabic text-on-surface">
-                <div className="flex justify-between items-center">
-                  <span className="text-secondary">الطلبات المؤكدة</span>
-                  <span className="text-[#006E1C] font-bold">{loyalty?.confirmed_orders_count || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-secondary">الطلبات القيد الانتظار</span>
-                  <span className="text-amber-700 font-bold">{loyalty?.pending_orders_count || 0}</span>
-                </div>
-                <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-[11px] rounded-xl border border-blue-100 flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-lg">💡</span>
-                  <span className="flex-1 font-arabic">
-                    تزداد النقاط المؤكدة للعميل بشكل فعلي فقط عند تغيير حالة هذا الطلب إلى "تم التوصيل". 
-                    هذا يحمي من كسب النقاط لطلبات غير مستلمة.
-                    عند وصول العدد لـ 3، يحصل العميل على خصم بقيمة 1000 ل.س في طلبه القادم.
-                  </span>
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Shipping info */}
             <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
@@ -313,59 +322,61 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               )}
             </div>
 
-            {/* Order totals */}
-            <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <CreditCard size={16} className="text-secondary" />
-                <h3 className="text-sm font-arabic font-semibold text-on-surface">ملخص الطلب</h3>
-              </div>
-              <div className="flex flex-col gap-2 text-sm font-arabic">
-                <div className="flex justify-between">
-                  <span className="text-secondary">المجموع الفرعي</span>
-                  <span className="text-on-surface">{subtotal}</span>
+            {/* Order totals (hide for employees) */}
+            {!isEmployee && (
+              <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <CreditCard size={16} className="text-secondary" />
+                  <h3 className="text-sm font-arabic font-semibold text-on-surface">ملخص الطلب</h3>
                 </div>
-                {order.coupon_code && (
+                <div className="flex flex-col gap-2 text-sm font-arabic">
                   <div className="flex justify-between">
-                    <span className="text-secondary">كوبون ({order.coupon_code})</span>
-                    <span className="text-tertiary font-medium">{discount}</span>
+                    <span className="text-secondary">المجموع الفرعي</span>
+                    <span className="text-on-surface">{subtotal}</span>
                   </div>
-                )}
-                {(order.loyalty_discount_syp > 0 || order.loyalty_discount_usd > 0) && (
-                  <div className="flex justify-between">
-                    <span className="text-secondary">خصم الولاء 🎁</span>
-                    <span className="text-[#BA1A1A] font-medium" dir="rtl">
-                      {order.currency_used === 'USD' ? formatPrice(order.loyalty_discount_usd, 'USD') : formatPrice(order.loyalty_discount_syp, 'SYP')}
+                  {order.coupon_code && (
+                    <div className="flex justify-between">
+                      <span className="text-secondary">كوبون ({order.coupon_code})</span>
+                      <span className="text-tertiary font-medium">{discount}</span>
+                    </div>
+                  )}
+                  {(order.loyalty_discount_syp > 0 || order.loyalty_discount_usd > 0) && (
+                    <div className="flex justify-between">
+                      <span className="text-secondary">خصم الولاء 🎁</span>
+                      <span className="text-[#BA1A1A] font-medium" dir="rtl">
+                        {order.currency_used === 'USD' ? formatPrice(order.loyalty_discount_usd, 'USD') : formatPrice(order.loyalty_discount_syp, 'SYP')}
+                      </span>
+                    </div>
+                  )}
+                  {order.shipping_fee_determined ? (
+                    <div className="flex justify-between items-center">
+                      <span className="text-secondary">أجرة الشحن</span>
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">تتحدد مع البائع</span>
+                    </div>
+                  ) : (order.shipping_fee_syp > 0 || order.shipping_fee_usd > 0) ? (
+                    <div className="flex justify-between">
+                      <span className="text-secondary">أجرة الشحن</span>
+                      <span className="text-on-surface">
+                        {order.currency_used === 'USD' ? formatPrice(order.shipping_fee_usd, 'USD') : formatPrice(order.shipping_fee_syp, 'SYP')}
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="flex justify-between pt-2 border-t border-outline-variant/40">
+                    <span className="text-on-surface font-semibold">الإجمالي</span>
+                    <span className="text-on-surface font-bold text-base">{total}</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
+                    <span className="text-secondary text-xs">طريقة الدفع</span>
+                    <span className="text-[11px] font-arabic font-bold text-on-surface">
+                      {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
                     </span>
                   </div>
-                )}
-                {order.shipping_fee_determined ? (
-                  <div className="flex justify-between items-center">
-                    <span className="text-secondary">أجرة الشحن</span>
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">تتحدد مع البائع</span>
+                  <div className="text-xs text-secondary text-center mt-1">
+                    العملة المستخدمة: {order.currency_used}
                   </div>
-                ) : (order.shipping_fee_syp > 0 || order.shipping_fee_usd > 0) ? (
-                  <div className="flex justify-between">
-                    <span className="text-secondary">أجرة الشحن</span>
-                    <span className="text-on-surface">
-                      {order.currency_used === 'USD' ? formatPrice(order.shipping_fee_usd, 'USD') : formatPrice(order.shipping_fee_syp, 'SYP')}
-                    </span>
-                  </div>
-                ) : null}
-                <div className="flex justify-between pt-2 border-t border-outline-variant/40">
-                  <span className="text-on-surface font-semibold">الإجمالي</span>
-                  <span className="text-on-surface font-bold text-base">{total}</span>
-                </div>
-                <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
-                  <span className="text-secondary text-xs">طريقة الدفع</span>
-                  <span className="text-[11px] font-arabic font-bold text-on-surface">
-                    {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
-                  </span>
-                </div>
-                <div className="text-xs text-secondary text-center mt-1">
-                  العملة المستخدمة: {order.currency_used}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Status update (client component) */}
             <OrderStatusUpdater orderId={order.id} currentStatus={order.status} />

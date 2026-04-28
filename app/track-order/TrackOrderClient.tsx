@@ -276,7 +276,7 @@ function OrderCard({ order }: { order: OrderFull }) {
                 </p>
                 <p className="text-sm font-arabic font-medium text-[#1A1A1A]">
                   {(order as any).delivery_type === 'delivery' 
-                    ? '🚀 توصيل عادي (حلب)'
+                    ? 'توصيل عادي (حلب)'
                     : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
                 </p>
               </div>

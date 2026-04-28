@@ -463,41 +463,43 @@ export default function ProductForm({
             <div className="flex flex-col gap-6">
               {/* Global Quick Entry for ALL colors and sizes */}
               {validSizes.length > 0 && validColors.length > 0 && (
-                <div className="bg-tertiary/5 border border-tertiary/10 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-6 bg-tertiary rounded-full" />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-arabic font-bold text-on-surface">الإدخال السريع الشامل</span>
-                      <span className="text-[10px] font-arabic text-secondary">سيطبق هذا الرقم على جميع الألوان وجميع المقاسات معاً</span>
+                <div className="bg-tertiary/5 border border-tertiary/10 p-4 rounded-2xl flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-6 bg-tertiary rounded-full" />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-arabic font-bold text-on-surface">الإدخال السريع الشامل</span>
+                        <span className="text-[10px] font-arabic text-secondary">أدخل الكمية لكل مقاس وسيتم تطبيق التوزيعة على جميع الألوان تلقائياً</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="الكمية"
-                      id="global-quick-entry"
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value)
-                        if (!isNaN(val)) {
-                          const currentVariants = getValues('variants') || []
-                          currentVariants.forEach((_, idx) => {
-                            setValue(`variants.${idx}.quantity`, val, { shouldDirty: true, shouldValidate: true })
-                          })
-                        }
-                      }}
-                      className="w-24 bg-white border-2 border-tertiary/20 rounded-xl px-4 py-2 text-sm font-bold text-on-surface focus:border-tertiary outline-none shadow-sm transition-all"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const input = document.getElementById('global-quick-entry') as HTMLInputElement
-                        if (input) input.value = ''
-                      }}
-                      className="text-[10px] font-arabic text-secondary hover:text-primary transition-colors underline"
-                    >
-                      تصفير
-                    </button>
+                  
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
+                    {validSizes.map(size => (
+                      <div key={`global-${size}`} className="flex flex-col gap-1.5 bg-white p-2 rounded-xl border border-tertiary/20 shadow-sm">
+                        <label className="text-[10px] font-arabic font-bold text-tertiary px-1 text-center">مقاس {size}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="الكمية"
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value)
+                            if (!isNaN(val)) {
+                              // Apply this size's quantity to ALL colors for this specific size
+                              validColors.forEach(color => {
+                                const variantIdx = (getValues('variants') || []).findIndex(
+                                  (v: any) => v.color === color.value && v.size === size
+                                )
+                                if (variantIdx !== -1) {
+                                  setValue(`variants.${variantIdx}.quantity`, val, { shouldDirty: true, shouldValidate: true })
+                                }
+                              })
+                            }
+                          }}
+                          className="w-full bg-surface-container-lowest border-none rounded-lg text-sm font-bold text-center text-on-surface focus:ring-2 focus:ring-tertiary/30 outline-none"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

@@ -202,7 +202,7 @@ export default function OrderSummaryPanel({
 
           {(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0)) > 0 && (
             <div className="flex items-center justify-between text-sm">
-              <span className="font-arabic text-[#6B6560]">خصم الولاء 🎁</span>
+              <span className="font-arabic text-[#6B6560]">خصم الولاء</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
                 {formatCurrency(currency === 'SYP' ? (loyaltyDiscountSyp || 0) : (loyaltyDiscountUsd || 0), currency)}
               </span>
@@ -211,7 +211,7 @@ export default function OrderSummaryPanel({
 
           {(currency === 'SYP' ? (multiItemDiscountSyp || 0) : (multiItemDiscountUsd || 0)) > 0 && (
             <div className="flex items-center justify-between text-sm">
-              <span className="font-arabic text-[#6B6560]">حسم تعدد القطع 🔥</span>
+              <span className="font-arabic text-[#6B6560]">حسم تعدد القطع</span>
               <span className="font-body tabular-nums text-[#BA1A1A] font-semibold" dir="rtl">
                 {formatCurrency(currency === 'SYP' ? (multiItemDiscountSyp || 0) : (multiItemDiscountUsd || 0), currency)}
               </span>
@@ -224,7 +224,7 @@ export default function OrderSummaryPanel({
                 <span className="font-arabic text-[#6B6560]">أجرة الشحن</span>
                 <span className="font-arabic text-[#1B5E20] font-bold text-[11px] flex items-center gap-1">
                   <span>يتم تحديد السعر عبر الواتساب</span>
-                  <span className="text-base">💬</span>
+                  <span className="text-base"></span>
                 </span>
               </div>
               <p className="text-[10px] font-arabic text-[#1B5E20]/80 leading-tight">
@@ -283,7 +283,6 @@ export default function OrderSummaryPanel({
             </>
           ) : (
             <>
-              <span>✅</span>
               تأكيد الطلب
             </>
           )}

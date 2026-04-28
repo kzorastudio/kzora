@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import NextImage from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import {
   LayoutDashboard,
   Package,
@@ -18,15 +18,17 @@ import {
   Truck,
   X,
   MessageSquare,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { href: '/admin',            label: 'الرئيسية',         icon: LayoutDashboard, exact: true  },
   { href: '/admin/products',   label: 'المنتجات',         icon: Package,          exact: false },
+  { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false },
+  { href: '/admin/users',      label: 'الموظفين',        icon: Users,            exact: false },
   { href: '/admin/categories', label: 'الأقسام',          icon: FolderOpen,       exact: false },
   { href: '/admin/navigation', label: 'إدارة التنقل',     icon: Menu,             exact: false },
-  { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false },
   { href: '/admin/reviews',    label: 'التقييمات',        icon: MessageSquare,   exact: false },
   { href: '/admin/coupons',    label: 'الكوبونات',        icon: Tag,              exact: false },
   { href: '/admin/homepage',   label: 'محتوى المتجر',     icon: Image,            exact: false },
@@ -41,6 +43,7 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ open = false, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [isMobile, setIsMobile] = useState(false)
 
   // Detect mobile on client
@@ -115,7 +118,13 @@ export default function AdminSidebar({ open = false, onClose }: AdminSidebarProp
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scrollbar-hide">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => {
+            if (session?.user?.role === 'employee') {
+              // Employee can only see Products
+              return item.href === '/admin/products'
+            }
+            return true // super_admin sees all
+          }).map((item) => {
             const active = isActive(item.href, item.exact)
             const Icon = item.icon
             return (

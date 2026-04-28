@@ -82,7 +82,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 </div>
-                <h1 className="font-arabic text-3xl font-bold mb-2">تم استلام طلبك! 🎉</h1>
+                <h1 className="font-arabic text-3xl font-bold mb-2">تم استلام طلبك!</h1>
                 <p className="font-arabic text-white/85 text-base leading-relaxed">
                   شكراً لثقتك بكزورا. سيتواصل معك فريقنا على واتساب خلال ساعات لتأكيد الطلب وترتيب التوصيل.
                 </p>
@@ -198,7 +198,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
               </div>
 
               <h1 className="font-arabic text-3xl font-bold mb-2">
-                تم استلام طلبك! 🎉
+                تم استلام طلبك!
               </h1>
               <p className="font-arabic text-white/85 text-base leading-relaxed">
                 شكراً لثقتك بكزورا. سيتواصل معك فريقنا على واتساب خلال ساعات لتأكيد الطلب وترتيب التوصيل.
@@ -253,7 +253,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   </p>
                   <p className="font-arabic text-sm font-medium text-on-surface">
                     {(order as any).delivery_type === 'delivery' 
-                      ? '🚀 توصيل عادي (حلب)'
+                      ? 'توصيل عادي (حلب)'
                       : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
                   </p>
                 </div>
@@ -365,7 +365,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                 {loyaltyDiscount > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-arabic text-[#006E1C] font-semibold">
-                      خصم الولاء 🎁
+                      خصم الولاء
                     </span>
                     <span className="font-body tabular-nums text-[#006E1C] font-bold" dir="rtl">
                       {formatPrice(loyaltyDiscount, currency)}
@@ -398,11 +398,11 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                 <p className="text-xs font-arabic text-secondary text-left" dir="ltr">
                   {order.payment_method === 'sham_cash' ? (
                     <span className="flex flex-col items-end gap-1">
-                      <span className="text-[#785600] font-bold">شام كاش (تحويل مسبق) 📱</span>
+                      <span className="text-[#785600] font-bold">شام كاش (تحويل مسبق)</span>
                       <span className="text-[10px] text-secondary">رقم المحفظة: {order.customer_phone}</span>
                     </span>
                   ) : (
-                    'الدفع عند الاستلام 💵'
+                    'الدفع عند الاستلام'
                   )}
                 </p>
               </div>

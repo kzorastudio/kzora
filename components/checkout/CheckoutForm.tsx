@@ -322,7 +322,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                   dir="ltr"
                   className="flex items-center gap-1.5 px-3 text-sm font-body font-medium text-[#6B6560] border-r border-[#E8E3DB] select-none shrink-0"
                 >
-                  <span className="text-base">🇸🇾</span>
+                  <span className="text-base"></span>
                   +963
                 </span>
                 <input
@@ -544,7 +544,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">📱</span>
+                  <span className="text-xl"></span>
                   <p className="font-arabic font-bold text-sm text-[#1A1A1A]">شام كاش (تحويل مسبق)</p>
                 </div>
                 <p className="font-arabic text-[11px] text-[#6B6560] mt-0.5">قم بالتحويل إلى رقم المحفظة أدناه قبل إتمام الطلب.</p>
@@ -603,13 +603,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
         )}
       </div>
 
-      {/* ═══ Warning Banner ══════════════════════════════════════════════════════════ */}
-      <div className="flex items-start gap-3 bg-[#FFF3E0] border border-[#FFB74D]/40 rounded-xl p-4 mt-5">
-        <AlertTriangle size={18} className="text-[#E65100] shrink-0 mt-0.5" />
-        <p className="font-arabic text-xs text-[#5D4037] leading-relaxed">
-          <strong>تنبيه:</strong> لا يمكن للعميل فحص المنتج قبل الدفع. نضمن لكم حق الاسترجاع والتبديل في حال وجود أي عيب مصنعي خلال 3 أيام من الاستلام.
-        </p>
-      </div>
+
     </form>
   )
 }

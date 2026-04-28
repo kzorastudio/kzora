@@ -10,6 +10,7 @@ import StatusBadge from './StatusBadge'
 import DeleteOrderModal from './DeleteOrderModal'
 import { cn } from '@/lib/utils'
 import type { Order, OrderStatus } from '@/types'
+import { useSession } from 'next-auth/react'
 
 const SHIPPING_DISPLAY: Record<string, string> = {
   karam:   'كرم',
@@ -39,6 +40,8 @@ export default function OrderTable({
   loading = false,
 }: OrderTableProps) {
   const router = useRouter()
+  const { data: session } = useSession()
+  const isEmployee = session?.user?.role === 'employee'
   const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
@@ -77,7 +80,7 @@ export default function OrderTable({
       order.customer_address ? `العنوان: ${order.customer_address}` : null,
       `الشحن: ${shippingLabel}`,
       `طريقة الدفع: ${pMethod}`,
-      `الإجمالي: ${totalStr}`,
+      !isEmployee ? `الإجمالي: ${totalStr}` : null,
       `الحالة: ${ORDER_STATUS_OPTIONS.find((o) => o.id === order.status)?.label ?? order.status}`,
       `التاريخ: ${formatDate(order.created_at)}`,
     ].filter(Boolean)
@@ -184,9 +187,11 @@ export default function OrderTable({
             </div>
             {/* Row 3: total + governorate + date */}
             <div className="flex items-center justify-between text-xs text-secondary font-arabic mt-1">
-              <span className="font-label font-semibold text-on-surface text-sm">
-                {order.currency_used === 'USD' ? formatPrice(order.total_usd, 'USD') : formatPrice(order.total_syp, 'SYP')}
-              </span>
+              {!isEmployee && (
+                <span className="font-label font-semibold text-on-surface text-sm">
+                  {order.currency_used === 'USD' ? formatPrice(order.total_usd, 'USD') : formatPrice(order.total_syp, 'SYP')}
+                </span>
+              )}
               <span>{order.customer_governorate}</span>
               <div className="flex items-center gap-1.5 bg-surface-container-high px-2 py-0.5 rounded-lg border border-outline-variant/30 text-[10px] font-arabic font-bold text-on-surface-variant">
                 <span>{order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}</span>
@@ -261,7 +266,7 @@ export default function OrderTable({
                     </td>
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface whitespace-nowrap">{order.customer_governorate}</td>
                     <td className="px-4 py-3 text-sm font-label font-semibold text-on-surface whitespace-nowrap">
-                      {order.currency_used === 'USD' ? formatPrice(order.total_usd, 'USD') : formatPrice(order.total_syp, 'SYP')}
+                      {!isEmployee ? (order.currency_used === 'USD' ? formatPrice(order.total_usd, 'USD') : formatPrice(order.total_syp, 'SYP')) : '---'}
                     </td>
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface whitespace-nowrap">
                       <span className={cn(

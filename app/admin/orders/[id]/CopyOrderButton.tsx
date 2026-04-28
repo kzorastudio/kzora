@@ -6,12 +6,16 @@ import toast from 'react-hot-toast'
 import type { OrderFull } from '@/types'
 import { formatDate, formatPrice, SHIPPING_LABELS } from '@/lib/utils'
 
+import { useSession } from 'next-auth/react'
+
 interface CopyOrderButtonProps {
   order: OrderFull
 }
 
 export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
   const [copied, setCopied] = useState(false)
+  const { data: session } = useSession()
+  const isEmployee = session?.user?.role === 'employee'
 
   const handleCopy = async () => {
     try {
@@ -45,7 +49,7 @@ ${itemsText}
 
 🚚 الشحن: ${shippingInfo}
 💳 الدفع: ${paymentMethod}
-💰 الإجمالي: ${totalPrice}
+${!isEmployee ? `💰 الإجمالي: ${totalPrice}\n` : ''}
 
 ✨ شكراً لاختياركم كزورا ✨
       `.trim()

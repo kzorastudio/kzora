@@ -116,9 +116,9 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
               <p className="text-xs font-arabic font-bold text-white/60 tracking-widest uppercase px-1">اقتراحات ذكية</p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { label: '🔥 العروض الخاصة', href: '/products?tag=on_sale' },
-                  { label: '✨ وصلنا حديثاً', href: '/products?tag=new' },
-                  { label: '🏆 الأكثر مبيعاً', href: '/products?tag=best_seller' },
+                  { label: 'العروض الخاصة', href: '/products?tag=on_sale' },
+                  { label: 'وصلنا حديثاً', href: '/products?tag=new' },
+                  { label: 'الأكثر مبيعاً', href: '/products?tag=best_seller' },
                 ].map((item) => (
                   <button
                     key={item.href}
@@ -195,7 +195,7 @@ export function Header() {
           <div className="max-w-7xl mx-auto flex items-center justify-center">
             <p className="text-[10px] md:text-xs font-arabic font-bold text-[#FFDEA6] flex items-center justify-center text-center gap-2 md:gap-3 whitespace-normal md:whitespace-nowrap animate-pulse leading-tight md:leading-relaxed">
               <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-[#FFDEA6] shrink-0" />
-              ✨ برنامج الولاء: أكمل 3 طلبيات واحصل على عرض خاص وهدية في طلبيتك القادمة!
+              برنامج الولاء: أكمل 3 طلبيات واحصل على عرض خاص وهدية في طلبيتك القادمة!
               <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-[#FFDEA6] shrink-0 hidden sm:inline" />
             </p>
           </div>

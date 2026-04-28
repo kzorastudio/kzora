@@ -215,9 +215,40 @@ export default function ProductActions({ product, settings, activeColorName, onC
     }
     addItem(item)
     trackAddToCart(product, quantity)
-    toast.success(`تمت إضافة ${quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى السلة`)
+    toast.custom((t) => (
+      <div className={cn(
+        "max-w-sm w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex flex-col ring-1 ring-black/5 overflow-hidden transition-all duration-300",
+        t.visible ? 'animate-in fade-in slide-in-from-top-4' : 'animate-out fade-out slide-out-to-top-4'
+      )} dir="rtl">
+        <div className="p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center shrink-0">
+            <ShoppingBag size={20} className="text-[#2E7D32]" />
+          </div>
+          <div>
+            <p className="font-arabic font-bold text-[#1A1A1A] text-sm">تمت الإضافة بنجاح!</p>
+            <p className="font-arabic text-[#6B6560] text-xs mt-0.5">تمت إضافة {quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى سلة التسوق.</p>
+          </div>
+        </div>
+        <div className="flex border-t border-gray-100">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              openCart()
+            }}
+            className="w-full border-r border-gray-100 px-4 py-3 font-arabic font-bold text-sm text-[#785600] hover:bg-[#F5F1EB] transition-colors flex items-center justify-center gap-2"
+          >
+            الذهاب للعربة
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="w-full px-4 py-3 font-arabic font-semibold text-sm text-[#6B6560] hover:bg-gray-50 transition-colors"
+          >
+            متابعة التسوق
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, position: 'top-center' })
     setQuantity(1)
-    openCart()
   }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, openCart, currentAvailableStock])
 
   return (
@@ -272,7 +303,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
         {product.multi_discount_enabled && (
           <div className="bg-[#E8F5E9] border border-[#2E7D32]/20 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-right-2 duration-500">
             <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center shrink-0">
-              <span className="text-lg">🔥</span>
+              <span className="text-lg"></span>
             </div>
             <div className="flex flex-col gap-0.5">
               <p className="text-xs font-arabic font-bold text-[#1B5E20]">وفّر أكثر مع كزورا!</p>
@@ -292,47 +323,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
           </div>
         )}
 
-        {/* Shipping info */}
-        {settings && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/50 border border-[#E8E3DB] p-3 rounded-xl">
-              <span className="block text-[10px] font-arabic text-[#9E9890] mb-0.5">🚀 توصيل عادي (حلب)</span>
-              <span className="text-xs font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                {/* Aleppo is ALWAYS flat fee from settings */}
-                {formatPrice(currency === 'SYP' ? (settings.delivery_fee_syp || 0) : (settings.delivery_fee_usd || 0), currency)}
-              </span>
-            </div>
-            <div className="bg-white/50 border border-[#E8E3DB] p-3 rounded-xl">
-              <span className="block text-[10px] font-arabic text-[#9E9890] mb-0.5">📦 شحن محافظات ({quantity} {quantity >= 3 ? 'قطع' : 'قطعة'})</span>
-              <span className="text-xs font-bold text-[#1A1A1A] tabular-nums" dir="rtl">
-                {(() => {
-                  // Rule for Provincial Shipping: 4+ items = WhatsApp
-                  if (quantity >= 4) {
-                    return <span className="text-[#2E7D32] font-arabic font-bold">يتحدد عبر الواتساب</span>
-                  }
-                  
-                  const feeSyp = quantity === 1 
-                    ? settings.shipping_fee_1_piece_syp 
-                    : quantity === 2 
-                      ? settings.shipping_fee_2_pieces_syp 
-                      : settings.shipping_fee_3_plus_pieces_syp;
-                      
-                  const feeUsd = quantity === 1 
-                    ? settings.shipping_fee_1_piece_usd 
-                    : quantity === 2 
-                      ? settings.shipping_fee_2_pieces_usd 
-                      : settings.shipping_fee_3_plus_pieces_usd;
-                  
-                  if (quantity === 3 && (!feeSyp || feeSyp === 0)) {
-                    return <span className="text-[#2E7D32] font-arabic font-bold">يتحدد عبر الواتساب</span>
-                  }
-                  
-                  return formatPrice(currency === 'SYP' ? (feeSyp || 0) : (feeUsd || 0), currency)
-                })()}
-              </span>
-            </div>
-          </div>
-        )}
+
       </div>
 
       {/* ── Color selector ── */}
@@ -417,7 +408,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
                   ? "bg-[#FFF0E6] text-[#E65C00] border border-[#FFD1B3]"
                   : "bg-[#E6F4EA] text-[#137333] border border-[#BCE3C6]"
               )}>
-                {product.mold_type === 'chinese' ? '⚠️ القالب صيني (ننصح بمقاس أكبر)' : '📏 القالب طبيعي (نظامي)'}
+                {product.mold_type === 'chinese' ? 'القالب صيني (ننصح بمقاس أكبر)' : 'القالب طبيعي (نظامي)'}
               </div>
             </div>
             
@@ -563,7 +554,7 @@ export default function ProductActions({ product, settings, activeColorName, onC
       {!outOfStock && (
         <div className="bg-[#FFFBEA] border border-[#FBE39A] rounded-2xl p-4 flex items-start gap-3 shadow-sm group hover:shadow-md transition-shadow">
           <div className="w-10 h-10 rounded-full bg-[#785600] flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:rotate-12 transition-transform">
-            <span className="text-xl">🎁</span>
+            <span className="text-xl"></span>
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-sm font-arabic font-bold text-[#785600]">مفاجأة بانتظارك!</p>

@@ -96,7 +96,17 @@ async function getRecentOrders(): Promise<Order[]> {
   return (data as Order[]) ?? []
 }
 
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+
 export default async function AdminDashboardPage() {
+  const session = await getServerSession(authOptions)
+  
+  if (session?.user?.role === 'employee') {
+    redirect('/admin/products')
+  }
+
   const [stats, recentOrders] = await Promise.all([
     getDashboardStats(),
     getRecentOrders(),

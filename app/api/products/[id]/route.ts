@@ -246,7 +246,7 @@ export async function PUT(
     if (variants !== undefined) {
       await supabaseAdmin.from('product_variants').delete().eq('product_id', id)
       if (variants.length > 0) {
-        await supabaseAdmin
+        const { error: variantError } = await supabaseAdmin
           .from('product_variants')
           .insert(variants.map((v: any) => ({
              product_id: id,
@@ -254,6 +254,10 @@ export async function PUT(
              size: v.size || 0,
              quantity: v.quantity || 0,
           })))
+        if (variantError) {
+          console.error('Variant insert error:', variantError)
+          throw new Error('Failed to insert variants: ' + variantError.message)
+        }
       }
     }
 
@@ -261,6 +265,7 @@ export async function PUT(
     revalidatePath('/')
     revalidatePath('/products')
     revalidatePath('/admin/products')
+    revalidatePath(`/admin/products/${id}/edit`)
     if (oldCategorySlug) revalidatePath(`/category/${oldCategorySlug}`)
     if (newCategorySlug && (newCategorySlug !== oldCategorySlug)) revalidatePath(`/category/${newCategorySlug}`)
     if (existing?.slug) revalidatePath(`/product/${existing.slug}`)

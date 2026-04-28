@@ -18,6 +18,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/admin/pages':      'الصفحات',
   '/admin/shipping':   'شركات الشحن',
   '/admin/navigation': 'إدارة التنقل',
+  '/admin/users':      'المدراء والموظفين',
 }
 
 const DYNAMIC_LABELS: Record<string, string> = {
