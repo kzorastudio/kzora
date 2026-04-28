@@ -217,42 +217,51 @@ export default function ProductActions({ product, settings, activeColorName, onC
     trackAddToCart(product, quantity)
     toast.custom((t) => (
       <div className={cn(
-        "max-w-sm w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex flex-col ring-1 ring-black/5 overflow-hidden transition-all duration-300",
+        "max-w-[340px] w-full bg-white shadow-xl rounded-2xl pointer-events-auto flex flex-col ring-1 ring-[#E8E3DB] overflow-hidden transition-all duration-300 relative",
         t.visible ? 'animate-in fade-in slide-in-from-top-4' : 'animate-out fade-out slide-out-to-top-4'
       )} dir="rtl">
         <div className="p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center shrink-0">
             <ShoppingBag size={20} className="text-[#2E7D32]" />
           </div>
-          <div>
-            <p className="font-arabic font-bold text-[#1A1A1A] text-sm">تمت الإضافة بنجاح!</p>
-            <p className="font-arabic text-[#6B6560] text-xs mt-0.5">تمت إضافة {quantity > 1 ? quantity + ' قطع' : 'المنتج'} إلى سلة التسوق.</p>
+          <div className="flex-1">
+            <p className="font-arabic font-bold text-[#1A1A1A] text-[15px]">تمت الإضافة بنجاح!</p>
+            <p className="font-arabic text-[#6B6560] text-xs mt-0.5">
+              تمت إضافة المنتج إلى سلة التسوق.
+            </p>
           </div>
-        </div>
-        <div className="flex border-t border-gray-100">
           <button
             onClick={() => {
               toast.dismiss(t.id)
               openCart()
             }}
-            className="w-full border-r border-gray-100 px-4 py-3 font-arabic font-bold text-sm text-[#785600] hover:bg-[#F5F1EB] transition-colors flex items-center justify-center gap-2"
+            className="px-4 py-2 bg-[#F5F3F0] hover:bg-[#EDE8E0] text-[#785600] rounded-xl font-arabic font-bold text-xs transition-colors shrink-0 border border-[#E8E3DB]"
           >
-            الذهاب للعربة
-          </button>
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="w-full px-4 py-3 font-arabic font-semibold text-sm text-[#6B6560] hover:bg-gray-50 transition-colors"
-          >
-            متابعة التسوق
+            عرض السلة
           </button>
         </div>
+        {/* Progress Bar */}
+        <div className="h-1 bg-gray-100 w-full absolute bottom-0 left-0 right-0">
+          <div 
+            className="h-full bg-[#2E7D32]"
+            style={{ 
+              animation: `toast-progress ${t.duration || 4000}ms linear forwards` 
+            }}
+          />
+        </div>
       </div>
-    ), { duration: 5000, position: 'top-center' })
+    ), { duration: 4000, position: 'top-center' })
     setQuantity(1)
   }, [product, selectedColor, selectedSize, quantity, outOfStock, addItem, openCart, currentAvailableStock])
 
   return (
     <div dir="rtl" className="space-y-6">
+      <style>{`
+        @keyframes toast-progress {
+          0% { width: 100%; }
+          100% { width: 0%; }
+        }
+      `}</style>
 
       {/* ── Price block ── */}
       <div className="flex flex-col gap-4">
