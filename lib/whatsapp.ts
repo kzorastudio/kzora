@@ -124,9 +124,6 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
       lines.push(`   ${EMOJI.RULER} *المقاس:* ${item.size}${moldNotice}`)
     }
     lines.push(`   ${EMOJI.NUMBERS} *الكمية:* ${item.quantity} × ${price}`)
-    if (item.image) {
-      lines.push(`   🖼️ *صورة المنتج:* ${item.image}`)
-    }
   })
 
   lines.push(DIVIDER)
