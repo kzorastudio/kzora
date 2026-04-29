@@ -80,17 +80,16 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const shippingName = deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : (await getShippingMethodName(order.shipping_company || ''))
   const loyalty = await getCustomerLoyalty(order.customer_phone)
 
-  const subtotal = order.currency_used === 'USD'
-    ? formatPrice(order.subtotal_usd, 'USD')
-    : formatPrice(order.subtotal_syp, 'SYP')
+  const currency = order.currency_used
+  const subtotalRaw = currency === 'USD' ? order.subtotal_usd : order.subtotal_syp
+  const discountRaw = currency === 'USD' ? order.discount_amount_usd : order.discount_amount_syp
+  const loyaltyDiscountRaw = currency === 'USD' ? order.loyalty_discount_usd : order.loyalty_discount_syp
+  const baseDiscountRaw = discountRaw - loyaltyDiscountRaw
 
-  const discount = order.currency_used === 'USD'
-    ? formatPrice(order.discount_amount_usd, 'USD')
-    : formatPrice(order.discount_amount_syp, 'SYP')
-
-  const total = order.currency_used === 'USD'
-    ? formatPrice(order.total_usd, 'USD')
-    : formatPrice(order.total_syp, 'SYP')
+  const subtotal = formatPrice(subtotalRaw, currency)
+  const baseDiscount = formatPrice(baseDiscountRaw, currency)
+  const loyaltyDiscount = formatPrice(loyaltyDiscountRaw, currency)
+  const total = formatPrice(currency === 'USD' ? order.total_usd : order.total_syp, currency)
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
@@ -334,17 +333,21 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     <span className="text-secondary">المجموع الفرعي</span>
                     <span className="text-on-surface">{subtotal}</span>
                   </div>
-                  {order.coupon_code && (
+                  {baseDiscountRaw > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-secondary">كوبون ({order.coupon_code})</span>
-                      <span className="text-tertiary font-medium">{discount}</span>
+                      <span className="text-secondary">
+                        خصم التوفير {order.coupon_code && `(${order.coupon_code})`}
+                      </span>
+                      <span className="text-tertiary font-medium" dir="rtl">
+                        {baseDiscount}
+                      </span>
                     </div>
                   )}
-                  {(order.loyalty_discount_syp > 0 || order.loyalty_discount_usd > 0) && (
+                  {loyaltyDiscountRaw > 0 && (
                     <div className="flex justify-between">
                       <span className="text-secondary">خصم الولاء 🎁</span>
                       <span className="text-[#BA1A1A] font-medium" dir="rtl">
-                        {order.currency_used === 'USD' ? formatPrice(order.loyalty_discount_usd, 'USD') : formatPrice(order.loyalty_discount_syp, 'SYP')}
+                        {loyaltyDiscount}
                       </span>
                     </div>
                   )}

@@ -262,14 +262,14 @@ export default function OrderSummaryPanel({
         <button
           type="submit"
           form="checkout-form"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !deliveryType}
           className={cn(
             'w-full py-3.5 rounded-xl font-arabic font-bold text-sm text-white',
             'bg-gradient-to-l from-[#785600] to-[#986D00]',
             'hover:from-[#986D00] hover:to-[#B8860B]',
             'transition-all duration-200 shadow-md shadow-[#785600]/20',
             'focus-visible:outline-none active:scale-[0.98]',
-            'disabled:opacity-60 disabled:cursor-not-allowed',
+            'disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none',
             'flex items-center justify-center gap-2'
           )}
         >
@@ -280,6 +280,10 @@ export default function OrderSummaryPanel({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
               جارٍ تأكيد الطلب...
+            </>
+          ) : !deliveryType ? (
+            <>
+              اختر طريقة الاستلام للمتابعة
             </>
           ) : (
             <>

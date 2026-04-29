@@ -273,8 +273,10 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       </div>
 
       {/* ═══ Section 2: Contact Info ════════════════════════════════════════════════ */}
-      <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
-        <SectionHeading icon={MapPin} title="معلومات الاتصال" />
+      {deliveryType ? (
+        <div className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-0">
+          <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+            <SectionHeading icon={MapPin} title="معلومات الاتصال" />
 
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -602,7 +604,13 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
           </div>
         )}
       </div>
-
+        </div>
+      ) : (
+        <div className="mt-5 p-8 border-2 border-dashed border-[#E8E3DB] rounded-3xl bg-white/60 text-center animate-pulse flex flex-col items-center justify-center gap-3">
+          <Truck size={32} className="text-[#D3C4AF]" />
+          <p className="font-arabic text-sm text-[#9E9890] font-bold">يرجى اختيار طريقة الاستلام بالأعلى لمتابعة إدخال بياناتك...</p>
+        </div>
+      )}
 
     </form>
   )
