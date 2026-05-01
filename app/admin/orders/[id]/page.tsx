@@ -336,7 +336,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   {baseDiscountRaw > 0 && (
                     <div className="flex justify-between">
                       <span className="text-secondary">
-                        خصم التوفير {order.coupon_code && `(${order.coupon_code})`}
+                        {order.coupon_code ? `خصم الكوبون (${order.coupon_code})` : 'حسم تعدد القطع'}
                       </span>
                       <span className="text-tertiary font-medium" dir="rtl">
                         {baseDiscount}

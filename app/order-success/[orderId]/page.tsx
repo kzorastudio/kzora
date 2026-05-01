@@ -352,10 +352,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                 {baseDiscount > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-arabic text-secondary">
-                      خصم التوفير
-                      {order.coupon_code && (
-                        <span className="font-body text-primary mr-1">({order.coupon_code})</span>
-                      )}
+                      {order.coupon_code ? `خصم الكوبون (${order.coupon_code})` : 'حسم تعدد القطع'}
                     </span>
                     <span className="font-body tabular-nums text-[#BA1A1A]" dir="rtl">
                       {formatPrice(baseDiscount, currency)}

@@ -395,9 +395,8 @@ export async function POST(request: NextRequest) {
     }
 
     const finalDiscountSyp = discountSyp + loyaltyDiscountSyp + multiItemDiscountSyp
-    const currentRatio     = subtotalSyp > 0 ? subtotalUsd / subtotalSyp : 0
     const finalDiscountUsd = parseFloat(
-      (discountUsd + (loyaltyDiscountSyp + multiItemDiscountSyp) * currentRatio).toFixed(2)
+      (discountUsd + loyaltyDiscountUsd + multiItemDiscountUsd).toFixed(2)
     )
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))
