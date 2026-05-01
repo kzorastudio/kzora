@@ -410,7 +410,7 @@ export async function POST(request: NextRequest) {
       .insert({
         order_number:            orderNumber,
         customer_full_name:      customer.full_name,
-        customer_phone:          customer.phone,
+        customer_phone:          normalizePhone(customer.phone),
         customer_governorate:    customer.governorate,
         customer_address:        customer.address || null,
         center_name:             customer.center_name || null,

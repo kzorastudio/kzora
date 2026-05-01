@@ -287,20 +287,20 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                   الاسم الكامل <span className="text-[#BA1A1A]">*</span>
                 </label>
                 <span className="text-[10px] font-arabic px-2 py-0.5 bg-[#785600]/10 text-[#785600] rounded-full font-bold">
-                  الكتابة بالعربي حصراً
+                  بالعربي أو الإنكليزي
                 </span>
               </div>
               <input
                 id="full_name"
                 type="text"
                 autoComplete="name"
-                placeholder="أدخل اسمك الثلاثي باللغة العربية..."
+                placeholder="أدخل اسمك الكامل..."
                 className={cn(fieldBase, errors.full_name && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
                 {...register('full_name')}
                 onInput={(e) => {
                   const val = e.currentTarget.value;
-                  // Allow only Arabic characters and spaces
-                  const filtered = val.replace(/[^\u0600-\u06FF\s]/g, '');
+                  // Allow Arabic characters, English letters, and spaces
+                  const filtered = val.replace(/[^\u0600-\u06FFa-zA-Z\s]/g, '');
                   if (val !== filtered) {
                     e.currentTarget.value = filtered;
                   }
@@ -336,6 +336,14 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                   placeholder="9xx xxx xxx"
                   className="flex-1 min-w-0 bg-transparent px-3 py-3 text-sm font-body text-[#1A1A1A] text-right focus:outline-none placeholder:text-[#9E9890]"
                   {...register('phone')}
+                  onInput={(e) => {
+                    const val = e.currentTarget.value;
+                    // Allow both English and Arabic digits
+                    const filtered = val.replace(/[^0-9٠-٩\s]/g, '');
+                    if (val !== filtered) {
+                      e.currentTarget.value = filtered;
+                    }
+                  }}
                   onBlur={() => trigger('phone')}
                 />
               </div>

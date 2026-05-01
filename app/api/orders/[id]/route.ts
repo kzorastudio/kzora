@@ -102,7 +102,7 @@ export async function PUT(
 
     if (notes !== undefined) updateFields.notes = notes
     if (customer_full_name !== undefined) updateFields.customer_full_name = customer_full_name
-    if (customer_phone !== undefined) updateFields.customer_phone = customer_phone
+    if (customer_phone !== undefined) updateFields.customer_phone = normalizePhone(customer_phone)
     if (customer_governorate !== undefined) updateFields.customer_governorate = customer_governorate
     if (customer_address !== undefined) updateFields.customer_address = customer_address
     if (center_name !== undefined) updateFields.center_name = center_name
