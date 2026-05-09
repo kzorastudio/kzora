@@ -62,25 +62,34 @@ export default function CategoryGrid({ categories }: Props) {
           )}
 
           {count >= 4 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 h-auto md:h-[650px]">
-              {/* Featured card — 2 cols × 2 rows */}
-              <CategoryCard 
-                category={categories[0]} 
-                className="col-span-2 row-span-1 md:row-span-2 h-[400px] md:h-auto" 
-                isFeatured 
-                subtitle="قوة التحمل بلمسة من الفخامة" 
-              />
-              
-              {/* Wide card — 2 cols × 1 row */}
-              <CategoryCard 
-                category={categories[1]} 
-                className="col-span-2 row-span-1 h-[250px] md:h-auto" 
-                subtitle="عصرية ومريحة" 
-              />
-              
-              {/* Small cards — 1 col × 1 row */}
-              <CategoryCard category={categories[2]} className="col-span-1 row-span-1 h-[200px] md:h-auto" />
-              <CategoryCard category={categories[3]} className="col-span-1 row-span-1 h-[200px] md:h-auto" />
+            <div className="flex flex-col gap-3 md:gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 h-auto md:h-[650px]">
+                {/* Featured card — 2 cols × 2 rows */}
+                <CategoryCard 
+                  category={categories[0]} 
+                  className="col-span-2 row-span-1 md:row-span-2 h-[400px] md:h-auto" 
+                  isFeatured 
+                  subtitle="قوة التحمل بلمسة من الفخامة" 
+                />
+                
+                {/* Wide card — 2 cols × 1 row */}
+                <CategoryCard 
+                  category={categories[1]} 
+                  className="col-span-2 row-span-1 h-[250px] md:h-auto" 
+                  subtitle="عصرية ومريحة" 
+                />
+                
+                {/* Small cards — 1 col × 1 row */}
+                <CategoryCard category={categories[2]} className="col-span-1 row-span-1 h-[200px] md:h-auto" />
+                <CategoryCard category={categories[3]} className="col-span-1 row-span-1 h-[200px] md:h-auto" />
+              </div>
+              {count > 4 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+                  {categories.slice(4).map((cat) => (
+                    <CategoryCard key={cat.id} category={cat} className="col-span-1 h-[200px] md:h-[250px]" />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

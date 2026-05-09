@@ -110,7 +110,7 @@ export default async function HomePage() {
 
   const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult] = await Promise.all([
     supabase.from('hero_slides').select('*').eq('is_active', true).order('sort_order'),
-    supabase.from('categories').select('*').eq('show_in_home', true).eq('is_active', true).order('home_order', { ascending: true }).limit(4),
+    supabase.from('categories').select('*').eq('show_in_home', true).eq('is_active', true).order('home_order', { ascending: true }),
     fetchProductsByTag('new', 8),
     fetchProductsByTag('best_seller', 8),
     fetchProductsByTag('on_sale', 6),
