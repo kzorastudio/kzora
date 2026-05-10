@@ -153,7 +153,7 @@ export default function ProductSection({
               style={{ scrollbarWidth: 'none' }}
             >
               {products.map((product) => (
-                <div key={product.id} className="min-w-[180px] sm:min-w-[240px] md:min-w-[300px] snap-start shrink-0">
+                <div key={product.id} className="min-w-[180px] sm:min-w-[240px] md:min-w-[300px] snap-start shrink-0 flex">
                   <ProductCard product={product} />
                 </div>
               ))}

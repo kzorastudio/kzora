@@ -374,7 +374,7 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
         )}
 
         {/* Name */}
-        <h3 className="text-sm font-arabic font-medium text-[#1A1A1A] leading-snug line-clamp-2 flex items-start gap-1">
+        <h3 className="text-sm font-arabic font-medium text-[#1A1A1A] leading-snug line-clamp-2 flex items-start gap-1 h-10">
           {product.is_featured && (
             <Star size={14} className="fill-[#C59B27] text-[#C59B27] shrink-0 mt-0.5" />
           )}
