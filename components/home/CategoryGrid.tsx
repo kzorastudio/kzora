@@ -35,63 +35,36 @@ export default function CategoryGrid({ categories }: Props) {
           </Link>
         </div>
 
-        {/* Dynamic Layout */}
-        <div className="w-full">
-          {count === 1 && (
-             <div className="max-w-4xl mx-auto">
-                <CategoryCard category={categories[0]} className="h-[400px] md:h-[500px]" isFeatured />
-             </div>
-          )}
+        {/* Dynamic Grid — works for any count */}
+        <div className={cn(
+          "grid gap-4 md:gap-6",
+          count === 1 && "grid-cols-1 max-w-3xl mx-auto",
+          count === 2 && "grid-cols-1 sm:grid-cols-2",
+          count >= 3 && "grid-cols-1 sm:grid-cols-2",
+        )}>
+          {categories.map((cat, i) => {
+            const isFeatured = i === 0
+            const isFullWidth = isFeatured && count >= 3
 
-          {count === 2 && (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 max-w-5xl mx-auto">
-                {categories.map((cat) => (
-                  <CategoryCard key={cat.id} category={cat} className="h-[300px] md:h-[450px]" isFeatured />
-                ))}
-             </div>
-          )}
-
-          {count === 3 && (
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 h-auto md:h-[500px]">
-                <CategoryCard category={categories[0]} className="md:col-span-2 md:h-full h-[300px]" isFeatured subtitle="تشكيلة فاخرة وحصرية" />
-                <div className="flex flex-col gap-4 md:gap-6 md:h-full">
-                   <CategoryCard category={categories[1]} className="flex-1 h-[250px] md:h-auto" />
-                   <CategoryCard category={categories[2]} className="flex-1 h-[250px] md:h-auto" />
-                </div>
-             </div>
-          )}
-
-          {count >= 4 && (
-            <div className="flex flex-col gap-3 md:gap-5">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 h-auto md:h-[650px]">
-                {/* Featured card — 2 cols × 2 rows */}
-                <CategoryCard 
-                  category={categories[0]} 
-                  className="col-span-2 row-span-1 md:row-span-2 h-[400px] md:h-auto" 
-                  isFeatured 
-                  subtitle="قوة التحمل بلمسة من الفخامة" 
-                />
-                
-                {/* Wide card — 2 cols × 1 row */}
-                <CategoryCard 
-                  category={categories[1]} 
-                  className="col-span-2 row-span-1 h-[250px] md:h-auto" 
-                  subtitle="عصرية ومريحة" 
-                />
-                
-                {/* Small cards — 1 col × 1 row */}
-                <CategoryCard category={categories[2]} className="col-span-1 row-span-1 h-[200px] md:h-auto" />
-                <CategoryCard category={categories[3]} className="col-span-1 row-span-1 h-[200px] md:h-auto" />
-              </div>
-              {count > 4 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-                  {categories.slice(4).map((cat) => (
-                    <CategoryCard key={cat.id} category={cat} className="col-span-1 h-[200px] md:h-[250px]" />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            return (
+              <CategoryCard
+                key={cat.id}
+                category={cat}
+                className={cn(
+                  // Default height for all cards
+                  "h-[280px] md:h-[320px]",
+                  // Single category — taller
+                  count === 1 && "h-[350px] md:h-[480px]",
+                  // Featured first card spans full width when 3+ categories
+                  isFullWidth && "sm:col-span-2 h-[320px] md:h-[420px]",
+                  // If odd number of remaining cards, last one spans full width
+                  !isFeatured && count >= 3 && i === count - 1 && (count - 1) % 2 !== 0 && "sm:col-span-2",
+                )}
+                isFeatured={isFeatured}
+                subtitle={isFeatured && count > 1 ? "تشكيلة فاخرة وحصرية" : undefined}
+              />
+            )
+          })}
         </div>
       </div>
     </section>
@@ -153,4 +126,3 @@ function CategoryCard({
     </Link>
   )
 }
-
