@@ -55,9 +55,9 @@ export default function RelatedProductsClient({ products }: Props) {
         {products.map((product) => (
           <div 
             key={product.id} 
-            className="min-w-[200px] sm:min-w-[260px] md:min-w-[300px] snap-start shrink-0"
+            className="min-w-[200px] sm:min-w-[260px] md:min-w-[300px] w-[200px] sm:w-[260px] md:w-[300px] snap-start shrink-0 flex"
           >
-            <ProductCard product={product} />
+            <ProductCard product={product} className="w-full" />
           </div>
         ))}
       </div>
