@@ -39,7 +39,7 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
   const isEntirelyOutOfStock = product.stock_status === 'out_of_stock' || 
     (product.variants && product.variants.length > 0 
       ? product.variants.every(v => (v.quantity ?? 0) <= 0) 
-      : (product.colors.length > 0 || product.sizes.length > 0))
+      : false)
 
   // If the filter says this product is unavailable for the selected criteria, treat as out of stock
   const isActuallyOutOfStock = isEntirelyOutOfStock || !!filterUnavailableLabel

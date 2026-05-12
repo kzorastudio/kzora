@@ -131,9 +131,8 @@ export default function ProductActions({ product, settings, activeColorName, onC
     if (product.variants && product.variants.length > 0) {
       return product.variants.every(v => (v.quantity ?? 0) <= 0)
     }
-    if (product.colors.length > 0 || product.sizes.length > 0) return true
     return false
-  }, [outOfStockGlobal, product.variants, product.colors.length, product.sizes.length])
+  }, [outOfStockGlobal, product.variants])
 
   const outOfStock = isEntirelyOutOfStock || isComboOutOfStock
 

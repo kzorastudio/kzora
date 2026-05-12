@@ -243,9 +243,6 @@ export default function ProductForm({
       
       if (allZero) {
         finalStockStatus = 'out_of_stock'
-      } else if (hasVariants && variants.some(v => (v.quantity ?? 0) > 0) && data.stock_status === 'out_of_stock') {
-        // Automatically set back to in_stock if it was out_of_stock but now has items
-        finalStockStatus = 'in_stock'
       }
 
     const payload = {
