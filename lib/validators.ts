@@ -140,6 +140,40 @@ export const productSchema = z.object({
   multi_discount_2_items_usd: z.number().min(0).default(0),
   multi_discount_3_plus_syp: z.number().int().min(0).default(0),
   multi_discount_3_plus_usd: z.number().min(0).default(0),
+}).superRefine((data, ctx) => {
+  if (!data.multi_discount_enabled) return
+
+  const effSyp = data.discount_price_syp ?? data.price_syp
+  const effUsd = data.discount_price_usd ?? data.price_usd
+
+  if (data.multi_discount_2_items_syp > 0 && data.multi_discount_2_items_syp > effSyp * 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `الحسم لا يجوز أن يتجاوز سعر قطعتين (${(effSyp * 2).toLocaleString('ar-SY')} ل.س)`,
+      path: ['multi_discount_2_items_syp'],
+    })
+  }
+  if (data.multi_discount_2_items_usd > 0 && data.multi_discount_2_items_usd > effUsd * 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `الحسم لا يجوز أن يتجاوز سعر قطعتين (${(effUsd * 2).toFixed(2)} $)`,
+      path: ['multi_discount_2_items_usd'],
+    })
+  }
+  if (data.multi_discount_3_plus_syp > 0 && data.multi_discount_3_plus_syp > effSyp * 3) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `الحسم لا يجوز أن يتجاوز سعر 3 قطع (${(effSyp * 3).toLocaleString('ar-SY')} ل.س)`,
+      path: ['multi_discount_3_plus_syp'],
+    })
+  }
+  if (data.multi_discount_3_plus_usd > 0 && data.multi_discount_3_plus_usd > effUsd * 3) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `الحسم لا يجوز أن يتجاوز سعر 3 قطع (${(effUsd * 3).toFixed(2)} $)`,
+      path: ['multi_discount_3_plus_usd'],
+    })
+  }
 })
 
 export type ProductFormData = z.infer<typeof productSchema>

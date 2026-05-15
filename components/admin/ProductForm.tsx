@@ -639,6 +639,9 @@ export default function ProductForm({
                       {...register('multi_discount_2_items_syp', { valueAsNumber: true })}
                       className={cn(FIELD_CLASS, 'tabular-nums')}
                     />
+                    {errors.multi_discount_2_items_syp && (
+                      <p className="text-xs font-arabic text-error">{errors.multi_discount_2_items_syp.message}</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-arabic text-secondary">$</label>
@@ -649,6 +652,9 @@ export default function ProductForm({
                       {...register('multi_discount_2_items_usd', { valueAsNumber: true })}
                       className={cn(FIELD_CLASS, 'tabular-nums')}
                     />
+                    {errors.multi_discount_2_items_usd && (
+                      <p className="text-xs font-arabic text-error">{errors.multi_discount_2_items_usd.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -663,6 +669,9 @@ export default function ProductForm({
                       {...register('multi_discount_3_plus_syp', { valueAsNumber: true })}
                       className={cn(FIELD_CLASS, 'tabular-nums')}
                     />
+                    {errors.multi_discount_3_plus_syp && (
+                      <p className="text-xs font-arabic text-error">{errors.multi_discount_3_plus_syp.message}</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-arabic text-secondary">$</label>
@@ -673,6 +682,9 @@ export default function ProductForm({
                       {...register('multi_discount_3_plus_usd', { valueAsNumber: true })}
                       className={cn(FIELD_CLASS, 'tabular-nums')}
                     />
+                    {errors.multi_discount_3_plus_usd && (
+                      <p className="text-xs font-arabic text-error">{errors.multi_discount_3_plus_usd.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
