@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { Shield, FileText, Gavel, Scale } from 'lucide-react'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'شروط الاستخدام — كزورا Kzora | دليل التسوق الآمن',

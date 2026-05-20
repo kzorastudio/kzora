@@ -31,7 +31,7 @@ export default async function AdminUsersPage() {
     <div className="flex flex-col min-h-screen" dir="rtl">
       <AdminHeader />
       
-      <div className="flex-1 p-6 max-w-6xl w-full mx-auto">
+      <div className="flex-1 p-4 sm:p-6 max-w-6xl w-full mx-auto">
         <UsersClient users={users as any} currentUserId={session.user.id} />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
 import type { ProductImage } from '@/types'
 
@@ -219,7 +220,7 @@ function Lightbox({
             onClick={(e) => { e.stopPropagation(); if (!isDragging) toggleZoom() }}
           >
             <Image
-              src={images[index].url}
+              src={optimizeCloudinaryUrl(images[index].url)}
               alt={`${productName} - صورة ${index + 1}`}
               fill
               sizes="100vw"
@@ -247,7 +248,7 @@ function Lightbox({
                 )}
               >
                 <Image
-                  src={img.url}
+                  src={optimizeCloudinaryUrl(img.url)}
                   alt={`صورة ${i + 1}`}
                   fill
                   sizes="56px"
@@ -382,7 +383,7 @@ export function ProductGallery({
                   }}
                 >
                   <Image
-                    src={activeImage.url}
+                    src={optimizeCloudinaryUrl(activeImage.url)}
                     alt={productName}
                     fill
                     sizes="(max-width: 768px) 100vw, 60vw"
@@ -492,7 +493,7 @@ export function ProductGallery({
                 )}
               >
                 <Image
-                  src={img.url}
+                  src={optimizeCloudinaryUrl(img.url)}
                   alt={`${productName} - صورة ${i + 1}`}
                   fill
                   sizes="80px"

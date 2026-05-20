@@ -22,11 +22,20 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
+type NavItem = {
+  href: string
+  label: string
+  icon: typeof LayoutDashboard
+  exact: boolean
+  /** When true, only super_admin can see/access this item */
+  superAdminOnly?: boolean
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/admin',            label: 'الرئيسية',         icon: LayoutDashboard, exact: true  },
   { href: '/admin/products',   label: 'المنتجات',         icon: Package,          exact: false },
   { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false },
-  { href: '/admin/users',      label: 'الموظفين',        icon: Users,            exact: false },
+  { href: '/admin/users',      label: 'الموظفين',        icon: Users,            exact: false, superAdminOnly: true },
   { href: '/admin/categories', label: 'الأقسام',          icon: FolderOpen,       exact: false },
   { href: '/admin/navigation', label: 'إدارة التنقل',     icon: Menu,             exact: false },
   { href: '/admin/reviews',    label: 'التقييمات',        icon: MessageSquare,   exact: false },
@@ -119,11 +128,13 @@ export default function AdminSidebar({ open = false, onClose }: AdminSidebarProp
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scrollbar-hide">
           {NAV_ITEMS.filter((item) => {
-            if (session?.user?.role === 'employee') {
-              // Employee can only see Products
-              return item.href === '/admin/products'
-            }
-            return true // super_admin sees all
+            const role = session?.user?.role
+            // Employee can only see Products
+            if (role === 'employee') return item.href === '/admin/products'
+            // For any other role state (including a stale/undefined JWT), explicitly hide super_admin-only links.
+            // This avoids relying on JWT freshness for security-sensitive routes.
+            if (item.superAdminOnly && role !== 'super_admin') return false
+            return true
           }).map((item) => {
             const active = isActive(item.href, item.exact)
             const Icon = item.icon

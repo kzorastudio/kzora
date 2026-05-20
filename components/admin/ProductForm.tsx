@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Minus, Trash2, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { productSchema, type ProductFormData } from '@/lib/validators'
 import { cn } from '@/lib/utils'
@@ -548,18 +548,44 @@ export default function ProductForm({
                       return (
                         <div key={size} className="flex flex-col gap-1.5">
                           <label className="text-[10px] font-arabic font-bold text-secondary/70 px-1">المقاس {size}</label>
-                          <div className="relative">
+                          <div className={cn(
+                            'flex items-center bg-white rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden',
+                            'focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all',
+                            (watch(`variants.${variantIdx}.quantity`) || 0) === 0 && 'bg-surface-container-lowest'
+                          )}>
+                            <button
+                              type="button"
+                              aria-label="إنقاص"
+                              onClick={() => {
+                                const current = Number(getValues(`variants.${variantIdx}.quantity`)) || 0
+                                setValue(`variants.${variantIdx}.quantity`, Math.max(0, current - 1), { shouldDirty: true, shouldValidate: true })
+                              }}
+                              className="w-8 h-11 flex items-center justify-center text-primary hover:bg-primary/10 active:bg-primary/20 disabled:opacity-30 transition shrink-0"
+                              disabled={(watch(`variants.${variantIdx}.quantity`) || 0) <= 0}
+                            >
+                              <Minus size={14} strokeWidth={2.5} />
+                            </button>
                             <input
                               type="number"
                               min="0"
                               {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
                               className={cn(
-                                'w-full bg-white rounded-xl border border-outline-variant/40 px-3 py-3 text-sm font-bold tabular-nums shadow-sm',
-                                'focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none',
-                                (watch(`variants.${variantIdx}.quantity`) || 0) === 0 ? 'text-secondary/40 bg-surface-container-lowest' : 'text-on-surface'
+                                'w-full min-w-0 text-center bg-transparent px-1 py-3 text-sm font-bold tabular-nums outline-none border-none',
+                                '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+                                (watch(`variants.${variantIdx}.quantity`) || 0) === 0 ? 'text-secondary/40' : 'text-on-surface'
                               )}
                             />
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-arabic font-medium text-secondary/30 pointer-events-none">قطعة</span>
+                            <button
+                              type="button"
+                              aria-label="زيادة"
+                              onClick={() => {
+                                const current = Number(getValues(`variants.${variantIdx}.quantity`)) || 0
+                                setValue(`variants.${variantIdx}.quantity`, current + 1, { shouldDirty: true, shouldValidate: true })
+                              }}
+                              className="w-8 h-11 flex items-center justify-center text-primary hover:bg-primary/10 active:bg-primary/20 transition shrink-0"
+                            >
+                              <Plus size={14} strokeWidth={2.5} />
+                            </button>
                           </div>
                         </div>
                       )
@@ -573,12 +599,43 @@ export default function ProductForm({
                        return (
                           <div className="col-span-full">
                             <label className="text-sm font-arabic font-bold text-secondary mb-1.5 block">الكمية الإجمالية لهذا اللون</label>
-                            <input
-                              type="number"
-                              min="0"
-                              {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
-                              className={cn(FIELD_CLASS, 'text-center font-bold text-lg h-14 bg-white')}
-                            />
+                            <div className={cn(
+                              'flex items-center bg-white rounded-xl border border-outline-variant/50 shadow-sm overflow-hidden h-14',
+                              'focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all'
+                            )}>
+                              <button
+                                type="button"
+                                aria-label="إنقاص"
+                                onClick={() => {
+                                  const current = Number(getValues(`variants.${variantIdx}.quantity`)) || 0
+                                  setValue(`variants.${variantIdx}.quantity`, Math.max(0, current - 1), { shouldDirty: true, shouldValidate: true })
+                                }}
+                                className="w-12 h-full flex items-center justify-center text-primary hover:bg-primary/10 active:bg-primary/20 disabled:opacity-30 transition shrink-0"
+                                disabled={(watch(`variants.${variantIdx}.quantity`) || 0) <= 0}
+                              >
+                                <Minus size={18} strokeWidth={2.5} />
+                              </button>
+                              <input
+                                type="number"
+                                min="0"
+                                {...register(`variants.${variantIdx}.quantity`, { valueAsNumber: true })}
+                                className={cn(
+                                  'w-full min-w-0 text-center bg-transparent text-lg font-bold tabular-nums outline-none border-none text-on-surface',
+                                  '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+                                )}
+                              />
+                              <button
+                                type="button"
+                                aria-label="زيادة"
+                                onClick={() => {
+                                  const current = Number(getValues(`variants.${variantIdx}.quantity`)) || 0
+                                  setValue(`variants.${variantIdx}.quantity`, current + 1, { shouldDirty: true, shouldValidate: true })
+                                }}
+                                className="w-12 h-full flex items-center justify-center text-primary hover:bg-primary/10 active:bg-primary/20 transition shrink-0"
+                              >
+                                <Plus size={18} strokeWidth={2.5} />
+                              </button>
+                            </div>
                           </div>
                        )
                     })()}

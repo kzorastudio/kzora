@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ProductGallery } from '@/components/product/ProductGallery'
 import { Star } from 'lucide-react'
 import { truncate, getDiscountPercent } from '@/lib/utils'
@@ -17,7 +18,26 @@ interface Props {
 }
 
 export default function ProductPageClient({ product, settings, relatedProductsNode }: Props) {
-  const [activeColor, setActiveColor] = React.useState<string | null>(null)
+  const searchParams = useSearchParams()
+
+  // Pre-selected color/size from listing card filters (e.g. /product/foo?color=أحمر&size=42)
+  const initialColorName = React.useMemo(() => {
+    const raw = searchParams?.get('color')
+    if (!raw) return null
+    const trimmed = raw.trim().toLowerCase()
+    const match = product.colors.find(c => c.name_ar?.trim().toLowerCase() === trimmed)
+    return match?.name_ar ?? null
+  }, [searchParams, product.colors])
+
+  const initialSize = React.useMemo(() => {
+    const raw = searchParams?.get('size')
+    if (!raw) return null
+    const n = parseInt(raw, 10)
+    if (isNaN(n)) return null
+    return product.sizes.some(s => s.size === n) ? n : null
+  }, [searchParams, product.sizes])
+
+  const [activeColor, setActiveColor] = React.useState<string | null>(initialColorName)
   const [reviewsMetadata, setReviewsMetadata] = useState<{ totalReviews: number; averageRating: number } | null>(null)
 
   React.useEffect(() => {
@@ -143,17 +163,18 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
               )}
             </div>
             
-            <ProductActions 
-              product={product} 
-              settings={settings} 
+            <ProductActions
+              product={product}
+              settings={settings}
               activeColorName={activeColor}
+              initialSize={initialSize}
               onColorChange={useCallback((c: ProductColor | null) => {
                 if (c?.name_ar) {
                   if (c.name_ar !== activeColor) setActiveColor(c.name_ar)
                 } else if (activeColor !== null) {
                   setActiveColor(null)
                 }
-              }, [activeColor])} 
+              }, [activeColor])}
             />
 
             <div className="border-t border-[#E8E3DB] mt-2">

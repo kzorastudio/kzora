@@ -8,9 +8,10 @@ import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { formatPrice, getDiscountPercent } from '@/lib/utils'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { useCartStore } from '@/store/cartStore'
-import type { ProductFull, CartItem } from '@/types'
+import type { ProductFull, ProductColor, CartItem } from '@/types'
 import { trackAddToCart } from '@/lib/analytics'
 
 const TAG_LABELS: Record<string, string> = {
@@ -24,9 +25,13 @@ interface ProductCardProps {
   className?: string
   /** When set, forces the card into an "unavailable" state with this custom label (e.g. "غير متوفر بهذا المقاس") */
   filterUnavailableLabel?: string | null
+  /** When set, the card represents this single color: image, swatches, and quick-add are locked to it */
+  forcedColor?: ProductColor | null
+  /** When set alongside forcedColor, this size is pre-selected in cart additions and forwarded as ?size= when navigating to the PDP */
+  forcedSize?: number | null
 }
 
-export function ProductCard({ product, className, filterUnavailableLabel }: ProductCardProps) {
+export function ProductCard({ product, className, filterUnavailableLabel, forcedColor, forcedSize }: ProductCardProps) {
   const router = useRouter()
   const { currency } = useCurrencyStore()
   const { addItem, openCart } = useCartStore()
@@ -45,12 +50,19 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
   const isActuallyOutOfStock = isEntirelyOutOfStock || !!filterUnavailableLabel
 
   const mainImage = product.images?.find(img => img.is_main) || product.images?.[0]
-  const defaultImageUrl = mainImage?.url ?? '/placeholder-shoe.jpg'
+  // If forcedColor is set, default to that color's image; otherwise use the main image
+  const forcedColorImage = forcedColor
+    ? product.images?.find(img => img.color_variant?.trim() === forcedColor.name_ar.trim())
+    : null
+  const defaultImageUrl = forcedColorImage?.url ?? mainImage?.url ?? '/placeholder-shoe.jpg'
 
   // When hovering a color, show the first image matching that color_variant
   const imageUrl = hoveredColor
     ? product.images?.find(img => img.color_variant?.trim() === hoveredColor.trim())?.url ?? defaultImageUrl
     : defaultImageUrl
+
+  // Colors to render in the swatches row — locked to forcedColor when set
+  const displayedColors = forcedColor ? [forcedColor] : (product.colors ?? [])
 
   const currentPriceSyp = product.discount_price_syp ?? product.price_syp
   const currentPriceUsd = product.discount_price_usd ?? product.price_usd
@@ -66,14 +78,22 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
   const originalDisplayPrice =
     currency === 'SYP' ? product.price_syp : product.price_usd
 
+  const buildProductUrl = useCallback(() => {
+    const params = new URLSearchParams()
+    if (forcedColor) params.set('color', forcedColor.name_ar)
+    if (forcedSize) params.set('size', String(forcedSize))
+    const qs = params.toString()
+    return `/product/${product.slug}${qs ? `?${qs}` : ''}`
+  }, [product.slug, forcedColor, forcedSize])
+
   const handleNavigate = useCallback(
     (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest('[data-no-navigate]')) return
       if (isNavigating) return
       setIsNavigating(true)
-      router.push(`/product/${product.slug}`)
+      router.push(buildProductUrl())
     },
-    [router, product.slug, isNavigating]
+    [router, isNavigating, buildProductUrl]
   )
 
   const handleQuickAdd = useCallback(
@@ -84,19 +104,21 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       const hasMultipleColors = (product.colors ?? []).length > 1
       const hasMultipleSizes = (product.sizes ?? []).length > 1
 
-      if (hasMultipleColors) {
-        router.push(`/product/${product.slug}`)
+      // When forcedColor is set, we already know which color to add — no need to go to PDP
+      if (hasMultipleColors && !forcedColor) {
+        router.push(buildProductUrl())
         return
       }
+
+      // The effective color for this card (forcedColor when locked, else the only color)
+      const effectiveColorName = forcedColor?.name_ar ?? product.colors?.[0]?.name_ar ?? ''
 
       // If there are variants, we must find which ones are actually in stock
       const getInStockSize = () => {
         if (!product.variants || product.variants.length === 0) {
           return product.sizes.find(s => (typeof s === 'number' ? true : s.is_available))?.size ?? null
         }
-        // If only one color, check sizes for that color
-        const colorName = product.colors?.[0]?.name_ar || ''
-        return product.variants.find(v => (colorName === '' || v.color === colorName) && (v.quantity ?? 0) > 0)?.size ?? null
+        return product.variants.find(v => (effectiveColorName === '' || v.color === effectiveColorName) && (v.quantity ?? 0) > 0)?.size ?? null
       }
 
       if (hasMultipleSizes) {
@@ -107,15 +129,16 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       const selectedSize = getInStockSize()
 
       // Add immediately
-      const colorName = product.colors?.[0]?.name_ar ?? ''
+      const colorName = effectiveColorName
+      const colorHex = forcedColor?.hex_code ?? product.colors?.[0]?.hex_code ?? null
       const variantStock = product.variants?.find(v => v.color === colorName && v.size === selectedSize)?.quantity ?? 0
       const item: CartItem = {
         id:                 product.id,
         slug:               product.slug,
         name:               product.name,
         image:              imageUrl,
-        color:              product.colors?.[0]?.name_ar ?? null,
-        color_hex:          product.colors?.[0]?.hex_code ?? null,
+        color:              colorName || null,
+        color_hex:          colorHex,
         size:               selectedSize,
         quantity:           1,
         price_syp:          product.price_syp,
@@ -130,20 +153,21 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       toast.success('تمت إضافة المنتج إلى السلة')
       openCart()
     },
-    [product, imageUrl, addItem, openCart, router, isActuallyOutOfStock]
+    [product, imageUrl, addItem, openCart, router, isActuallyOutOfStock, forcedColor]
   )
 
   const handleAddWithSize = useCallback(
     (size: number) => {
-      const colorName = product.colors?.[0]?.name_ar ?? ''
+      const colorName = forcedColor?.name_ar ?? product.colors?.[0]?.name_ar ?? ''
+      const colorHex = forcedColor?.hex_code ?? product.colors?.[0]?.hex_code ?? null
       const variantStock = product.variants?.find(v => v.color === colorName && v.size === size)?.quantity ?? 0
       const item: CartItem = {
         id:                 product.id,
         slug:               product.slug,
         name:               product.name,
         image:              imageUrl,
-        color:              product.colors?.[0]?.name_ar ?? null,
-        color_hex:          product.colors?.[0]?.hex_code ?? null,
+        color:              colorName || null,
+        color_hex:          colorHex,
         size,
         quantity:           1,
         price_syp:          product.price_syp,
@@ -159,7 +183,7 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       toast.success('تمت إضافة المنتج إلى السلة')
       openCart()
     },
-    [product, imageUrl, addItem, openCart, router]
+    [product, imageUrl, addItem, openCart, router, forcedColor]
   )
 
   const priorityTag = product.tags?.find((t) => t === 'new' || t === 'best_seller' || t === 'on_sale')
@@ -189,7 +213,7 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#F7F4F0] flex items-center justify-center">
         {product.images && product.images.length > 0 ? (
           <Image
-            src={imageUrl}
+            src={optimizeCloudinaryUrl(imageUrl)}
             alt={`${product.name} — من كزورا Kzora`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -312,9 +336,14 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
             <div className="flex flex-wrap gap-1.5">
               {(product.sizes || []).map((s) => {
                 const size = s.size
-                const colorName = product.colors?.[0]?.name_ar || ''
+                const colorName = forcedColor?.name_ar ?? product.colors?.[0]?.name_ar ?? ''
                 const variant = product.variants?.find(v => (colorName === '' || v.color === colorName) && v.size === size)
-                const hasStock = variant ? (variant.quantity ?? 0) > 0 : true
+                // When variant tracking is enabled, a missing combo means "we don't carry it".
+                // Only treat the combo as available when there's no per-variant tracking at all.
+                const hasVariantTracking = (product.variants?.length ?? 0) > 0
+                const hasStock = variant
+                  ? (variant.quantity ?? 0) > 0
+                  : !hasVariantTracking
                 const isAvailable = s.is_available && hasStock
 
                 return (
@@ -343,9 +372,9 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
       {/* Card body */}
       <div className="pt-3 pb-3 px-3 space-y-1.5 flex-1 flex flex-col">
         {/* Color swatches */}
-        {product.colors && product.colors.length > 0 && (
+        {displayedColors && displayedColors.length > 0 && (
           <div className="flex items-center gap-1.5" data-no-navigate>
-            {product.colors.slice(0, 5).map((color) => (
+            {displayedColors.slice(0, 5).map((color) => (
               <button
                 key={color.id}
                 type="button"
@@ -354,20 +383,27 @@ export function ProductCard({ product, className, filterUnavailableLabel }: Prod
                 onMouseLeave={() => setHoveredColor(null)}
                 onClick={(e) => {
                   e.stopPropagation()
-                  router.push(`/product/${product.slug}`)
+                  router.push(buildProductUrl())
                 }}
                 className={cn(
                   'w-4 h-4 rounded-full shrink-0 transition-all duration-150',
-                  hoveredColor === color.name_ar
+                  forcedColor
+                    ? 'ring-2 ring-[#785600] ring-offset-1'
+                    : hoveredColor === color.name_ar
                     ? 'ring-2 ring-[#785600] ring-offset-1 scale-110'
                     : 'ring-1 ring-black/25 hover:ring-[#785600]/50'
                 )}
                 style={{ backgroundColor: color.hex_code }}
               />
             ))}
-            {product.colors.length > 5 && (
+            {!forcedColor && displayedColors.length > 5 && (
               <span className="text-[10px] font-arabic text-[#9E9890]">
-                +{product.colors.length - 5}
+                +{displayedColors.length - 5}
+              </span>
+            )}
+            {forcedColor && (
+              <span className="text-[10px] font-arabic text-[#6B6560] mr-1">
+                {forcedColor.name_ar}
               </span>
             )}
           </div>

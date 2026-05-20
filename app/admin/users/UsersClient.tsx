@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, KeyRound, Plus, Shield, ShieldAlert, X } from 'lucide-react'
+import { Trash2, KeyRound, Plus, Shield, ShieldAlert, Loader2, UserPlus, Mail, User as UserIcon, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Modal } from '@/components/ui/Modal'
+import { cn } from '@/lib/utils'
 import type { Admin } from '@/types'
 import { createUser, updateUserPassword, deleteUser } from './actions'
 
@@ -11,230 +13,420 @@ interface UsersClientProps {
   currentUserId: string
 }
 
-export default function UsersClient({ users, currentUserId }: UsersClientProps) {
-  const [isAdding, setIsAdding] = useState(false)
-  const [changingPasswordId, setChangingPasswordId] = useState<string | null>(null)
+const FIELD_CLASS =
+  'w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition'
 
-  // Form states
+const LABEL_CLASS = 'text-xs font-arabic font-bold text-secondary'
+
+function RoleBadge({ role }: { role: Admin['role'] }) {
+  if (role === 'super_admin') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-error-container/30 text-error text-xs font-arabic font-bold whitespace-nowrap">
+        <ShieldAlert size={13} strokeWidth={2.5} />
+        مدير عام
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#006E1C]/10 text-[#006E1C] text-xs font-arabic font-bold whitespace-nowrap">
+      <Shield size={13} strokeWidth={2.5} />
+      موظف
+    </span>
+  )
+}
+
+export default function UsersClient({ users, currentUserId }: UsersClientProps) {
+  // Modal state
+  const [addOpen, setAddOpen] = useState(false)
+  const [passwordTarget, setPasswordTarget] = useState<Admin | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Admin | null>(null)
+
+  // Form state
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'super_admin' | 'employee'>('employee')
-  
   const [newPassword, setNewPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+
+  // Loading flags
+  const [creating, setCreating] = useState(false)
+  const [changingPw, setChangingPw] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  function resetCreateForm() {
+    setName('')
+    setEmail('')
+    setPassword('')
+    setRole('employee')
+  }
 
   async function handleCreateUser(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
+    setCreating(true)
     const res = await createUser({ name, email, password, role })
+    setCreating(false)
     if (res?.error) {
       toast.error(res.error)
     } else {
       toast.success('تمت إضافة الموظف بنجاح')
-      setIsAdding(false)
-      setName('')
-      setEmail('')
-      setPassword('')
-      setRole('employee')
+      setAddOpen(false)
+      resetCreateForm()
     }
-    setLoading(false)
   }
 
-  async function handleChangePassword(e: React.FormEvent, id: string) {
+  async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
-    const res = await updateUserPassword(id, newPassword)
+    if (!passwordTarget) return
+    setChangingPw(true)
+    const res = await updateUserPassword(passwordTarget.id, newPassword)
+    setChangingPw(false)
     if (res?.error) {
       toast.error(res.error)
     } else {
       toast.success('تم تغيير كلمة السر بنجاح')
-      setChangingPasswordId(null)
+      setPasswordTarget(null)
       setNewPassword('')
     }
-    setLoading(false)
   }
 
-  async function handleDelete(id: string) {
-    if (id === currentUserId) {
+  async function handleDelete() {
+    if (!deleteTarget) return
+    if (deleteTarget.id === currentUserId) {
       toast.error('لا يمكنك حذف حسابك الشخصي')
       return
     }
-    if (!confirm('هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.')) return
-
-    setLoading(true)
-    const res = await deleteUser(id)
+    setDeleting(true)
+    const res = await deleteUser(deleteTarget.id)
+    setDeleting(false)
     if (res?.error) {
       toast.error(res.error)
     } else {
       toast.success('تم الحذف بنجاح')
+      setDeleteTarget(null)
     }
-    setLoading(false)
   }
 
   return (
-    <div className="flex flex-col gap-6" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex flex-col gap-5 sm:gap-6" dir="rtl">
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl font-arabic font-black text-[#1A1A1A]">المدراء والموظفين</h2>
+          <h2 className="text-lg sm:text-xl font-arabic font-black text-[#1A1A1A]">المدراء والموظفون</h2>
           <p className="text-xs font-arabic text-secondary mt-1">إدارة حسابات وصلاحيات الدخول للوحة التحكم</p>
         </div>
         <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white font-arabic font-bold hover:bg-primary/90 transition-all active:scale-95 text-sm"
+          onClick={() => { resetCreateForm(); setAddOpen(true) }}
+          className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-primary text-white font-arabic font-bold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
         >
-          {isAdding ? <X size={16} /> : <Plus size={16} />}
-          <span>{isAdding ? 'إلغاء' : 'إضافة موظف جديد'}</span>
+          <UserPlus size={16} strokeWidth={2.5} />
+          إضافة حساب جديد
         </button>
       </div>
 
-      {/* Add User Form */}
-      {isAdding && (
-        <form onSubmit={handleCreateUser} className="bg-white p-6 rounded-2xl shadow-ambient border border-outline-variant/10 flex flex-col gap-5 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-sm font-arabic font-bold text-on-surface border-b border-outline-variant/20 pb-3">إضافة حساب جديد</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── MOBILE CARDS ───────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {users.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center text-sm font-arabic text-secondary shadow-ambient border border-outline-variant/10">
+            لا يوجد مستخدمون بعد
+          </div>
+        ) : users.map((user) => {
+          const isMe = user.id === currentUserId
+          return (
+            <div
+              key={user.id}
+              className="bg-white rounded-2xl p-4 shadow-ambient border border-outline-variant/10 flex flex-col gap-3"
+            >
+              {/* Top row: name + role */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-base font-arabic font-bold text-on-surface truncate">{user.name}</span>
+                    {isMe && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-arabic font-bold whitespace-nowrap">
+                        أنت
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-label text-secondary truncate" dir="ltr">{user.email}</p>
+                </div>
+                <RoleBadge role={user.role} />
+              </div>
+
+              {/* Actions row */}
+              <div className="flex items-center gap-2 pt-2 border-t border-outline-variant/20">
+                <button
+                  type="button"
+                  onClick={() => { setPasswordTarget(user); setNewPassword('') }}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-surface-container-high text-xs font-arabic font-bold text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <KeyRound size={14} strokeWidth={2.5} />
+                  تغيير كلمة السر
+                </button>
+                {!isMe && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(user)}
+                    aria-label={`حذف ${user.name}`}
+                    className="h-10 w-10 inline-flex items-center justify-center rounded-xl bg-error-container/20 text-error hover:bg-error-container/40 active:scale-95 transition-all"
+                  >
+                    <Trash2 size={15} strokeWidth={2.5} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── DESKTOP TABLE ──────────────────────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl shadow-ambient border border-outline-variant/10 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-surface-container/50 border-b border-outline-variant/20">
+                <th className="px-5 py-4 text-right text-[11px] font-arabic font-black text-secondary uppercase tracking-wider">الاسم</th>
+                <th className="px-5 py-4 text-right text-[11px] font-arabic font-black text-secondary uppercase tracking-wider">البريد الإلكتروني</th>
+                <th className="px-5 py-4 text-right text-[11px] font-arabic font-black text-secondary uppercase tracking-wider">الصلاحية</th>
+                <th className="px-5 py-4 text-right text-[11px] font-arabic font-black text-secondary uppercase tracking-wider">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/10">
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-16 text-center text-sm font-arabic text-secondary">
+                    لا يوجد مستخدمون بعد
+                  </td>
+                </tr>
+              ) : users.map((user) => {
+                const isMe = user.id === currentUserId
+                return (
+                  <tr key={user.id} className="hover:bg-surface-container-lowest transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-arabic font-bold text-on-surface">{user.name}</span>
+                        {isMe && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-arabic font-bold">أنت</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="text-sm font-label text-secondary" dir="ltr">{user.email}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <RoleBadge role={user.role} />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setPasswordTarget(user); setNewPassword('') }}
+                          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-surface-container-high text-xs font-arabic font-bold text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <KeyRound size={14} strokeWidth={2.5} />
+                          تغيير السر
+                        </button>
+                        {!isMe && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(user)}
+                            aria-label={`حذف ${user.name}`}
+                            className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-error-container/20 text-error hover:bg-error-container/40 transition-colors"
+                            title="حذف"
+                          >
+                            <Trash2 size={14} strokeWidth={2.5} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── MODAL: Add user ────────────────────────────────────────── */}
+      <Modal isOpen={addOpen} onClose={() => !creating && setAddOpen(false)} title="إضافة حساب جديد" maxWidth="max-w-lg">
+        <form onSubmit={handleCreateUser} className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-arabic font-bold text-secondary">الاسم كامل</label>
+              <label className={LABEL_CLASS}>
+                <UserIcon size={12} className="inline ml-1 -mt-0.5" />
+                الاسم الكامل
+              </label>
               <input
                 type="text"
                 required
                 value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-4 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
+                onChange={(e) => setName(e.target.value)}
+                placeholder="مثلاً: أحمد محمد"
+                className={FIELD_CLASS}
               />
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-arabic font-bold text-secondary">البريد الإلكتروني (للسبجيل)</label>
+              <label className={LABEL_CLASS}>
+                <Mail size={12} className="inline ml-1 -mt-0.5" />
+                البريد الإلكتروني (للتسجيل)
+              </label>
               <input
                 type="email"
                 required
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-4 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@kzora.co"
+                className={FIELD_CLASS}
                 dir="ltr"
               />
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-arabic font-bold text-secondary">كلمة السر</label>
+              <label className={LABEL_CLASS}>
+                <Lock size={12} className="inline ml-1 -mt-0.5" />
+                كلمة السر (6 أحرف على الأقل)
+              </label>
               <input
                 type="text"
                 required
                 minLength={6}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-4 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••"
+                className={FIELD_CLASS}
                 dir="ltr"
               />
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-arabic font-bold text-secondary">الصلاحية (الرتبة)</label>
+              <label className={LABEL_CLASS}>
+                <Shield size={12} className="inline ml-1 -mt-0.5" />
+                الصلاحية
+              </label>
               <select
                 value={role}
-                onChange={e => setRole(e.target.value as any)}
-                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-4 py-2.5 text-sm font-arabic text-on-surface focus:outline-none focus:border-primary"
+                onChange={(e) => setRole(e.target.value as 'super_admin' | 'employee')}
+                className={cn(FIELD_CLASS, 'py-2.5')}
               >
-                <option value="employee">موظف (رؤية المنتجات فقط)</option>
+                <option value="employee">موظف (رؤية المنتجات والطلبات)</option>
                 <option value="super_admin">مدير عام (صلاحيات كاملة)</option>
               </select>
             </div>
           </div>
-          
-          <div className="flex justify-end pt-2">
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-outline-variant/20">
+            <button
+              type="button"
+              onClick={() => setAddOpen(false)}
+              disabled={creating}
+              className="h-11 px-5 rounded-xl bg-surface-container text-on-surface font-arabic font-bold text-sm hover:bg-outline-variant/30 transition-colors disabled:opacity-50"
+            >
+              إلغاء
+            </button>
             <button
               type="submit"
-              disabled={loading}
-              className="px-8 py-2.5 bg-[#1A1A1A] text-white font-arabic font-bold rounded-xl hover:bg-black transition-colors disabled:opacity-50 text-sm"
+              disabled={creating}
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-[#1A1A1A] text-white font-arabic font-bold text-sm hover:bg-black transition-colors disabled:opacity-50"
             >
+              {creating && <Loader2 size={16} className="animate-spin" />}
               حفظ الحساب
             </button>
           </div>
         </form>
-      )}
+      </Modal>
 
-      {/* Users List */}
-      <div className="bg-white rounded-2xl shadow-ambient border border-outline-variant/10 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="bg-surface-container/50 border-b border-outline-variant/20">
-                <th className="px-6 py-4 text-right text-[11px] font-arabic font-black text-[#9E9890] uppercase">الاسم</th>
-                <th className="px-6 py-4 text-right text-[11px] font-arabic font-black text-[#9E9890] uppercase">الإيميل</th>
-                <th className="px-6 py-4 text-right text-[11px] font-arabic font-black text-[#9E9890] uppercase">الصلاحية</th>
-                <th className="px-6 py-4 text-right text-[11px] font-arabic font-black text-[#9E9890] uppercase">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/10">
-              {users.map(user => (
-                <tr key={user.id} className="hover:bg-surface-container-lowest transition-colors">
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-arabic font-bold text-on-surface">{user.name}</span>
-                    {user.id === currentUserId && <span className="mr-2 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">أنت</span>}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-label text-secondary" dir="ltr">{user.email}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
-                      {user.role === 'super_admin' ? (
-                        <>
-                          <ShieldAlert size={14} className="text-error" />
-                          <span className="text-xs font-arabic font-bold text-error">مدير عام</span>
-                        </>
-                      ) : (
-                        <>
-                          <Shield size={14} className="text-[#006E1C]" />
-                          <span className="text-xs font-arabic font-bold text-[#006E1C]">موظف</span>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {changingPasswordId === user.id ? (
-                        <form onSubmit={(e) => handleChangePassword(e, user.id)} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            required
-                            minLength={6}
-                            placeholder="كلمة السر الجديدة"
-                            value={newPassword}
-                            onChange={e => setNewPassword(e.target.value)}
-                            className="w-32 bg-white border border-outline-variant/50 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-primary"
-                            dir="ltr"
-                          />
-                          <button type="submit" disabled={loading} className="text-[10px] bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-primary/90">حفظ</button>
-                          <button type="button" onClick={() => setChangingPasswordId(null)} className="text-[10px] bg-surface-container text-on-surface px-3 py-1.5 rounded-lg font-bold hover:bg-outline-variant/30">إلغاء</button>
-                        </form>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => { setChangingPasswordId(user.id); setNewPassword(''); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high text-xs font-arabic font-bold text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            <KeyRound size={14} />
-                            تغيير السر
-                          </button>
-                          {user.id !== currentUserId && (
-                            <button
-                              onClick={() => handleDelete(user.id)}
-                              className="p-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container/50 transition-colors"
-                              title="حذف"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* ── MODAL: Change password ─────────────────────────────────── */}
+      <Modal
+        isOpen={passwordTarget !== null}
+        onClose={() => !changingPw && setPasswordTarget(null)}
+        title={passwordTarget ? `تغيير كلمة سر: ${passwordTarget.name}` : ''}
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+          <p className="text-xs font-arabic text-secondary">
+            ستحلّ كلمة السر الجديدة محل الحالية فوراً. لا يمكن استعادة كلمة السر القديمة بعد الحفظ.
+          </p>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={LABEL_CLASS}>
+              <Lock size={12} className="inline ml-1 -mt-0.5" />
+              كلمة السر الجديدة
+            </label>
+            <input
+              type="text"
+              required
+              minLength={6}
+              autoFocus
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="6 أحرف على الأقل"
+              className={FIELD_CLASS}
+              dir="ltr"
+            />
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-outline-variant/20">
+            <button
+              type="button"
+              onClick={() => setPasswordTarget(null)}
+              disabled={changingPw}
+              className="h-11 px-5 rounded-xl bg-surface-container text-on-surface font-arabic font-bold text-sm hover:bg-outline-variant/30 transition-colors disabled:opacity-50"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              disabled={changingPw}
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-primary text-white font-arabic font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {changingPw && <Loader2 size={16} className="animate-spin" />}
+              حفظ كلمة السر
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── MODAL: Delete confirm ──────────────────────────────────── */}
+      <Modal
+        isOpen={deleteTarget !== null}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        title="تأكيد الحذف"
+        maxWidth="max-w-md"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-error-container/20 border border-error/20">
+            <ShieldAlert size={20} className="text-error shrink-0 mt-0.5" strokeWidth={2.5} />
+            <div className="flex-1">
+              <p className="text-sm font-arabic font-bold text-on-surface mb-1">
+                هل أنت متأكد من حذف هذا الحساب؟
+              </p>
+              <p className="text-xs font-arabic text-secondary">
+                سيتم حذف <strong className="text-on-surface">{deleteTarget?.name}</strong> ({deleteTarget?.email}) نهائياً ولن يستطيع الوصول للوحة التحكم. لا يمكن التراجع عن هذا الإجراء.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+              className="h-11 px-5 rounded-xl bg-surface-container text-on-surface font-arabic font-bold text-sm hover:bg-outline-variant/30 transition-colors disabled:opacity-50"
+            >
+              إلغاء
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-error text-white font-arabic font-bold text-sm hover:bg-error/90 transition-colors disabled:opacity-50"
+            >
+              {deleting && <Loader2 size={16} className="animate-spin" />}
+              نعم، احذف
+            </button>
+          </div>
         </div>
-      </div>
+      </Modal>
     </div>
   )
 }

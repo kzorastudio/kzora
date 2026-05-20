@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
 import type { Category } from '@/types'
 
 interface Props {
@@ -92,7 +93,7 @@ function CategoryCard({
     >
       {category.image_url && (
         <Image
-          src={category.image_url}
+          src={optimizeCloudinaryUrl(category.image_url)}
           alt={category.name_ar}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"

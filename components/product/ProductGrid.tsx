@@ -5,6 +5,7 @@ import type { ProductFull } from '@/types'
 import { ProductCard } from './ProductCard'
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
+import type { ProductDisplayItem } from '@/lib/expandProductsBySize'
 
 interface ProductGridProps {
   products: ProductFull[]
@@ -13,6 +14,8 @@ interface ProductGridProps {
   className?: string
   /** Map of productId → unavailable label for filter-based unavailability */
   filterUnavailableMap?: Record<string, string>
+  /** When provided, the grid renders one card per item (allowing the same product to appear multiple times — e.g. one card per matching color when filtering by size) */
+  items?: ProductDisplayItem[]
 }
 
 function SkeletonCard() {
@@ -38,7 +41,11 @@ export function ProductGrid({
   columns = 4,
   className,
   filterUnavailableMap,
+  items,
 }: ProductGridProps) {
+  // When `items` is provided, it controls rendering; otherwise fall back to one card per product.
+  const displayItems: ProductDisplayItem[] = items
+    ?? products.map(p => ({ key: p.id, product: p, forcedColor: null, forcedSize: null }))
   const colClass: Record<number, string> = {
     2: 'grid-cols-2',
     3: 'grid-cols-2 sm:grid-cols-3',
@@ -62,7 +69,7 @@ export function ProductGrid({
     )
   }
 
-  if (!products || products.length === 0) {
+  if (!displayItems || displayItems.length === 0) {
     return (
       <div dir="rtl" className="flex flex-col items-center justify-center py-24 text-center">
         <div className="w-20 h-20 rounded-[2rem] bg-[#F0EBE3] flex items-center justify-center mb-8 rotate-3 shadow-inner">
@@ -89,10 +96,12 @@ export function ProductGrid({
         className
       )}
     >
-      {products.map((product) => (
+      {displayItems.map(({ key, product, forcedColor, forcedSize }) => (
         <ProductCard
-          key={product.id}
+          key={key}
           product={product}
+          forcedColor={forcedColor}
+          forcedSize={forcedSize}
           filterUnavailableLabel={filterUnavailableMap?.[product.id] ?? null}
         />
       ))}

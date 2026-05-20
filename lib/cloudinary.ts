@@ -33,6 +33,10 @@ export async function deleteImages(publicIds: string[]): Promise<void> {
   await cloudinary.api.delete_resources(publicIds)
 }
 
+// Re-export the pure URL helper from its SDK-free module so server-side callers can keep
+// importing it from '@/lib/cloudinary'. Client components should import from '@/lib/cloudinaryUrl' directly.
+export { optimizeCloudinaryUrl } from './cloudinaryUrl'
+
 export function getOptimizedUrl(publicId: string, options: {
   width?: number
   height?: number

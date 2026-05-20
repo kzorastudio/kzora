@@ -5,7 +5,7 @@ import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'سياسة الإرجاع والاستبدال — كزورا',

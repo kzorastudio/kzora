@@ -39,4 +39,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://kzora.co/sitemap.xml
+Sitemap: https://www.kzora.co/sitemap.xml

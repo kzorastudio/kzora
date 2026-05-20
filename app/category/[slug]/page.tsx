@@ -1,5 +1,5 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// ISR: regenerate every 5 minutes. Admin actions also call revalidatePath on changes.
+export const revalidate = 300
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
@@ -104,19 +104,19 @@ export default async function CategoryPage({ params }: PageProps) {
         '@type': 'ListItem',
         position: 1,
         name: 'الرئيسية',
-        item: 'https://kzora.co',
+        item: 'https://www.kzora.co',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'كافة المنتجات',
-        item: 'https://kzora.co/products',
+        item: 'https://www.kzora.co/products',
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: category.name_ar,
-        item: `https://kzora.co/category/${category.slug}`,
+        item: `https://www.kzora.co/category/${category.slug}`,
       },
     ],
   }
@@ -132,7 +132,7 @@ export default async function CategoryPage({ params }: PageProps) {
       '@type': 'ListItem',
       position: index + 1,
       name: p.name,
-      url: `https://kzora.co/product/${p.slug}`,
+      url: `https://www.kzora.co/product/${p.slug}`,
     })),
   }
 

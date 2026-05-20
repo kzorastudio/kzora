@@ -9,6 +9,7 @@ import type { Swiper as SwiperType } from 'swiper'
 import type { HeroSlide } from '@/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
 import { ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react'
 
 import 'swiper/css'
@@ -51,28 +52,28 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
               {slide.mobile_image_url ? (
                 <>
                   <Image
-                    src={slide.mobile_image_url}
+                    src={optimizeCloudinaryUrl(slide.mobile_image_url)}
                     alt={slide.heading}
                     fill
-                    priority
+                    priority={i === 0}
                     sizes="100vw"
                     className="object-cover sm:hidden"
                   />
                   <Image
-                    src={slide.desktop_image_url}
+                    src={optimizeCloudinaryUrl(slide.desktop_image_url)}
                     alt={slide.heading}
                     fill
-                    priority
+                    priority={i === 0}
                     sizes="100vw"
                     className="object-cover hidden sm:block"
                   />
                 </>
               ) : (
                 <Image
-                  src={slide.desktop_image_url}
+                  src={optimizeCloudinaryUrl(slide.desktop_image_url)}
                   alt={slide.heading}
                   fill
-                  priority
+                  priority={i === 0}
                   sizes="100vw"
                   className="object-cover"
                 />

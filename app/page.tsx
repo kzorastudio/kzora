@@ -1,5 +1,5 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// ISR: homepage regenerates every 5 minutes; admin actions revalidate it on change.
+export const revalidate = 300
 
 import { supabase } from '@/lib/supabase'
 import { Header } from '@/components/layout/Header'
@@ -295,11 +295,6 @@ export default async function HomePage() {
                     إكسسوارات وعناية بالأحذية
                   </li>
                 </ul>
-                <div className="mt-8 p-4 bg-primary/5 rounded-xl border border-primary/10">
-                  <p className="text-xs font-arabic text-primary leading-relaxed">
-                    <strong>كلمات دلالية للبحث:</strong> كزورا، kzora، أحذية سوريا، أحذية حلب، شراء أحذية أونلاين، أسعار الأحذية، أحذية رياضية سوريا، صبابات جلد طبيعي، موديلات أحذية 2026.
-                  </p>
-                </div>
               </div>
             </div>
           </div>

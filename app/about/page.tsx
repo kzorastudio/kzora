@@ -9,7 +9,8 @@ import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ShieldCheck, Gem, Truck } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export const dynamic = 'force-dynamic'
+// Legal/static content — regenerate hourly only if updated
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'من نحن — كزورا Kzora | قصة شغف بالأحذية في سوريا',

@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { Truck, MapPin, Clock, ShieldCheck } from 'lucide-react'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'سياسة الشحن — كزورا Kzora | توصيل سريع لكل سوريا',

@@ -5,6 +5,7 @@ import { SlidersHorizontal, ChevronDown, X, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { useCurrencyStore } from '@/store/currencyStore'
+import { expandProductsBySize } from '@/lib/expandProductsBySize'
 import type { ProductFull } from '@/types'
 
 // ─── MultiSelectDropdown (same as products page) ────────────────────────────
@@ -197,6 +198,21 @@ export default function CategoryProductsClient({ products }: Props) {
     return { filtered: result, filterUnavailableMap: unavailableMap }
   }, [products, sort, search, selectedTags, selectedSizes, onSale, minPrice, maxPrice, currency])
 
+  // Expand each filtered product into one card per matching color when size filter is active.
+  // We only expand cards that aren't already flagged as "unavailable" — those stay as one card.
+  const displayItems = useMemo(() => {
+    const sizeNums = selectedSizes.map(s => parseInt(s, 10)).filter(n => !isNaN(n))
+    if (sizeNums.length === 0) {
+      return filtered.map(p => ({ key: p.id, product: p, forcedColor: null, forcedSize: null }))
+    }
+    const available = filtered.filter(p => !filterUnavailableMap[p.id])
+    const unavailable = filtered.filter(p => filterUnavailableMap[p.id])
+    return [
+      ...expandProductsBySize(available, sizeNums),
+      ...unavailable.map(p => ({ key: p.id, product: p, forcedColor: null, forcedSize: null })),
+    ]
+  }, [filtered, filterUnavailableMap, selectedSizes])
+
   // ─── Filter Sidebar Content ────────────────────────────────────────────
   const FilterSidebar = (
     <div dir="rtl" className="space-y-5">
@@ -355,9 +371,10 @@ export default function CategoryProductsClient({ products }: Props) {
             </div>
           </div>
 
-          {/* Product grid */}
+          {/* Product grid — expand each card per matching color when filtering by size */}
           <ProductGrid
             products={filtered}
+            items={displayItems}
             isLoading={false}
             columns={3}
             filterUnavailableMap={filterUnavailableMap}

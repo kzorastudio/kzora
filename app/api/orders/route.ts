@@ -197,26 +197,46 @@ export async function POST(request: NextRequest) {
 
       if (variantsList.length > 0) {
         has_variant_tracking = true
+        // Trim whitespace defensively so a stray space in the color name doesn't break the match
+        const norm = (s: string) => s.trim()
         const found = variantsList.find(
-          (v: any) => (v.color || '') === targetColor && (v.size || 0) === targetSize
+          (v: any) => norm(v.color || '') === norm(targetColor) && (v.size || 0) === targetSize
         )
 
-        if (found) {
-          variantId = found.id
-          availableQuantity = found.quantity ?? 0
+        const colorLabel = item.color ? ` - اللون: ${item.color}` : ''
+        const sizeLabel  = item.size  ? ` - المقاس: ${item.size}` : ''
 
-          if (item.quantity > availableQuantity) {
-            const colorLabel = item.color ? ` - اللون: ${item.color}` : ''
-            const sizeLabel  = item.size  ? ` - المقاس: ${item.size}` : ''
-            return NextResponse.json(
-              {
-                error: `الكمية المطلوبة من "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفرة. الكمية المتاحة: ${availableQuantity} فقط`,
-              },
-              { status: 400 }
-            )
-          }
+        // CRITICAL: when variant tracking is enabled, a missing combo means we don't carry it.
+        // Without this rejection, customers could order combinations the admin never stocked.
+        if (!found) {
+          return NextResponse.json(
+            {
+              error: `المنتج "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفر حالياً. يرجى اختيار تركيبة أخرى.`,
+            },
+            { status: 400 }
+          )
         }
-        // variant combo not in DB → allow (admin hasn't configured all combinations)
+
+        variantId = found.id
+        availableQuantity = found.quantity ?? 0
+
+        if (availableQuantity <= 0) {
+          return NextResponse.json(
+            {
+              error: `المنتج "${dbProduct.name}"${colorLabel}${sizeLabel} نفد من المخزن.`,
+            },
+            { status: 400 }
+          )
+        }
+
+        if (item.quantity > availableQuantity) {
+          return NextResponse.json(
+            {
+              error: `الكمية المطلوبة من "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفرة. الكمية المتاحة: ${availableQuantity} فقط`,
+            },
+            { status: 400 }
+          )
+        }
       }
       // no variants at all → rely on stock_status (checked above)
 

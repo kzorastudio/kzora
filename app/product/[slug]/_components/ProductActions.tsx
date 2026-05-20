@@ -16,10 +16,12 @@ interface Props {
   product: ProductFull
   settings: HomepageSettings | null
   activeColorName?: string | null
+  /** Pre-selected size (e.g. from ?size= when navigating from a filtered listing card) */
+  initialSize?: number | null
   onColorChange?: (color: ProductColor | null) => void
 }
 
-export default function ProductActions({ product, settings, activeColorName, onColorChange }: Props) {
+export default function ProductActions({ product, settings, activeColorName, initialSize, onColorChange }: Props) {
   const router = useRouter()
   const { currency, setCurrency } = useCurrencyStore()
   const { addItem, openCart, items: cartItems } = useCartStore()
@@ -38,11 +40,21 @@ export default function ProductActions({ product, settings, activeColorName, onC
   }, [product.variants])
 
   const [selectedColorId, setSelectedColorId] = useState<string | null>(() => {
+    // If a color name was passed in (?color= or activeColorName from URL), select that one
+    if (activeColorName) {
+      const trimmed = activeColorName.trim().toLowerCase()
+      const match = product.colors.find(c => c.name_ar?.trim().toLowerCase() === trimmed)
+      if (match) return match.id
+    }
     const available = product.colors.filter(c => c.is_available && isColorInStock(c.name_ar))
     return available.length === 1 ? available[0].id : null
   })
-  
+
   const [selectedSize, setSelectedSize] = useState<number | null>(() => {
+    // If a size was passed in (?size=42), use it when valid
+    if (initialSize != null && product.sizes.some(s => s.size === initialSize)) {
+      return initialSize
+    }
     const available = product.sizes.filter(s => {
        const sz = typeof s === 'number' ? s : s.size
        return (typeof s === 'number' ? true : s.is_available)

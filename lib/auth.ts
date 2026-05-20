@@ -68,6 +68,30 @@ export const authOptions: NextAuthOptions = {
         token.name  = user.name
         token.role  = (user as any).role
       }
+
+      // Re-fetch role from DB so a demotion/promotion takes effect on the next request,
+      // without forcing the user to log out and back in.
+      // The JWT itself can still be cached, but the role inside it is refreshed on every check.
+      if (token?.id) {
+        try {
+          const { data: admin } = await supabaseAdmin
+            .from('admins')
+            .select('role, name')
+            .eq('id', token.id as string)
+            .maybeSingle()
+
+          if (admin) {
+            token.role = admin.role || 'employee'
+            token.name = admin.name
+          } else {
+            // Admin was deleted — invalidate the token so the user is forced to re-login.
+            token.role = undefined
+          }
+        } catch {
+          // On DB error, keep the existing token values rather than locking the user out.
+        }
+      }
+
       return token
     },
     async session({ session, token }) {

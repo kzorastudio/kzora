@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useTransition } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, useTransition } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { SlidersHorizontal, X, ChevronDown, Search, LayoutGrid } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { useCurrencyStore } from '@/store/currencyStore'
+import { expandProductsBySize } from '@/lib/expandProductsBySize'
 import type { Category, ProductFull, ProductTag } from '@/types'
 
 const SORT_OPTIONS = [
@@ -43,6 +44,8 @@ interface Props {
     max_price?: string
     on_sale?:  string
   }
+  initialProducts?: ProductFull[]
+  initialTotal?: number
 }
 
 function MultiSelectDropdown({
@@ -97,7 +100,7 @@ function MultiSelectDropdown({
   )
 }
 
-export default function ProductsClientPage({ initialCategories, initialParams }: Props) {
+export default function ProductsClientPage({ initialCategories, initialParams, initialProducts, initialTotal }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
@@ -116,10 +119,13 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
   const [page,             setPage]             = useState(Number(initialParams.page ?? 1))
 
   const [sidebarOpen,  setSidebarOpen]  = useState(false)
-  const [products,     setProducts]     = useState<ProductFull[]>([])
-  const [total,        setTotal]        = useState(0)
-  const [loading,      setLoading]      = useState(true)
+  const [products,     setProducts]     = useState<ProductFull[]>(initialProducts ?? [])
+  const [total,        setTotal]        = useState(initialTotal ?? 0)
+  // Skip the initial loading flash when we already have SSR data
+  const [loading,      setLoading]      = useState(initialProducts == null)
   const [availableSizes, setAvailableSizes] = useState<number[]>([])
+  // Track whether this is the first render — if so, we already have SSR data and can skip the initial fetch
+  const skipNextFetch = useRef(initialProducts != null)
 
   // Build URL params and push to router
   const buildParams = useCallback(() => {
@@ -165,6 +171,11 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
   }, [selectedCategories])
 
   useEffect(() => {
+    if (skipNextFetch.current) {
+      // First render: server already gave us products + URL is already correct
+      skipNextFetch.current = false
+      return
+    }
     fetchProducts()
     // Update URL without hard navigation
     const params = buildParams()
@@ -207,6 +218,12 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
   const hasActiveFilters =
     selectedCategories.length > 0 || selectedTags.length > 0 || search || selectedSizes.length > 0 ||
     minPrice || maxPrice || onSale || sort !== 'newest'
+
+  // Expand products by matching color when a size filter is active
+  const displayItems = useMemo(() => {
+    const sizeNums = selectedSizes.map(s => parseInt(s, 10)).filter(n => !isNaN(n))
+    return expandProductsBySize(products, sizeNums)
+  }, [products, selectedSizes])
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE)
 
@@ -476,9 +493,10 @@ export default function ProductsClientPage({ initialCategories, initialParams }:
             </div>
           </div>
 
-          {/* Product grid */}
+          {/* Product grid — when a size filter is active, expand each product into one card per matching color */}
           <ProductGrid
             products={products}
+            items={displayItems}
             isLoading={loading || isPending}
             columns={3}
           />

@@ -54,7 +54,13 @@
       "Bash(npx tsx:*)",
       "Bash(export SUPABASE_ACCESS_TOKEN=sbp_355a6cc6e1fc99253a38fd9d2a4061fd8ee8eb93)",
       "Bash(env)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "WebFetch(domain:www.kzora.com)",
+      "WebFetch(domain:kzora.co)",
+      "Bash(cat next.config.js)",
+      "Bash(cat next.config.mjs)",
+      "Bash(cat next.config.ts)",
+      "WebFetch(domain:pagespeed.web.dev)"
     ]
   }
 }

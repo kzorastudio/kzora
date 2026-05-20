@@ -1,5 +1,5 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// ISR: regenerate every 5 minutes. Admin actions also call revalidatePath on changes.
+export const revalidate = 300
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -9,6 +9,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { truncate, getDiscountPercent } from '@/lib/utils'
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 import type { ProductFull } from '@/types'
 import ProductPageClient from './_components/ProductPageClient'
 import RelatedProducts from './_components/RelatedProducts'
@@ -55,6 +56,24 @@ async function getSettings() {
   return data
 }
 
+interface ReviewRow {
+  user_name: string
+  rating: number
+  comment: string | null
+  created_at: string
+}
+
+async function getProductReviews(productId: string): Promise<ReviewRow[]> {
+  const { data } = await supabase
+    .from('product_reviews')
+    .select('user_name, rating, comment, created_at')
+    .eq('product_id', productId)
+    .eq('is_published', true)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  return (data ?? []) as ReviewRow[]
+}
+
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
@@ -73,34 +92,51 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${product.name} — كزورا Kzora`,
       description: description,
-      images: product.images[0] ? [{ url: product.images[0].url, width: 1200, height: 630, alt: product.name }] : [],
-      url: `https://kzora.co/product/${product.slug}`,
+      images: product.images[0] ? [{ url: optimizeCloudinaryUrl(product.images[0].url), width: 1200, height: 630, alt: product.name }] : [],
+      url: `https://www.kzora.co/product/${product.slug}`,
       type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
       title: `${product.name} — كزورا Kzora`,
       description: description,
-      images: product.images[0] ? [product.images[0].url] : [],
+      images: product.images[0] ? [optimizeCloudinaryUrl(product.images[0].url)] : [],
     }
   }
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params
-  const [product, settings] = await Promise.all([
-    getProduct(slug),
-    getSettings()
-  ])
-
+  const product = await getProduct(slug)
   if (!product) notFound()
 
+  const [settings, reviews] = await Promise.all([
+    getSettings(),
+    getProductReviews(product.id),
+  ])
+
+  const hasDiscountSchema = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
+
+  // priceValidUntil — only meaningful when discounted. Default to 30 days from now.
+  const priceValidUntil = (() => {
+    if (!hasDiscountSchema) return undefined
+    const d = new Date()
+    d.setDate(d.getDate() + 30)
+    return d.toISOString().split('T')[0]
+  })()
+
+  // Compute real aggregateRating from published reviews — omit entirely if no reviews
+  const totalReviews = reviews.length
+  const averageRating = totalReviews > 0
+    ? Number((reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
+    : 0
+
   // JSON-LD for Product
-  const productSchema = {
+  const productSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: product.images.map(img => img.url),
+    image: product.images.map(img => optimizeCloudinaryUrl(img.url)),
     description: product.description,
     sku: product.id,
     brand: {
@@ -109,21 +145,38 @@ export default async function ProductDetailPage({ params }: PageProps) {
     },
     offers: {
       '@type': 'Offer',
-      url: `https://kzora.co/product/${product.slug}`,
+      url: `https://www.kzora.co/product/${product.slug}`,
       priceCurrency: 'SYP',
       price: product.discount_price_syp || product.price_syp,
       availability: product.stock_status === 'out_of_stock' ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+      ...(priceValidUntil ? { priceValidUntil } : {}),
       seller: {
         '@type': 'Organization',
         name: 'كزورا Kzora',
       },
     },
-    // Elite SEO: Star ratings in search results
-    aggregateRating: {
+  }
+
+  if (totalReviews > 0) {
+    productSchema.aggregateRating = {
       '@type': 'AggregateRating',
-      ratingValue: '5.0',
-      reviewCount: '15',
-    },
+      ratingValue: averageRating,
+      reviewCount: totalReviews,
+      bestRating: 5,
+      worstRating: 1,
+    }
+    productSchema.review = reviews.map((r) => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: r.user_name },
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: r.rating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      datePublished: r.created_at,
+      ...(r.comment ? { reviewBody: r.comment } : {}),
+    }))
   }
 
   const breadcrumbSchema = {
@@ -134,19 +187,19 @@ export default async function ProductDetailPage({ params }: PageProps) {
         '@type': 'ListItem',
         position: 1,
         name: 'الرئيسية',
-        item: 'https://kzora.co',
+        item: 'https://www.kzora.co',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: product.category?.name_ar || 'الأقسام',
-        item: product.category ? `https://kzora.co/category/${product.category.slug}` : 'https://kzora.co/categories',
+        item: product.category ? `https://www.kzora.co/category/${product.category.slug}` : 'https://www.kzora.co/categories',
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: product.name,
-        item: `https://kzora.co/product/${product.slug}`,
+        item: `https://www.kzora.co/product/${product.slug}`,
       },
     ],
   }

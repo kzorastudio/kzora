@@ -36,7 +36,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://kzora.co'),
+  metadataBase: new URL('https://www.kzora.co'),
   title: {
     default: 'كزورا Kzora — أفضل متجر أحذية أونلاين في سوريا',
     template: '%s — كزورا Kzora',
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'كزورا Kzora — متجر الأحذية الفاخرة في سوريا',
     description: 'تشكيلة واسعة من الأحذية الرجالية والنسائية والرياضية. جودة عالية وتوصيل لجميع المحافظات السورية من كزورا Kzora.',
-    url: 'https://kzora.co',
+    url: 'https://www.kzora.co',
     siteName: 'كزورا Kzora',
     locale: 'ar_SY',
     type: 'website',
@@ -98,10 +98,6 @@ export const metadata: Metadata = {
   verification: {
     google: 'QIzKZwVc9QgD9CyJy0S5u9dsuiRnX43X1_lysapN5Ak',
   },
-  other: {
-    'fb:app_id': '1974751789689405', // Placeholder - User should provide real ID if available
-    'facebook-domain-verification': 'v6q99x699x699x699x699x', // Placeholder for verification
-  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -131,11 +127,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               '@type': 'WebSite',
               name: 'كزورا Kzora',
               alternateName: 'Kzora',
-              url: 'https://kzora.co',
+              url: 'https://www.kzora.co',
               inLanguage: 'ar',
               potentialAction: {
                 '@type': 'SearchAction',
-                target: 'https://kzora.co/products?search={search_term_string}',
+                target: 'https://www.kzora.co/products?search={search_term_string}',
                 'query-input': 'required name=search_term_string',
               },
             }),
@@ -152,10 +148,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               name: 'كزورا Kzora',
               alternateName: 'Kzora',
               description: 'متجر كزورا للأحذية الفاخرة في سوريا. أحذية رجالية ونسائية ورياضية بجودة عالية وتوصيل لجميع المحافظات.',
-              image: 'https://kzora.co/logo.png',
-              logo: 'https://kzora.co/logo.png',
-              '@id': 'https://kzora.co',
-              url: 'https://kzora.co',
+              image: 'https://www.kzora.co/logo.png',
+              logo: 'https://www.kzora.co/logo.png',
+              '@id': 'https://www.kzora.co',
+              url: 'https://www.kzora.co',
               telephone: '+963964514765',
               priceRange: '$$',
               currenciesAccepted: 'SYP, USD',
@@ -185,7 +181,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 closes: '22:00',
               },
               sameAs: [
-                'https://kzora.co',
+                'https://www.kzora.co',
                 'https://www.facebook.com/kzora.studio',
                 'https://www.instagram.com/kzora.studio',
               ],
