@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { SlidersHorizontal, ChevronDown, X, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
@@ -77,17 +78,46 @@ interface Props {
 
 export default function CategoryProductsClient({ products }: Props) {
   const { currency } = useCurrencyStore()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  // Filter state
-  const [sort, setSort] = useState('newest')
-  const [searchInput, setSearchInput] = useState('')
-  const [search, setSearch] = useState('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
-  const [onSale, setOnSale] = useState(false)
+  // Filter state — initialized from URL so shared/bookmarked links restore the same filters
+  const [sort, setSort] = useState(() => searchParams.get('sort') ?? 'newest')
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    const raw = searchParams.get('tag')
+    return raw ? raw.split(',').filter(Boolean) : []
+  })
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(() => {
+    const raw = searchParams.get('size')
+    return raw ? raw.split(',').filter(Boolean) : []
+  })
+  const [minPrice, setMinPrice] = useState(() => searchParams.get('min_price') ?? '')
+  const [maxPrice, setMaxPrice] = useState(() => searchParams.get('max_price') ?? '')
+  const [onSale, setOnSale] = useState(() => searchParams.get('on_sale') === 'true')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Sync the current filters back into the URL (replace, no scroll) so the link is shareable.
+  // Skip the very first run so we don't rewrite an already-correct URL on mount.
+  const isFirstSync = useRef(true)
+  useEffect(() => {
+    if (isFirstSync.current) {
+      isFirstSync.current = false
+      return
+    }
+    const params = new URLSearchParams()
+    if (selectedTags.length)  params.set('tag', selectedTags.join(','))
+    if (selectedSizes.length) params.set('size', selectedSizes.join(','))
+    if (sort !== 'newest')    params.set('sort', sort)
+    if (search)               params.set('search', search)
+    if (minPrice)             params.set('min_price', minPrice)
+    if (maxPrice)             params.set('max_price', maxPrice)
+    if (onSale)               params.set('on_sale', 'true')
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }, [sort, search, selectedTags, selectedSizes, minPrice, maxPrice, onSale, pathname, router])
 
   // Sizes that are actually in products AND marked as available in admin panel AND have stock > 0
   const availableSizes = useMemo(() => {
