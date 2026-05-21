@@ -86,6 +86,43 @@ async function getInitialProducts(params: Record<string, string | undefined>): P
       if (ids.length > 0) query = query.in('id', ids)
     }
 
+    // Size filter — mirror /api/products so shared filtered links render correctly server-side.
+    // A product qualifies if the size is marked available AND (has no variants for it OR has stock > 0).
+    if (params.size) {
+      const sizes = params.size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
+      if (sizes.length > 0) {
+        const { data: availSizes } = await supabase
+          .from('product_sizes')
+          .select('product_id')
+          .in('size', sizes)
+          .eq('is_available', true)
+
+        const candidateIds = Array.from(new Set((availSizes ?? []).map((r: { product_id: string }) => r.product_id)))
+
+        if (candidateIds.length === 0) {
+          query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
+        } else {
+          const { data: sizeVariants } = await supabase
+            .from('product_variants')
+            .select('product_id, quantity')
+            .in('size', sizes)
+            .in('product_id', candidateIds)
+
+          const variantStock = new Map<string, number>()
+          for (const v of (sizeVariants ?? [])) {
+            variantStock.set(v.product_id, Math.max(variantStock.get(v.product_id) ?? 0, v.quantity ?? 0))
+          }
+
+          const finalIds = candidateIds.filter(id => {
+            const qty = variantStock.get(id)
+            return qty === undefined || qty > 0
+          })
+
+          query = query.in('id', finalIds.length > 0 ? finalIds : ['00000000-0000-0000-0000-000000000000'])
+        }
+      }
+    }
+
     if (params.on_sale === 'true') {
       query = query.not('discount_price_syp', 'is', null)
     }
