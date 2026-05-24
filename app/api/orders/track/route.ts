@@ -1,20 +1,26 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { normalizePhone } from '@/lib/utils'
 
 // ─── GET /api/orders/track?phone=09XXXXXXXX ───────────────────────────────────
 // Public endpoint. Returns orders for the given phone number.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const phone = searchParams.get('phone')?.trim()
+    const rawPhone = searchParams.get('phone')?.trim()
 
-    if (!phone || phone.length < 6) {
+    if (!rawPhone || rawPhone.length < 6) {
       return NextResponse.json(
         { error: 'يرجى إدخال رقم هاتف صحيح' },
         { status: 400 }
       )
     }
+
+    // Match storage format: orders save the phone via normalizePhone (leading
+    // zero / country code stripped), so the customer's input must be normalized
+    // too — otherwise searching with the leading zero returns nothing.
+    const phone = normalizePhone(rawPhone)
 
     // Fetch orders matching the phone number, newest first
     const { data: orders, error } = await supabaseAdmin

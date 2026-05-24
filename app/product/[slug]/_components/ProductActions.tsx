@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { ShoppingBag, Minus, Plus } from 'lucide-react'
+import { ShoppingBag, Minus, Plus, Gift, BadgePercent } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatPrice, formatCurrency, getDiscountPercent } from '@/lib/utils'
 import { useCurrencyStore } from '@/store/currencyStore'
@@ -323,7 +323,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
         {product.multi_discount_enabled && (
           <div className="bg-[#E8F5E9] border border-[#2E7D32]/20 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-right-2 duration-500">
             <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center shrink-0">
-              <span className="text-lg"></span>
+              <BadgePercent size={18} className="text-white" />
             </div>
             <div className="flex flex-col gap-0.5">
               <p className="text-xs font-arabic font-bold text-[#1B5E20]">وفّر أكثر مع كزورا!</p>
@@ -574,7 +574,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
       {!outOfStock && (
         <div className="bg-[#FFFBEA] border border-[#FBE39A] rounded-2xl p-4 flex items-start gap-3 shadow-sm group hover:shadow-md transition-shadow">
           <div className="w-10 h-10 rounded-full bg-[#785600] flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:rotate-12 transition-transform">
-            <span className="text-xl"></span>
+            <Gift size={20} className="text-white" />
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-sm font-arabic font-bold text-[#785600]">مفاجأة بانتظارك!</p>

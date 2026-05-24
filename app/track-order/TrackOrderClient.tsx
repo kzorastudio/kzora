@@ -431,7 +431,7 @@ export default function TrackOrderClient() {
               البحث عن طلباتك
             </h2>
             <p className="text-xs font-arabic text-[#9E9890]">
-              أدخل رقم هاتفك المستخدم عند الطلب
+              أدخل رقم هاتفك المستخدم عند الطلب (بدون أو مع الصفر)
             </p>
           </div>
         </div>
