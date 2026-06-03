@@ -5,21 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateStaffOrderPayload } from '@/types'
 import { normalizePhone } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
-
-// ─── Helper: generate unique staff order number (KZS- prefix) ───────────────────
-async function generateStaffOrderNumber(): Promise<string> {
-  const maxAttempts = 10
-  for (let i = 0; i < maxAttempts; i++) {
-    const number = 'KZS-' + String(Math.floor(1000 + Math.random() * 9000))
-    const { data } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .eq('order_number', number)
-      .maybeSingle()
-    if (!data) return number
-  }
-  return 'KZS-' + Date.now().toString().slice(-5)
-}
+import { generateSequentialOrderNumber } from '@/lib/orderNumber'
 
 // ─── GET /api/admin/staff-orders ────────────────────────────────────────────────
 // Returns staff-created orders. Employees see only their own; super_admin sees all
@@ -231,7 +217,7 @@ export async function POST(request: NextRequest) {
     const totalUsd = Math.max(0, parseFloat((subtotalUsd + shippingFeeUsd).toFixed(2)))
 
     // ── Insert order ─────────────────────────────────────────────────────────────
-    const orderNumber = await generateStaffOrderNumber()
+    const orderNumber = await generateSequentialOrderNumber()
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({

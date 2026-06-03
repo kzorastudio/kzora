@@ -5,24 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
-
-// ─── Helper: generate unique order number ──────────────────────────────────────
-async function generateOrderNumber(): Promise<string> {
-  const maxAttempts = 10
-  for (let i = 0; i < maxAttempts; i++) {
-    const number = 'KZ-' + String(Math.floor(1000 + Math.random() * 9000))
-
-    const { data } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .eq('order_number', number)
-      .maybeSingle()
-
-    if (!data) return number
-  }
-  // Fallback: use timestamp
-  return 'KZ-' + Date.now().toString().slice(-4)
-}
+import { generateSequentialOrderNumber } from '@/lib/orderNumber'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -445,7 +428,7 @@ export async function POST(request: NextRequest) {
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))
 
     // ── Step 10: Generate order number ────────────────────────────────────────
-    const orderNumber = await generateOrderNumber()
+    const orderNumber = await generateSequentialOrderNumber()
 
     // ── Step 11: Insert order ─────────────────────────────────────────────────
     const { data: order, error: orderError } = await supabaseAdmin
