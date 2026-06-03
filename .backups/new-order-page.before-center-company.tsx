@@ -97,9 +97,9 @@ export default function NewStaffOrderPage() {
   const [governorate, setGovernorate] = useState('')
   const [address, setAddress] = useState('')
   const [centerName, setCenterName] = useState('')
-  // Default delivery method = shipping. The company is derived from the chosen center.
+  // Defaults requested: shipping + Qadmous (its real DB slug is "kadmous")
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('shipping')
-  const [shippingCompany, setShippingCompany] = useState('')
+  const [shippingCompany, setShippingCompany] = useState('kadmous')
   const [shippingFee, setShippingFee] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('cod')
   const [notes, setNotes] = useState('')
@@ -107,7 +107,7 @@ export default function NewStaffOrderPage() {
 
   // Shipping data (from DB, like the store)
   const [shippingMethods, setShippingMethods] = useState<{ slug: string; name: string }[]>([])
-  const [centers, setCenters] = useState<{ id: string; name: string; supported_companies: string[] }[]>([])
+  const [centers, setCenters] = useState<{ id: string; name: string }[]>([])
   const [loadingCenters, setLoadingCenters] = useState(false)
 
   // Load shipping companies once
@@ -124,7 +124,7 @@ export default function NewStaffOrderPage() {
     setLoadingCenters(true)
     fetch(`/api/shipping/centers?governorate=${encodeURIComponent(governorate)}`)
       .then((r) => r.json())
-      .then((d) => setCenters((d.centers || d || []).map((c: any) => ({ id: c.id, name: c.name, supported_companies: c.supported_companies || [] }))))
+      .then((d) => setCenters((d.centers || d || []).map((c: any) => ({ id: c.id, name: c.name }))))
       .catch(() => setCenters([]))
       .finally(() => setLoadingCenters(false))
   }, [governorate, deliveryType])
@@ -226,27 +226,6 @@ export default function NewStaffOrderPage() {
   // Restore the original DB price for the selected currency
   function resetPrice(id: string) {
     setCart((prev) => prev.map((l) => (l.id === id ? { ...l, ...(currency === 'USD' ? { unit_price_usd: l.orig_price_usd } : { unit_price_syp: l.orig_price_syp }) } : l)))
-  }
-
-  // ── Shipping center → company (like the store) ──────────────────────────────
-  const selectedCenter = centers.find((c) => c.name === address)
-  // Companies are limited to what the chosen center actually supports.
-  const companyOptions = selectedCenter && selectedCenter.supported_companies.length
-    ? shippingMethods.filter((m) => selectedCenter.supported_companies.includes(m.slug))
-    : shippingMethods
-
-  function handleSelectCenter(name: string) {
-    setAddress(name)
-    setCenterName(name)
-    const center = centers.find((c) => c.name === name)
-    const supported = center?.supported_companies || []
-    const allowed = shippingMethods.filter((m) => supported.includes(m.slug))
-    // Auto-select: if the current company isn't supported, pick the first allowed one
-    if (allowed.length && !allowed.some((m) => m.slug === shippingCompany)) {
-      setShippingCompany(allowed[0].slug)
-    } else if (!allowed.length) {
-      setShippingCompany('')
-    }
   }
 
   // ── Totals ────────────────────────────────────────────────────────────────
@@ -487,7 +466,7 @@ export default function NewStaffOrderPage() {
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الهاتف *" dir="ltr" className={FIELD} />
             <select
               value={governorate}
-              onChange={(e) => { setGovernorate(e.target.value); setAddress(''); setCenterName(''); setShippingCompany('') }}
+              onChange={(e) => { setGovernorate(e.target.value); setAddress(''); setCenterName('') }}
               className={FIELD}
             >
               <option value="">المحافظة *</option>
@@ -509,59 +488,55 @@ export default function NewStaffOrderPage() {
               </select>
             </div>
 
-            {/* Delivery type */}
-            <select
-              value={deliveryType}
-              onChange={(e) => { setDeliveryType(e.target.value as any); setAddress(''); setCenterName(''); setShippingCompany('') }}
-              className={FIELD}
-            >
-              <option value="shipping">شحن للمحافظات</option>
-              <option value="delivery">توصيل عادي (حلب)</option>
-            </select>
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={deliveryType}
+                onChange={(e) => { setDeliveryType(e.target.value as any); setAddress(''); setCenterName('') }}
+                className={FIELD}
+              >
+                <option value="shipping">شحن للمحافظات</option>
+                <option value="delivery">توصيل عادي (حلب)</option>
+              </select>
+              {deliveryType === 'shipping' ? (
+                <select value={shippingCompany} onChange={(e) => setShippingCompany(e.target.value)} className={FIELD}>
+                  <option value="">شركة الشحن *</option>
+                  {shippingMethods.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                </select>
+              ) : (
+                <div />
+              )}
+            </div>
 
+            {/* Address — free text for delivery, center dropdown for shipping (like the store) */}
             {deliveryType === 'delivery' ? (
-              /* Aleppo delivery → free-text address */
               <input
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="العنوان التفصيلي *"
                 className={FIELD}
               />
+            ) : !governorate ? (
+              <div className="rounded-xl border border-dashed border-outline-variant/50 px-3 py-2.5 text-sm font-arabic text-secondary text-center">
+                اختر المحافظة أولاً لعرض المراكز
+              </div>
+            ) : loadingCenters ? (
+              <div className="flex items-center justify-center py-2"><Loader2 className="animate-spin text-primary" size={16} /></div>
+            ) : centers.length > 0 ? (
+              <select
+                value={address}
+                onChange={(e) => { setAddress(e.target.value); setCenterName(e.target.value) }}
+                className={FIELD}
+              >
+                <option value="">اختر المركز *</option>
+                {centers.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
             ) : (
-              <>
-                {/* Step 1: center/branch (becomes the address) */}
-                {!governorate ? (
-                  <div className="rounded-xl border border-dashed border-outline-variant/50 px-3 py-2.5 text-sm font-arabic text-secondary text-center">
-                    اختر المحافظة أولاً لعرض المراكز
-                  </div>
-                ) : loadingCenters ? (
-                  <div className="flex items-center justify-center py-2"><Loader2 className="animate-spin text-primary" size={16} /></div>
-                ) : centers.length > 0 ? (
-                  <select value={address} onChange={(e) => handleSelectCenter(e.target.value)} className={FIELD}>
-                    <option value="">اختر المركز *</option>
-                    {centers.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                ) : (
-                  <input
-                    value={address}
-                    onChange={(e) => { setAddress(e.target.value); setCenterName(e.target.value) }}
-                    placeholder="اكتب اسم المركز / العنوان *"
-                    className={FIELD}
-                  />
-                )}
-
-                {/* Step 2: company — only the ones the chosen center supports */}
-                {address ? (
-                  <select value={shippingCompany} onChange={(e) => setShippingCompany(e.target.value)} className={FIELD}>
-                    <option value="">شركة الشحن *</option>
-                    {companyOptions.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-                  </select>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-outline-variant/50 px-3 py-2.5 text-xs font-arabic text-secondary text-center">
-                    اختر المركز لعرض شركات الشحن المتاحة له
-                  </div>
-                )}
-              </>
+              <input
+                value={address}
+                onChange={(e) => { setAddress(e.target.value); setCenterName(e.target.value) }}
+                placeholder="اكتب اسم المركز / العنوان *"
+                className={FIELD}
+              />
             )}
 
             <input
