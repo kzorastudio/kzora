@@ -150,6 +150,10 @@ export interface CreateStaffOrderPayload {
     color: string | null
     size: number | null
     quantity: number
+    // Optional manual price override (admin may sell at a custom price).
+    // If omitted, the price is taken from the database.
+    unit_price_syp?: number
+    unit_price_usd?: number
   }[]
   customer: {
     full_name: string

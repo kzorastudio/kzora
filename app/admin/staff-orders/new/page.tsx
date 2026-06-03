@@ -6,8 +6,8 @@ import NextImage from 'next/image'
 import toast from 'react-hot-toast'
 import { Search, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react'
 import AdminHeader from '@/components/admin/AdminHeader'
-import { GOVERNORATES, SHIPPING_COMPANIES } from '@/lib/constants'
-import { formatCurrency } from '@/lib/utils'
+import { GOVERNORATES } from '@/lib/constants'
+import { formatCurrency, cn } from '@/lib/utils'
 import type { Currency } from '@/types'
 
 interface PickerProduct {
@@ -25,7 +25,7 @@ interface PickerProduct {
 }
 
 interface CartLine {
-  key: string
+  id: string            // unique per line (allows the same product more than once)
   product_id: string
   name: string
   image: string | null
@@ -34,7 +34,46 @@ interface CartLine {
   quantity: number
   unit_price_syp: number
   unit_price_usd: number
+  // Original DB prices (for the "reset" button + showing the original)
+  orig_price_syp: number
+  orig_price_usd: number
   max_stock: number | null
+  // Available options + variant stock, so each line can change its own color/size
+  availColors: string[]
+  availSizes: number[]
+  variants: { color: string; size: number; quantity: number }[]
+}
+
+// Recompute available stock for a given color/size from a line's variants
+function stockFor(variants: CartLine['variants'], color: string | null, size: number | null): number | null {
+  if (variants.length === 0) return null
+  const v = variants.find((x) => (x.color || '').trim() === (color || '').trim() && (x.size || 0) === (size || 0))
+  return v ? v.quantity : 0
+}
+
+// Colors that are actually sellable (have a variant in stock) — mirrors the store.
+function colorOptionsFor(line: Pick<CartLine, 'variants' | 'availColors'>): string[] {
+  if (line.variants.length > 0) {
+    const set = new Set<string>()
+    line.variants.forEach((v) => {
+      if (v.quantity > 0 && v.color && (line.availColors.length === 0 || line.availColors.includes(v.color))) set.add(v.color)
+    })
+    const arr = Array.from(set)
+    return arr.length ? arr : line.availColors
+  }
+  return line.availColors
+}
+
+// Sizes sellable for the chosen color (have a variant in stock) — mirrors the store.
+function sizeOptionsFor(line: Pick<CartLine, 'variants' | 'availSizes'>, color: string | null): number[] {
+  if (line.variants.length > 0) {
+    const sizes = line.variants
+      .filter((v) => (v.color || '').trim() === (color || '').trim() && v.quantity > 0)
+      .map((v) => v.size)
+    const uniq = Array.from(new Set(sizes)).sort((a, b) => a - b)
+    return uniq.length ? uniq : line.availSizes
+  }
+  return line.availSizes
 }
 
 const FIELD =
@@ -58,12 +97,37 @@ export default function NewStaffOrderPage() {
   const [governorate, setGovernorate] = useState('')
   const [address, setAddress] = useState('')
   const [centerName, setCenterName] = useState('')
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('delivery')
-  const [shippingCompany, setShippingCompany] = useState('')
+  // Defaults requested: shipping + Qadmous (its real DB slug is "kadmous")
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('shipping')
+  const [shippingCompany, setShippingCompany] = useState('kadmous')
   const [shippingFee, setShippingFee] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('cod')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Shipping data (from DB, like the store)
+  const [shippingMethods, setShippingMethods] = useState<{ slug: string; name: string }[]>([])
+  const [centers, setCenters] = useState<{ id: string; name: string }[]>([])
+  const [loadingCenters, setLoadingCenters] = useState(false)
+
+  // Load shipping companies once
+  useEffect(() => {
+    fetch('/api/shipping')
+      .then((r) => r.json())
+      .then((d) => setShippingMethods((d.methods || []).map((m: any) => ({ slug: m.slug, name: m.name }))))
+      .catch(() => {})
+  }, [])
+
+  // Load centers whenever the governorate changes (shipping only)
+  useEffect(() => {
+    if (deliveryType !== 'shipping' || !governorate) { setCenters([]); return }
+    setLoadingCenters(true)
+    fetch(`/api/shipping/centers?governorate=${encodeURIComponent(governorate)}`)
+      .then((r) => r.json())
+      .then((d) => setCenters((d.centers || d || []).map((c: any) => ({ id: c.id, name: c.name }))))
+      .catch(() => setCenters([]))
+      .finally(() => setLoadingCenters(false))
+  }, [governorate, deliveryType])
 
   // ── Product search (debounced) ────────────────────────────────────────────
   const doSearch = useCallback(async (q: string) => {
@@ -85,44 +149,38 @@ export default function NewStaffOrderPage() {
     return () => clearTimeout(t)
   }, [searchInput, doSearch])
 
-  // ── Add product to cart (resolves variant interactively) ──────────────────
+  // ── Add product to cart ───────────────────────────────────────────────────
+  // The same product can be added multiple times; each line picks its own
+  // color/size via dropdowns. We auto-advance to the first variant not yet in
+  // the cart so adding "another pair" lands on a different size automatically.
   function addProduct(p: PickerProduct) {
-    const hasColors = p.colors.length > 0
-    const hasSizes = p.sizes.length > 0
-    const hasVariants = p.variants.length > 0
+    const availColors = p.colors.filter((c) => c.is_available).map((c) => c.name_ar)
+    const availSizes = p.sizes.filter((s) => s.is_available).map((s) => s.size)
+    const variants = p.variants.map((v) => ({ color: v.color, size: v.size, quantity: v.quantity }))
+    const meta = { availColors, availSizes, variants }
 
-    let color: string | null = null
-    let size: number | null = null
+    // Default selection: first sellable color/size
+    const colorOpts = colorOptionsFor(meta)
+    let color: string | null = colorOpts[0] ?? null
+    let size: number | null = sizeOptionsFor(meta, color)[0] ?? null
 
-    // For variant-tracked products, prompt minimal selection via window prompt fallback.
-    // Simpler approach: pick first available color/size; the user can adjust below.
-    if (hasColors) {
-      const avail = p.colors.find((c) => c.is_available)
-      color = avail ? avail.name_ar : p.colors[0].name_ar
-    }
-    if (hasSizes) {
-      const avail = p.sizes.find((s) => s.is_available)
-      size = avail ? avail.size : p.sizes[0].size
-    }
-
-    let maxStock: number | null = null
-    if (hasVariants) {
-      const v = p.variants.find(
-        (v) => (v.color || '').trim() === (color || '').trim() && (v.size || 0) === (size || 0)
-      )
-      maxStock = v ? v.quantity : 0
-    }
-
-    const key = `${p.id}|${color ?? ''}|${size ?? ''}`
-    if (cart.some((l) => l.key === key)) {
-      toast('هذا الصنف مضاف مسبقاً', { icon: 'ℹ️' })
-      return
+    // Try to land on a color/size combo not already used by this product in the cart,
+    // so "add another pair" auto-advances to a free size.
+    const usedKeys = new Set(
+      cart.filter((l) => l.product_id === p.id).map((l) => `${l.color ?? ''}|${l.size ?? ''}`)
+    )
+    const colorList = colorOpts.length ? colorOpts : [null]
+    outer: for (const c of colorList) {
+      const sizeList = sizeOptionsFor(meta, c).length ? sizeOptionsFor(meta, c) : [null]
+      for (const s of sizeList) {
+        if (!usedKeys.has(`${c ?? ''}|${s ?? ''}`)) { color = c; size = s; break outer }
+      }
     }
 
     setCart((prev) => [
       ...prev,
       {
-        key,
+        id: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         product_id: p.id,
         name: p.name,
         image: p.images.find((i) => i.is_main)?.url || p.images[0]?.url || null,
@@ -131,17 +189,43 @@ export default function NewStaffOrderPage() {
         quantity: 1,
         unit_price_syp: p.discount_price_syp ?? p.price_syp,
         unit_price_usd: p.discount_price_usd ?? p.price_usd,
-        max_stock: maxStock,
+        orig_price_syp: p.discount_price_syp ?? p.price_syp,
+        orig_price_usd: p.discount_price_usd ?? p.price_usd,
+        max_stock: stockFor(variants, color, size),
+        availColors,
+        availSizes,
+        variants,
       },
     ])
     toast.success('تمت الإضافة')
   }
 
-  function updateQty(key: string, qty: number) {
-    setCart((prev) => prev.map((l) => (l.key === key ? { ...l, quantity: Math.max(1, qty) } : l)))
+  function updateQty(id: string, qty: number) {
+    setCart((prev) => prev.map((l) => (l.id === id ? { ...l, quantity: Math.max(1, qty) } : l)))
   }
-  function removeLine(key: string) {
-    setCart((prev) => prev.filter((l) => l.key !== key))
+  function removeLine(id: string) {
+    setCart((prev) => prev.filter((l) => l.id !== id))
+  }
+  function updateColor(id: string, color: string) {
+    setCart((prev) => prev.map((l) => {
+      if (l.id !== id) return l
+      // When the color changes, keep the size if it's still valid, else pick the first valid one
+      const sizes = sizeOptionsFor(l, color)
+      const newSize = l.size != null && sizes.includes(l.size) ? l.size : (sizes[0] ?? null)
+      return { ...l, color, size: newSize, max_stock: stockFor(l.variants, color, newSize) }
+    }))
+  }
+  function updateSize(id: string, size: number) {
+    setCart((prev) => prev.map((l) => (l.id === id ? { ...l, size, max_stock: stockFor(l.variants, l.color, size) } : l)))
+  }
+  // Manual price override (in the currently selected currency)
+  function updatePrice(id: string, value: number) {
+    const v = Math.max(0, value || 0)
+    setCart((prev) => prev.map((l) => (l.id === id ? { ...l, ...(currency === 'USD' ? { unit_price_usd: v } : { unit_price_syp: v }) } : l)))
+  }
+  // Restore the original DB price for the selected currency
+  function resetPrice(id: string) {
+    setCart((prev) => prev.map((l) => (l.id === id ? { ...l, ...(currency === 'USD' ? { unit_price_usd: l.orig_price_usd } : { unit_price_syp: l.orig_price_syp }) } : l)))
   }
 
   // ── Totals ────────────────────────────────────────────────────────────────
@@ -159,21 +243,41 @@ export default function NewStaffOrderPage() {
     if (!governorate) { toast.error('اختر المحافظة'); return }
     if (deliveryType === 'delivery' && !address.trim()) { toast.error('العنوان مطلوب للتوصيل'); return }
     if (deliveryType === 'shipping' && !shippingCompany) { toast.error('اختر شركة الشحن'); return }
+    if (deliveryType === 'shipping' && !address.trim()) { toast.error('اختر المركز / العنوان'); return }
+
+    // Merge lines that have the exact same product + color + size (sum quantities),
+    // so two identical lines don't bypass the stock check. Keeps the first line's price.
+    const merged = new Map<string, { product_id: string; color: string | null; size: number | null; quantity: number; max_stock: number | null; name: string; unit_price_syp: number; unit_price_usd: number }>()
+    for (const l of cart) {
+      const k = `${l.product_id}|${l.color ?? ''}|${l.size ?? ''}`
+      const existing = merged.get(k)
+      if (existing) existing.quantity += l.quantity
+      else merged.set(k, { product_id: l.product_id, color: l.color, size: l.size, quantity: l.quantity, max_stock: l.max_stock, name: l.name, unit_price_syp: l.unit_price_syp, unit_price_usd: l.unit_price_usd })
+    }
+    // Stock check (client-side, friendlier than a server error)
+    for (const m of Array.from(merged.values())) {
+      if (m.max_stock !== null && m.quantity > m.max_stock) {
+        toast.error(`الكمية المطلوبة من "${m.name}" (${m.quantity}) تتجاوز المتاح (${m.max_stock})`)
+        return
+      }
+    }
 
     setSubmitting(true)
     try {
       const payload = {
-        items: cart.map((l) => ({
+        items: Array.from(merged.values()).map((l) => ({
           product_id: l.product_id,
           color: l.color,
           size: l.size,
           quantity: l.quantity,
+          unit_price_syp: l.unit_price_syp,
+          unit_price_usd: l.unit_price_usd,
         })),
         customer: {
           full_name: fullName.trim(),
           phone: phone.trim(),
           governorate,
-          address: address.trim() || null,
+          address: address.trim() || '',
           center_name: centerName.trim() || null,
         },
         delivery_type: deliveryType,
@@ -275,26 +379,78 @@ export default function NewStaffOrderPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {cart.map((l) => (
-                  <div key={l.key} className="flex items-center gap-2 p-2 rounded-xl bg-surface-container-low/40">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-arabic font-semibold text-on-surface truncate">{l.name}</p>
-                      <p className="text-xs font-arabic text-secondary">
-                        {l.color && `اللون: ${l.color}`} {l.size ? `• مقاس: ${l.size}` : ''}
-                        {l.max_stock !== null && <span className="text-amber-600"> • متاح: {l.max_stock}</span>}
-                      </p>
+                  <div key={l.id} className="flex flex-col gap-2 p-2.5 rounded-xl bg-surface-container-low/40">
+                    {/* Row 1: name + price + delete */}
+                    <div className="flex items-center gap-2">
+                      <p className="flex-1 min-w-0 text-sm font-arabic font-semibold text-on-surface truncate">{l.name}</p>
+                      <span className="text-xs font-label text-on-surface shrink-0">
+                        {formatCurrency((isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, currency)}
+                      </span>
+                      <button onClick={() => removeLine(l.id)} className="text-error hover:bg-error-container/30 rounded-lg p-1.5 transition shrink-0">
+                        <Trash2 size={15} />
+                      </button>
                     </div>
-                    <input
-                      type="number" min={1}
-                      value={l.quantity}
-                      onChange={(e) => updateQty(l.key, parseInt(e.target.value) || 1)}
-                      className="w-16 rounded-lg border border-outline-variant/50 px-2 py-1.5 text-sm text-center"
-                    />
-                    <span className="text-xs font-label text-on-surface w-20 text-left">
-                      {formatCurrency((isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, currency)}
-                    </span>
-                    <button onClick={() => removeLine(l.key)} className="text-error hover:bg-error-container/30 rounded-lg p-1.5 transition">
-                      <Trash2 size={15} />
-                    </button>
+                    {/* Row 2: color / size / quantity selectors */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {l.availColors.length > 0 && (
+                        <select
+                          value={l.color ?? ''}
+                          onChange={(e) => updateColor(l.id, e.target.value)}
+                          className="rounded-lg border border-outline-variant/50 bg-white px-2 py-1.5 text-xs font-arabic text-on-surface"
+                        >
+                          {colorOptionsFor(l).map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      )}
+                      {l.availSizes.length > 0 && (
+                        <select
+                          value={l.size ?? ''}
+                          onChange={(e) => updateSize(l.id, parseInt(e.target.value))}
+                          className="rounded-lg border border-outline-variant/50 bg-white px-2 py-1.5 text-xs font-arabic text-on-surface"
+                        >
+                          {sizeOptionsFor(l, l.color).map((s) => <option key={s} value={s}>مقاس {s}</option>)}
+                        </select>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-arabic text-secondary">الكمية:</span>
+                        <input
+                          type="number" min={1}
+                          value={l.quantity}
+                          onChange={(e) => updateQty(l.id, parseInt(e.target.value) || 1)}
+                          className="w-14 rounded-lg border border-outline-variant/50 px-2 py-1.5 text-sm text-center"
+                        />
+                      </div>
+                      {l.max_stock !== null && (
+                        <span className={cn('text-[11px] font-arabic px-1.5 py-0.5 rounded-md', l.max_stock <= 0 ? 'bg-red-50 text-red-600' : l.quantity > l.max_stock ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700')}>
+                          متاح: {l.max_stock}
+                        </span>
+                      )}
+                    </div>
+                    {/* Row 3: editable unit price (with original reference + reset) */}
+                    {(() => {
+                      const cur = isUSD ? '$' : 'ل.س'
+                      const price = isUSD ? l.unit_price_usd : l.unit_price_syp
+                      const orig = isUSD ? l.orig_price_usd : l.orig_price_syp
+                      const changed = price !== orig
+                      return (
+                        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-outline-variant/20">
+                          <span className="text-xs font-arabic text-secondary">سعر القطعة ({cur}):</span>
+                          <input
+                            type="number" min={0}
+                            value={price}
+                            onChange={(e) => updatePrice(l.id, parseFloat(e.target.value))}
+                            className={cn('w-24 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
+                              changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
+                          />
+                          {changed && (
+                            <>
+                              <span className="text-[11px] font-label text-secondary/60 line-through">{orig.toLocaleString()}</span>
+                              <button onClick={() => resetPrice(l.id)} className="text-[11px] font-arabic text-primary hover:underline">↺ الأصلي</button>
+                            </>
+                          )}
+                          <span className="mr-auto text-xs font-label font-bold text-on-surface">= {(price * l.quantity).toLocaleString()} {cur}</span>
+                        </div>
+                      )
+                    })()}
                   </div>
                 ))}
               </div>
@@ -308,12 +464,14 @@ export default function NewStaffOrderPage() {
             <span className="text-sm font-arabic font-bold text-on-surface">بيانات العميل</span>
             <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="الاسم الكامل *" className={FIELD} />
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الهاتف *" dir="ltr" className={FIELD} />
-            <select value={governorate} onChange={(e) => setGovernorate(e.target.value)} className={FIELD}>
+            <select
+              value={governorate}
+              onChange={(e) => { setGovernorate(e.target.value); setAddress(''); setCenterName('') }}
+              className={FIELD}
+            >
               <option value="">المحافظة *</option>
               {GOVERNORATES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان التفصيلي" className={FIELD} />
-            <input value={centerName} onChange={(e) => setCenterName(e.target.value)} placeholder="اسم المركز/المنطقة (اختياري)" className={FIELD} />
           </div>
 
           <div className="bg-white rounded-2xl p-4 shadow-ambient border border-outline-variant/20 flex flex-col gap-3">
@@ -331,19 +489,55 @@ export default function NewStaffOrderPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <select value={deliveryType} onChange={(e) => setDeliveryType(e.target.value as any)} className={FIELD}>
-                <option value="delivery">توصيل عادي (حلب)</option>
+              <select
+                value={deliveryType}
+                onChange={(e) => { setDeliveryType(e.target.value as any); setAddress(''); setCenterName('') }}
+                className={FIELD}
+              >
                 <option value="shipping">شحن للمحافظات</option>
+                <option value="delivery">توصيل عادي (حلب)</option>
               </select>
               {deliveryType === 'shipping' ? (
                 <select value={shippingCompany} onChange={(e) => setShippingCompany(e.target.value)} className={FIELD}>
                   <option value="">شركة الشحن *</option>
-                  {SHIPPING_COMPANIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {shippingMethods.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
                 </select>
               ) : (
                 <div />
               )}
             </div>
+
+            {/* Address — free text for delivery, center dropdown for shipping (like the store) */}
+            {deliveryType === 'delivery' ? (
+              <input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="العنوان التفصيلي *"
+                className={FIELD}
+              />
+            ) : !governorate ? (
+              <div className="rounded-xl border border-dashed border-outline-variant/50 px-3 py-2.5 text-sm font-arabic text-secondary text-center">
+                اختر المحافظة أولاً لعرض المراكز
+              </div>
+            ) : loadingCenters ? (
+              <div className="flex items-center justify-center py-2"><Loader2 className="animate-spin text-primary" size={16} /></div>
+            ) : centers.length > 0 ? (
+              <select
+                value={address}
+                onChange={(e) => { setAddress(e.target.value); setCenterName(e.target.value) }}
+                className={FIELD}
+              >
+                <option value="">اختر المركز *</option>
+                {centers.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            ) : (
+              <input
+                value={address}
+                onChange={(e) => { setAddress(e.target.value); setCenterName(e.target.value) }}
+                placeholder="اكتب اسم المركز / العنوان *"
+                className={FIELD}
+              />
+            )}
 
             <input
               type="number" min={0}

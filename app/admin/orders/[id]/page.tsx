@@ -10,6 +10,7 @@ import { formatDate, formatPrice, SHIPPING_LABELS, normalizePhone } from '@/lib/
 import type { OrderFull } from '@/types'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
+import OrderItemsEditor from './OrderItemsEditor'
 import CopyOrderButton from './CopyOrderButton'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -76,6 +77,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const order = await getOrder(params.id)
   if (!order) notFound()
 
+  // Isolation: an employee may only view their own orders (defends against manual URL access)
+  if (isEmployee && (order as any).created_by_admin_id !== session?.user?.id) {
+    notFound()
+  }
+
   const deliveryType = (order as any).delivery_type || 'shipping'
   const shippingName = deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : (await getShippingMethodName(order.shipping_company || ''))
   const loyalty = await getCustomerLoyalty(order.customer_phone)
@@ -127,11 +133,15 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <div className="xl:col-span-2 flex flex-col gap-5">
             {/* Items card */}
             <div className="bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
-              <div className="flex items-center gap-2 px-5 py-4 border-b border-outline-variant/40">
-                <Package size={18} className="text-secondary" />
-                <h2 className="text-sm font-arabic font-semibold text-on-surface">
-                  المنتجات ({order.items.length})
-                </h2>
+              <div className="flex items-center justify-between gap-2 px-5 py-4 border-b border-outline-variant/40">
+                <div className="flex items-center gap-2">
+                  <Package size={18} className="text-secondary" />
+                  <h2 className="text-sm font-arabic font-semibold text-on-surface">
+                    المنتجات ({order.items.length})
+                  </h2>
+                </div>
+                {/* Item editing with inventory reconciliation — staff orders only */}
+                {order.created_by_admin_id != null && <OrderItemsEditor order={order} />}
               </div>
               <div className="divide-y divide-outline-variant/20">
                 {order.items.map((item) => (

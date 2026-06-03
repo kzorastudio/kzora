@@ -201,6 +201,15 @@ export async function POST(request: NextRequest) {
         || (dbProduct.images || [])[0]?.url
         || null
 
+      // Default price from DB (discount price if set, otherwise base price)
+      const dbPriceSyp = dbProduct.discount_price_syp ?? dbProduct.price_syp
+      const dbPriceUsd = dbProduct.discount_price_usd ?? dbProduct.price_usd
+      // Allow an admin-supplied manual price (>= 0). Falls back to the DB price.
+      const manualSyp = Number(item.unit_price_syp)
+      const manualUsd = Number(item.unit_price_usd)
+      const unitSyp = Number.isFinite(manualSyp) && manualSyp >= 0 ? manualSyp : dbPriceSyp
+      const unitUsd = Number.isFinite(manualUsd) && manualUsd >= 0 ? manualUsd : dbPriceUsd
+
       sanitizedItems.push({
         product_id:     item.product_id,
         product_name:   dbProduct.name,
@@ -208,9 +217,8 @@ export async function POST(request: NextRequest) {
         color:          item.color || null,
         size:           item.size || null,
         quantity:       qty,
-        // Prices ALWAYS from DB (discount price if set, otherwise base price)
-        unit_price_syp: dbProduct.discount_price_syp ?? dbProduct.price_syp,
-        unit_price_usd: dbProduct.discount_price_usd ?? dbProduct.price_usd,
+        unit_price_syp: unitSyp,
+        unit_price_usd: unitUsd,
         variant_id:     variantId,
         available_quantity: availableQuantity,
       })
@@ -231,7 +239,8 @@ export async function POST(request: NextRequest) {
         customer_full_name:      customer.full_name,
         customer_phone:          normalizePhone(customer.phone),
         customer_governorate:    customer.governorate,
-        customer_address:        customer.address || null,
+        // Match the store: never null (the column is NOT NULL). Empty string for shipping orders.
+        customer_address:        customer.address || '',
         center_name:             customer.center_name || null,
         delivery_type:           delivery_type || 'delivery',
         shipping_company:        delivery_type === 'delivery' ? 'delivery' : (shipping_company || ''),
