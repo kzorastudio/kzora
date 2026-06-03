@@ -131,11 +131,59 @@ export interface Order {
   loyalty_discount_syp: number
   loyalty_discount_usd: number
   notes: string | null
+  // Staff orders & bulk printing
+  created_by_admin_id: string | null
+  printed: boolean
+  printed_at: string | null
+  printed_by_id: string | null
   created_at: string
   updated_at: string
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+
+// Payload for staff-created orders (no loyalty, no coupons, no discounts).
+// Prices are always resolved server-side from the database.
+export interface CreateStaffOrderPayload {
+  items: {
+    product_id: string
+    color: string | null
+    size: number | null
+    quantity: number
+  }[]
+  customer: {
+    full_name: string
+    phone: string
+    governorate: string
+    address?: string | null
+    center_name?: string | null
+  }
+  delivery_type: DeliveryType
+  shipping_company?: string | null
+  shipping_fee_syp?: number
+  shipping_fee_usd?: number
+  payment_method?: string
+  currency_used: Currency
+  notes?: string
+}
+
+// Lightweight admin reference (for "created by" / "printed by" display)
+export interface AdminRef {
+  id: string
+  name: string
+  email?: string
+}
+
+// Per-employee performance summary (stats endpoint)
+export interface StaffOrderStat {
+  admin_id: string
+  admin_name: string
+  total_orders: number
+  delivered_orders: number
+  cancelled_orders: number
+  total_sales_syp: number
+  total_sales_usd: number
+}
 
 export interface OrderItem {
   id: string

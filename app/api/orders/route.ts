@@ -38,12 +38,35 @@ export async function GET(request: NextRequest) {
     const limit  = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
     const status = searchParams.get('status')
     const search = searchParams.get('search')
+    const printed = searchParams.get('printed')        // 'true' | 'false'
+    const source  = searchParams.get('source')         // 'store' | 'staff' | admin_id
     const offset = (page - 1) * limit
+
+    const role = (session as any).role as 'super_admin' | 'employee' | undefined
 
     let query = supabaseAdmin
       .from('orders')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
+
+    // ─── Role-based isolation (enforced server-side, never trust the client) ───
+    if (role === 'employee') {
+      // Employees can only ever see the orders they created themselves.
+      query = query.eq('created_by_admin_id', (session as any).id)
+    } else {
+      // super_admin may optionally filter by source.
+      if (source === 'store') {
+        query = query.is('created_by_admin_id', null)
+      } else if (source === 'staff') {
+        query = query.not('created_by_admin_id', 'is', null)
+      } else if (source) {
+        // a specific employee id
+        query = query.eq('created_by_admin_id', source)
+      }
+    }
+
+    if (printed === 'true')  query = query.eq('printed', true)
+    if (printed === 'false') query = query.eq('printed', false)
 
     if (status) query = query.eq('status', status)
     if (search) {

@@ -34,6 +34,11 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
+    // Ownership isolation: employees may only view their own orders.
+    if ((session as any).role === 'employee' && order.created_by_admin_id !== (session as any).id) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
     // Sort status history by changed_at ascending
     if (order.status_history) {
       order.status_history.sort(
@@ -79,12 +84,18 @@ export async function PUT(
     // ─── Fetch current order to check status change ───────────────────────
     const { data: currentOrder, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('status, loyalty_discount_syp, customer_phone')
+      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id')
       .eq('id', id)
       .single()
 
     if (fetchErr || !currentOrder) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    // ─── Ownership isolation: employees may only modify their own orders ───
+    const role = (session as any).role as 'super_admin' | 'employee' | undefined
+    if (role === 'employee' && currentOrder.created_by_admin_id !== (session as any).id) {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
 
     // ─── Build update fields ──────────────────────────────────────────────
@@ -196,6 +207,11 @@ export async function DELETE(
     const session = await getAuthSession(_request)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Deleting orders is restricted to super_admin only.
+    if ((session as any).role !== 'super_admin') {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف الطلبات' }, { status: 403 })
     }
 
     const { id } = params

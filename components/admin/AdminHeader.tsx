@@ -13,6 +13,8 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/admin/products/new': 'منتج جديد',
   '/admin/categories': 'الأقسام',
   '/admin/orders':     'الطلبات',
+  '/admin/staff-orders': 'الطلبيات اليدوية',
+  '/admin/staff-orders/new': 'طلبية جديدة',
   '/admin/coupons':    'الكوبونات',
   '/admin/homepage':   'الصفحة الرئيسية',
   '/admin/pages':      'الصفحات',

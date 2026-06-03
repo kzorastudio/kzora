@@ -60,7 +60,11 @@
       "Bash(cat next.config.js)",
       "Bash(cat next.config.mjs)",
       "Bash(cat next.config.ts)",
-      "WebFetch(domain:pagespeed.web.dev)"
+      "WebFetch(domain:pagespeed.web.dev)",
+      "Bash(lsof -ti:3000)",
+      "Bash(node -e ' *)",
+      "Bash(git check-ignore *)",
+      "Bash(xargs kill -9)"
     ]
   }
 }

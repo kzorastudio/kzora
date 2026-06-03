@@ -28,6 +28,10 @@ interface OrderTableProps {
   totalPages: number
   onPageChange: (page: number) => void
   loading?: boolean
+  /** Enable multi-select checkboxes (for bulk printing) */
+  selectable?: boolean
+  selectedIds?: Set<string>
+  onToggleSelect?: (id: string) => void
 }
 
 export default function OrderTable({
@@ -38,6 +42,9 @@ export default function OrderTable({
   totalPages,
   onPageChange,
   loading = false,
+  selectable = false,
+  selectedIds,
+  onToggleSelect,
 }: OrderTableProps) {
   const router = useRouter()
   const { data: session } = useSession()
@@ -177,7 +184,20 @@ export default function OrderTable({
           >
             {/* Row 1: order number + status */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-label font-bold text-primary">{order.order_number}</span>
+              <div className="flex items-center gap-2">
+                {selectable && (
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds?.has(order.id) ?? false}
+                      onChange={() => onToggleSelect?.(order.id)}
+                      className="h-4 w-4 accent-primary cursor-pointer"
+                    />
+                  </span>
+                )}
+                <span className="text-sm font-label font-bold text-primary">{order.order_number}</span>
+                {order.printed && <span className="text-[9px] font-arabic bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">🖨️</span>}
+              </div>
               <StatusBadge status={order.status} />
             </div>
             {/* Row 2: customer */}
@@ -236,6 +256,7 @@ export default function OrderTable({
           <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b border-outline-variant/40">
+                {selectable && <th className="px-3 py-3 w-10"></th>}
                 {['رقم الطلب','العميل','المحافظة','الإجمالي','الدفع','شركة الشحن','الحالة','التاريخ','الإجراءات'].map((col) => (
                   <th key={col} className="px-4 py-3 text-right text-xs font-arabic font-semibold text-secondary uppercase tracking-wide whitespace-nowrap">{col}</th>
                 ))}
@@ -251,13 +272,28 @@ export default function OrderTable({
                   </tr>
                 ))
               ) : orders.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-16 text-center text-sm font-arabic text-secondary">لا توجد طلبات</td></tr>
+                <tr><td colSpan={selectable ? 10 : 9} className="px-4 py-16 text-center text-sm font-arabic text-secondary">لا توجد طلبات</td></tr>
               ) : (
                 orders.map((order) => (
                   <tr key={order.id} onClick={() => handleRowClick(order.id)}
                     className="border-b border-outline-variant/20 last:border-0 cursor-pointer transition-colors hover:bg-surface-container-low/30"
                   >
-                    <td className="px-4 py-3 text-sm font-label font-semibold text-primary whitespace-nowrap">{order.order_number}</td>
+                    {selectable && (
+                      <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds?.has(order.id) ?? false}
+                          onChange={() => onToggleSelect?.(order.id)}
+                          className="h-4 w-4 accent-primary cursor-pointer"
+                        />
+                      </td>
+                    )}
+                    <td className="px-4 py-3 text-sm font-label font-semibold text-primary whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        {order.order_number}
+                        {order.printed && <span className="text-[9px] font-arabic bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">🖨️ مطبوع</span>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-arabic font-medium text-on-surface leading-tight">{order.customer_full_name}</span>
