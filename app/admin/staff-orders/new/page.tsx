@@ -7,7 +7,8 @@ import toast from 'react-hot-toast'
 import { Search, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
-import { formatCurrency, cn } from '@/lib/utils'
+import { formatCurrency, cn, SHIPPING_LABELS } from '@/lib/utils'
+import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import type { Currency } from '@/types'
 
 interface PickerProduct {
@@ -319,7 +320,60 @@ export default function NewStaffOrderPage() {
       if (!res.ok) throw new Error(data.error || 'فشل إنشاء الطلب')
 
       toast.success(`تم إنشاء الطلب ${data.orderNumber}`)
-      router.push('/admin/staff-orders')
+
+      // Determine shipping company name
+      const shippingSlug = deliveryType === 'shipping' ? shippingCompany : ''
+      const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
+      const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug
+
+      // Map cart to CartItem structure expected by buildWhatsAppUrl
+      const itemsForWhatsApp = cart.map((l) => ({
+        id: l.product_id,
+        slug: '',
+        name: l.name,
+        image: l.image || '',
+        color: l.color,
+        color_name: l.color,
+        size: l.size,
+        quantity: l.quantity,
+        price_syp: l.unit_price_syp,
+        price_usd: l.unit_price_usd,
+        discount_price_syp: null,
+        discount_price_usd: null,
+        mold_type: 'normal' as const,
+      }))
+
+      // Construct WhatsApp URL
+      const whatsappUrl = buildWhatsAppUrl({
+        orderNumber: data.orderNumber,
+        customerName: fullName.trim(),
+        customerPhone: phone.trim(),
+        governorate,
+        centerName: centerName.trim() || undefined,
+        address: address.trim() || '',
+        deliveryType,
+        shippingCompany: shippingSlug,
+        shippingCompanyName,
+        items: itemsForWhatsApp as any,
+        shippingFeeSyp: currency === 'SYP' ? feeNum : 0,
+        shippingFeeUsd: currency === 'USD' ? feeNum : 0,
+        shippingFeeDetermined: false,
+        subtotalSyp: currency === 'SYP' ? subtotal : 0,
+        subtotalUsd: currency === 'USD' ? subtotal : 0,
+        totalSyp: currency === 'SYP' ? total : 0,
+        totalUsd: currency === 'USD' ? total : 0,
+        currency,
+        paymentMethod,
+        notes: notes.trim() || undefined,
+      })
+
+      // Redirect to WhatsApp
+      window.location.href = whatsappUrl
+
+      // Allow handoff to WhatsApp App before router navigation
+      setTimeout(() => {
+        router.push('/admin/staff-orders')
+      }, 800)
     } catch (e: any) {
       toast.error(e.message || 'حدث خطأ')
     } finally {

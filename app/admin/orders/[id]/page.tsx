@@ -12,6 +12,7 @@ import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
 import OrderItemsEditor from './OrderItemsEditor'
 import CopyOrderButton from './CopyOrderButton'
+import SendWhatsAppButton from './SendWhatsAppButton'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -123,6 +124,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </p>
           </div>
           <div className="shrink-0 flex items-center gap-2">
+            <SendWhatsAppButton order={order} />
             <CopyOrderButton order={order} />
           </div>
         </div>
