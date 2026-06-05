@@ -68,7 +68,11 @@ export default function SendWhatsAppButton({ order }: SendWhatsAppButtonProps) {
       loyaltyDiscountUsd: order.loyalty_discount_usd || undefined,
       shippingFeeSyp: order.shipping_fee_syp,
       shippingFeeUsd: order.shipping_fee_usd,
-      shippingFeeDetermined: order.shipping_fee_determined,
+      // Shipping with no stored fee → negotiated with the seller (e.g. 4+ pieces).
+      shippingFeeDetermined:
+        order.delivery_type === 'shipping' &&
+        (order.shipping_fee_syp || 0) === 0 &&
+        (order.shipping_fee_usd || 0) === 0,
       subtotalSyp: order.subtotal_syp,
       subtotalUsd: order.subtotal_usd,
       totalSyp: order.total_syp,

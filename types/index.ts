@@ -166,6 +166,8 @@ export interface CreateStaffOrderPayload {
   shipping_company?: string | null
   shipping_fee_syp?: number
   shipping_fee_usd?: number
+  // When true the shipping fee is negotiated with the seller (4+ pieces shipping).
+  shipping_fee_determined?: boolean
   payment_method?: string
   currency_used: Currency
   notes?: string

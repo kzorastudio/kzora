@@ -8,17 +8,21 @@ import toast from 'react-hot-toast'
 import { Plus, Search, Package, CheckCircle2, XCircle } from 'lucide-react'
 import StatusBadge from '@/components/admin/StatusBadge'
 import AdminHeader from '@/components/admin/AdminHeader'
+import SendOrderWhatsApp from './SendOrderWhatsApp'
 import { ORDER_STATUS_OPTIONS, ADMIN_ITEMS_PER_PAGE } from '@/lib/constants'
 import { formatDate, formatPrice, cn } from '@/lib/utils'
-import type { Order, OrderStatus, StaffOrderStat } from '@/types'
+import type { Order, OrderItem, OrderStatus, StaffOrderStat } from '@/types'
+
+type OrderWithItems = Order & { items?: OrderItem[] }
 
 export default function StaffOrdersPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const isEmployee = session?.user?.role === 'employee'
 
-  const [orders, setOrders] = useState<Order[]>([])
+  const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [stats, setStats] = useState<StaffOrderStat[]>([])
+  const [shippingMethods, setShippingMethods] = useState<{ slug: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -52,6 +56,14 @@ export default function StaffOrdersPage() {
     fetch('/api/admin/staff-orders/stats')
       .then((r) => (r.ok ? r.json() : { stats: [] }))
       .then((d) => setStats(d.stats ?? []))
+      .catch(() => {})
+  }, [])
+
+  // Shipping companies (to resolve the company display name in the WhatsApp message)
+  useEffect(() => {
+    fetch('/api/shipping')
+      .then((r) => r.json())
+      .then((d) => setShippingMethods((d.methods || []).map((m: any) => ({ slug: m.slug, name: m.name }))))
       .catch(() => {})
   }, [])
 
@@ -210,6 +222,9 @@ export default function StaffOrdersPage() {
               <span>{o.customer_governorate}</span>
               <span>{formatDate(o.created_at)}</span>
             </div>
+            <div className="mt-3 pt-3 border-t border-outline-variant/20 flex justify-end">
+              <SendOrderWhatsApp order={o} shippingMethods={shippingMethods} />
+            </div>
           </div>
         ))}
       </div>
@@ -220,7 +235,7 @@ export default function StaffOrdersPage() {
           <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-outline-variant/40">
-                {['رقم الطلب', 'العميل', 'المحافظة', 'الإجمالي', 'الحالة', 'التاريخ'].map((c) => (
+                {['رقم الطلب', 'العميل', 'المحافظة', 'الإجمالي', 'الحالة', 'التاريخ', 'واتساب'].map((c) => (
                   <th key={c} className="px-4 py-3 text-right text-xs font-arabic font-semibold text-secondary whitespace-nowrap">{c}</th>
                 ))}
               </tr>
@@ -228,10 +243,10 @@ export default function StaffOrdersPage() {
             <tbody>
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-outline-variant/20"><td colSpan={6} className="px-4 py-3"><div className="h-4 bg-surface-container-high animate-pulse rounded w-3/4" /></td></tr>
+                  <tr key={i} className="border-b border-outline-variant/20"><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-surface-container-high animate-pulse rounded w-3/4" /></td></tr>
                 ))
               ) : orders.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-16 text-center text-sm font-arabic text-secondary">لا توجد طلبيات</td></tr>
+                <tr><td colSpan={7} className="px-4 py-16 text-center text-sm font-arabic text-secondary">لا توجد طلبيات</td></tr>
               ) : (
                 orders.map((o) => (
                   <tr key={o.id} onClick={() => router.push(`/admin/orders/${o.id}`)} className="border-b border-outline-variant/20 last:border-0 cursor-pointer hover:bg-surface-container-low/30 transition">
@@ -248,6 +263,9 @@ export default function StaffOrdersPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={o.status as OrderStatus} /></td>
                     <td className="px-4 py-3 text-sm font-arabic text-secondary whitespace-nowrap">{formatDate(o.created_at)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <SendOrderWhatsApp order={o} shippingMethods={shippingMethods} />
+                    </td>
                   </tr>
                 ))
               )}

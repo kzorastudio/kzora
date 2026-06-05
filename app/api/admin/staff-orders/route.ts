@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin
       .from('orders')
-      .select('*', { count: 'exact' })
+      .select('*, items:order_items(*)', { count: 'exact' })
       .not('created_by_admin_id', 'is', null) // staff orders only
       .order('created_at', { ascending: false })
 
@@ -89,8 +89,11 @@ export async function POST(request: NextRequest) {
       payment_method, currency_used, notes,
     } = body
 
-    const shippingFeeSyp = Math.max(0, Number(body.shipping_fee_syp) || 0)
-    const shippingFeeUsd = Math.max(0, Number(body.shipping_fee_usd) || 0)
+    // When the fee is "determined with the seller" (e.g. 4+ pieces shipping),
+    // store 0 and flag it — mirrors the public checkout behaviour.
+    const shippingFeeDetermined = body.shipping_fee_determined === true
+    const shippingFeeSyp = shippingFeeDetermined ? 0 : Math.max(0, Number(body.shipping_fee_syp) || 0)
+    const shippingFeeUsd = shippingFeeDetermined ? 0 : Math.max(0, Number(body.shipping_fee_usd) || 0)
 
     // ── Basic validation ──────────────────────────────────────────────────────
     if (!items || items.length === 0) {
@@ -232,7 +235,7 @@ export async function POST(request: NextRequest) {
         shipping_company:        delivery_type === 'delivery' ? 'delivery' : (shipping_company || ''),
         shipping_fee_syp:        shippingFeeSyp,
         shipping_fee_usd:        shippingFeeUsd,
-        shipping_fee_determined: true,
+        shipping_fee_determined: shippingFeeDetermined,
         payment_method:          payment_method || 'cod',
         // NO discounts / loyalty
         loyalty_discount_syp:    0,

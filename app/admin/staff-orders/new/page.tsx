@@ -9,7 +9,7 @@ import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
 import { formatCurrency, cn, SHIPPING_LABELS } from '@/lib/utils'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
-import type { Currency } from '@/types'
+import type { Currency, HomepageSettings } from '@/types'
 
 interface PickerProduct {
   id: string
@@ -102,6 +102,9 @@ export default function NewStaffOrderPage() {
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('shipping')
   const [shippingCompany, setShippingCompany] = useState('')
   const [shippingFee, setShippingFee] = useState('')
+  // Whether the admin manually edited the shipping fee. While false, the fee is
+  // auto-filled from the store's pricing rules (same as the public checkout).
+  const [shippingFeeTouched, setShippingFeeTouched] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('cod')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -110,12 +113,22 @@ export default function NewStaffOrderPage() {
   const [shippingMethods, setShippingMethods] = useState<{ slug: string; name: string }[]>([])
   const [centers, setCenters] = useState<{ id: string; name: string; supported_companies: string[] }[]>([])
   const [loadingCenters, setLoadingCenters] = useState(false)
+  // Store pricing settings (delivery/shipping fees) — drives the auto shipping fee.
+  const [settings, setSettings] = useState<HomepageSettings | null>(null)
 
   // Load shipping companies once
   useEffect(() => {
     fetch('/api/shipping')
       .then((r) => r.json())
       .then((d) => setShippingMethods((d.methods || []).map((m: any) => ({ slug: m.slug, name: m.name }))))
+      .catch(() => {})
+  }, [])
+
+  // Load pricing settings once (same source the public checkout uses)
+  useEffect(() => {
+    fetch('/api/homepage/settings')
+      .then((r) => r.json())
+      .then((d) => setSettings(d.settings))
       .catch(() => {})
   }, [])
 
@@ -255,7 +268,38 @@ export default function NewStaffOrderPage() {
   const subtotal = cart.reduce(
     (s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0
   )
-  const feeNum = Math.max(0, Number(shippingFee) || 0)
+  const totalItemsCount = cart.reduce((s, l) => s + l.quantity, 0)
+
+  // Auto shipping fee — mirrors the public checkout pricing rules exactly:
+  //  • Aleppo (delivery): flat delivery fee
+  //  • Governorates (shipping): piece-based (1 / 2 / 3 pieces)
+  //  • 4+ pieces (or 3 pieces with no fee set): "determined with the seller"
+  const autoShipping: { fee: number; determined: boolean } = (() => {
+    if (!settings) return { fee: 0, determined: false }
+    if (deliveryType === 'delivery') {
+      return { fee: (isUSD ? settings.delivery_fee_usd : settings.delivery_fee_syp) || 0, determined: false }
+    }
+    if (deliveryType === 'shipping') {
+      if (totalItemsCount >= 4) return { fee: 0, determined: true }
+      if (totalItemsCount === 1) return { fee: (isUSD ? settings.shipping_fee_1_piece_usd : settings.shipping_fee_1_piece_syp) || 0, determined: false }
+      if (totalItemsCount === 2) return { fee: (isUSD ? settings.shipping_fee_2_pieces_usd : settings.shipping_fee_2_pieces_syp) || 0, determined: false }
+      if (totalItemsCount === 3) {
+        const f = (isUSD ? settings.shipping_fee_3_plus_pieces_usd : settings.shipping_fee_3_plus_pieces_syp) || 0
+        return { fee: f, determined: f === 0 }
+      }
+    }
+    return { fee: 0, determined: false }
+  })()
+
+  // Keep the fee field synced with the auto value until the admin edits it.
+  useEffect(() => {
+    if (shippingFeeTouched) return
+    setShippingFee(autoShipping.determined ? '' : (autoShipping.fee ? String(autoShipping.fee) : ''))
+  }, [autoShipping.fee, autoShipping.determined, shippingFeeTouched])
+
+  // Effective fee + "determined" flag used for submit and the WhatsApp message.
+  const feeDetermined = !shippingFeeTouched && autoShipping.determined
+  const feeNum = feeDetermined ? 0 : Math.max(0, Number(shippingFee) || 0)
   const total = subtotal + feeNum
 
   // ── Submit ──────────────────────────────────────────────────────────────────
@@ -306,6 +350,7 @@ export default function NewStaffOrderPage() {
         shipping_company: deliveryType === 'shipping' ? shippingCompany : null,
         shipping_fee_syp: isUSD ? 0 : feeNum,
         shipping_fee_usd: isUSD ? feeNum : 0,
+        shipping_fee_determined: feeDetermined,
         payment_method: paymentMethod,
         currency_used: currency,
         notes: notes.trim() || undefined,
@@ -357,7 +402,7 @@ export default function NewStaffOrderPage() {
         items: itemsForWhatsApp as any,
         shippingFeeSyp: currency === 'SYP' ? feeNum : 0,
         shippingFeeUsd: currency === 'USD' ? feeNum : 0,
-        shippingFeeDetermined: false,
+        shippingFeeDetermined: feeDetermined,
         subtotalSyp: currency === 'SYP' ? subtotal : 0,
         subtotalUsd: currency === 'USD' ? subtotal : 0,
         totalSyp: currency === 'SYP' ? total : 0,
@@ -541,7 +586,7 @@ export default function NewStaffOrderPage() {
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الهاتف *" dir="ltr" className={FIELD} />
             <select
               value={governorate}
-              onChange={(e) => { setGovernorate(e.target.value); setAddress(''); setCenterName(''); setShippingCompany('') }}
+              onChange={(e) => { setGovernorate(e.target.value); setAddress(''); setCenterName(''); setShippingCompany(''); setShippingFeeTouched(false) }}
               className={FIELD}
             >
               <option value="">المحافظة *</option>
@@ -566,7 +611,7 @@ export default function NewStaffOrderPage() {
             {/* Delivery type */}
             <select
               value={deliveryType}
-              onChange={(e) => { setDeliveryType(e.target.value as any); setAddress(''); setCenterName(''); setShippingCompany('') }}
+              onChange={(e) => { setDeliveryType(e.target.value as any); setAddress(''); setCenterName(''); setShippingCompany(''); setShippingFeeTouched(false) }}
               className={FIELD}
             >
               <option value="shipping">شحن للمحافظات</option>
@@ -618,13 +663,33 @@ export default function NewStaffOrderPage() {
               </>
             )}
 
-            <input
-              type="number" min={0}
-              value={shippingFee}
-              onChange={(e) => setShippingFee(e.target.value)}
-              placeholder={`رسوم الشحن (${currency === 'USD' ? 'دولار' : 'ل.س'}) — اختياري`}
-              className={FIELD}
-            />
+            <div className="flex flex-col gap-1">
+              <input
+                type="number" min={0}
+                value={shippingFee}
+                onChange={(e) => { setShippingFee(e.target.value); setShippingFeeTouched(true) }}
+                placeholder={`رسوم الشحن (${currency === 'USD' ? 'دولار' : 'ل.س'})`}
+                className={FIELD}
+              />
+              <div className="flex items-center gap-2 px-1">
+                {feeDetermined ? (
+                  <span className="text-[11px] font-arabic text-amber-700">تُحدّد أجرة الشحن مع البائع (4 قطع فأكثر)</span>
+                ) : (
+                  <span className="text-[11px] font-arabic text-secondary/70">
+                    {shippingFeeTouched ? 'رسوم مُعدّلة يدوياً' : 'محسوبة تلقائياً حسب المحافظة وعدد القطع'}
+                  </span>
+                )}
+                {shippingFeeTouched && (
+                  <button
+                    type="button"
+                    onClick={() => setShippingFeeTouched(false)}
+                    className="text-[11px] font-arabic text-primary hover:underline"
+                  >
+                    ↺ تلقائي
+                  </button>
+                )}
+              </div>
+            </div>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="ملاحظات (اختياري)" rows={2} className={FIELD} />
           </div>
 
