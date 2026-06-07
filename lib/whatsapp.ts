@@ -120,7 +120,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     lines.push(`${i + 1}. *${item.name}*`)
     if (item.color) lines.push(`   ${EMOJI.PALETTE} *اللون:* ${item.color_name || item.color}`)
     if (item.size) {
-      const moldNotice = item.mold_type === 'chinese' ? ' (قالب صيني)' : ' (قالب نظامي)'
+      const moldNotice = item.mold_type === 'chinese' ? ' (قالب ضيّق)' : ' (قالب نظامي)'
       lines.push(`   ${EMOJI.RULER} *المقاس:* ${item.size}${moldNotice}`)
     }
     lines.push(`   ${EMOJI.NUMBERS} *الكمية:* ${item.quantity} × ${price}`)

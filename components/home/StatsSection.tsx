@@ -1,5 +1,6 @@
 import { Users, Heart, ShieldCheck, RotateCcw } from 'lucide-react'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
+import { CountUp } from '@/components/ui/CountUp'
 import { cn } from '@/lib/utils'
 
 interface StatsSectionProps {
@@ -72,7 +73,7 @@ export default function StatsSection({ settings }: StatsSectionProps) {
                   </div>
                   
                   <h3 className="text-lg sm:text-2xl md:text-3xl font-arabic font-black text-[#1A1A1A] tracking-tight mb-1.5 md:mb-2">
-                    {item.label}
+                    <CountUp value={item.label} />
                   </h3>
                   <p className="text-xs sm:text-sm md:text-base font-arabic text-[#6B6560] font-medium leading-relaxed">
                      {item.sub}

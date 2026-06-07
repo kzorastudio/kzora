@@ -313,7 +313,7 @@ export default function ProductForm({
             <label className={LABEL_CLASS}>القالب (المقاس)</label>
             <select {...register('mold_type')} className={FIELD_CLASS}>
               <option value="normal">طبيعي (نظامي)</option>
-              <option value="chinese">صيني (أصغر)</option>
+              <option value="chinese">ضيّق (أصغر)</option>
             </select>
           </div>
           <div>

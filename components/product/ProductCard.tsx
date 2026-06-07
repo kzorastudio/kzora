@@ -425,7 +425,7 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
               ? "bg-[#E65C00]/5 text-[#E65C00] border-[#E65C00]/20" 
               : "bg-[#F5F1EB] text-[#6B6560] border-[#E8E3DB]"
           )}>
-            {product.mold_type === 'chinese' ? 'قالب صيني' : 'قالب نظامي'}
+            {product.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
           </span>
           {/* We can add more subtle badges here if needed */}
         </div>

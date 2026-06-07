@@ -428,7 +428,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
                   ? "bg-[#FFF0E6] text-[#E65C00] border border-[#FFD1B3]"
                   : "bg-[#E6F4EA] text-[#137333] border border-[#BCE3C6]"
               )}>
-                {product.mold_type === 'chinese' ? 'القالب صيني (ننصح بمقاس أكبر)' : 'القالب طبيعي (نظامي)'}
+                {product.mold_type === 'chinese' ? 'القالب ضيّق (ننصح بمقاس أكبر)' : 'القالب طبيعي (نظامي)'}
               </div>
             </div>
             

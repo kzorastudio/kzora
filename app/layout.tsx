@@ -38,8 +38,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.kzora.co'),
   title: {
-    default: 'كزورا Kzora — أفضل متجر أحذية أونلاين في سوريا',
-    template: '%s — كزورا Kzora',
+    default: 'متجر كزورا Kzora — أفضل متجر أحذية أونلاين في سوريا',
+    template: '%s — متجر كزورا Kzora',
   },
   description: 'تسوق أفضل الأحذية في سوريا من كزورا Kzora. أحذية رسمية ورياضية وكاجوال رجالية ونسائية بجودة عالية وتوصيل سريع في حلب وجميع المحافظات السورية. كزورا، أناقة تبدأ من خطوتك.',
   keywords: [
@@ -133,6 +133,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 '@type': 'SearchAction',
                 target: 'https://www.kzora.co/products?search={search_term_string}',
                 'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
+
+        {/* JSON-LD: Organization — يربط كل أسماء العلامة (متجر كزورا / كزورا / Kzora) بكيان واحد لبحث الاسم التجاري */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'متجر كزورا',
+              alternateName: ['كزورا', 'Kzora', 'Kzora Store', 'متجر كزورا للأحذية'],
+              url: 'https://www.kzora.co',
+              logo: 'https://www.kzora.co/logo.png',
+              image: 'https://www.kzora.co/logo.png',
+              description: 'متجر كزورا Kzora لبيع الأحذية الرجالية والنسائية والرياضية أونلاين في سوريا.',
+              sameAs: [
+                'https://www.facebook.com/kzora.studio',
+                'https://www.instagram.com/kzora.studio',
+              ],
+              contactPoint: {
+                '@type': 'ContactPoint',
+                telephone: '+963964514765',
+                contactType: 'customer service',
+                areaServed: 'SY',
+                availableLanguage: ['Arabic'],
               },
             }),
           }}

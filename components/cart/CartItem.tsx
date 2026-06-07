@@ -88,7 +88,7 @@ export function CartItem({ item, className }: CartItemProps) {
               <span>مقاس {item.size}</span>
               <span className="w-1 h-1 rounded-full bg-secondary/30" />
               <span className={cn(item.mold_type === 'chinese' ? "text-[#E65C00] font-bold" : "text-secondary/70")}>
-                {item.mold_type === 'chinese' ? 'قالب صيني' : 'قالب نظامي'}
+                {item.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
               </span>
             </span>
           )}
