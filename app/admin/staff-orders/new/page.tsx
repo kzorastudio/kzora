@@ -87,6 +87,9 @@ export default function NewStaffOrderPage() {
   const [searchInput, setSearchInput] = useState('')
   const [results, setResults] = useState<PickerProduct[]>([])
   const [searching, setSearching] = useState(false)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [importingRecentOrder, setImportingRecentOrder] = useState<string | null>(null)
 
   // Cart
   const [cart, setCart] = useState<CartLine[]>([])
@@ -131,6 +134,88 @@ export default function NewStaffOrderPage() {
       .then((d) => setSettings(d.settings))
       .catch(() => {})
   }, [])
+
+  // Load last 3 orders once for suggestions
+  useEffect(() => {
+    fetch('/api/admin/staff-orders?limit=3')
+      .then((r) => r.json())
+      .then((d) => setRecentOrders(d.orders || []))
+      .catch(() => {})
+  }, [])
+
+  const importCustomer = (o: any) => {
+    setFullName(o.customer_full_name || '')
+    setPhone(o.customer_phone || '')
+    setGovernorate(o.customer_governorate || '')
+    setAddress(o.customer_address || '')
+    setCenterName(o.center_name || '')
+    setDeliveryType(o.delivery_type || 'shipping')
+    setShippingCompany(o.shipping_company || '')
+    setPaymentMethod(o.payment_method || 'cod')
+    setNotes(o.notes || '')
+    // Reset pricing/currency to DB originals in the order's currency
+    setShippingFeeTouched(false)
+    setCurrency(o.currency_used || 'SYP')
+    toast.success(`تم استيراد بيانات العميل للطلب ${o.order_number}`)
+  }
+
+  const importProducts = async (o: any) => {
+    setImportingRecentOrder(o.id)
+    const toastId = toast.loading(`جاري استيراد منتجات الطلب ${o.order_number}...`)
+    try {
+      const res = await fetch(`/api/orders/${o.id}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      const items = data.order?.items || []
+
+      const newCartLines: CartLine[] = []
+      for (const item of items) {
+        const pRes = await fetch(`/api/products/${item.product_id}`)
+        if (!pRes.ok) continue
+        const pData = await pRes.json()
+        const p = pData.product
+        if (!p) continue
+
+        const availColors = p.colors.filter((c: any) => c.is_available).map((c: any) => c.name_ar)
+        const availSizes = p.sizes.filter((s: any) => s.is_available).map((s: any) => s.size)
+        const variants = p.variants.map((v: any) => ({ color: v.color, size: v.size, quantity: v.quantity }))
+
+        newCartLines.push({
+          id: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          product_id: p.id,
+          name: p.name,
+          image: p.images.find((i: any) => i.is_main)?.url || p.images[0]?.url || null,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity,
+          unit_price_syp: item.unit_price_syp,
+          unit_price_usd: item.unit_price_usd,
+          orig_price_syp: p.discount_price_syp ?? p.price_syp,
+          orig_price_usd: p.discount_price_usd ?? p.price_usd,
+          max_stock: stockFor(variants, item.color, item.size),
+          availColors,
+          availSizes,
+          variants,
+        })
+      }
+
+      if (newCartLines.length > 0) {
+        setCart((prev) => [...prev, ...newCartLines])
+        toast.success(`تم استيراد ${newCartLines.length} منتج بنجاح`, { id: toastId })
+      } else {
+        toast.error('لم يتم العثور على منتجات صالحة للاستيراد', { id: toastId })
+      }
+    } catch {
+      toast.error('فشل استيراد المنتجات', { id: toastId })
+    } finally {
+      setImportingRecentOrder(null)
+    }
+  }
+
+  const importEntireOrder = async (o: any) => {
+    importCustomer(o)
+    await importProducts(o)
+  }
 
   // Load centers whenever the governorate changes (shipping only)
   useEffect(() => {
@@ -412,13 +497,40 @@ export default function NewStaffOrderPage() {
         notes: notes.trim() || undefined,
       })
 
-      // Redirect to WhatsApp
-      window.location.href = whatsappUrl
+      // Extract formatted text message from WhatsApp URL and copy to clipboard
+      let textMessage = ''
+      try {
+        const urlObj = new URL(whatsappUrl)
+        textMessage = urlObj.searchParams.get('text') || ''
+      } catch {
+        const textParamIdx = whatsappUrl.indexOf('text=')
+        if (textParamIdx !== -1) {
+          textMessage = decodeURIComponent(whatsappUrl.substring(textParamIdx + 5))
+        }
+      }
 
-      // Allow handoff to WhatsApp App before router navigation
-      setTimeout(() => {
-        router.push('/admin/staff-orders')
-      }, 800)
+      if (textMessage) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(textMessage)
+          toast.success('تم نسخ رسالة الطلب بنجاح!')
+        } else {
+          const textArea = document.createElement('textarea')
+          textArea.value = textMessage
+          textArea.style.position = 'fixed'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+          try {
+            document.execCommand('copy')
+            toast.success('تم نسخ رسالة الطلب بنجاح!')
+          } catch (err) {
+            toast.error('تعذر نسخ الرسالة تلقائياً')
+          }
+          document.body.removeChild(textArea)
+        }
+      }
+
+      router.push('/admin/staff-orders')
     } catch (e: any) {
       toast.error(e.message || 'حدث خطأ')
     } finally {
@@ -452,10 +564,55 @@ export default function NewStaffOrderPage() {
               <input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                 placeholder="ابحث باسم المنتج..."
                 className={`${FIELD} pr-9`}
               />
             </div>
+
+            {isSearchFocused && searchInput.trim() === '' && recentOrders.length > 0 && (
+              <div className="border border-outline-variant/30 rounded-xl p-3 bg-surface-container-lowest shadow-md mb-3 animate-fade-in flex flex-col gap-2">
+                <span className="text-xs font-arabic font-bold text-[#bfa15f]">اقتراحات من آخر 3 طلبيات تمت:</span>
+                <div className="flex flex-col gap-2 divide-y divide-outline-variant/20">
+                  {recentOrders.map((o) => (
+                    <div key={o.id} className="pt-2 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-arabic">
+                      <div className="min-w-0">
+                        <span className="font-bold text-on-surface">طلب {o.order_number}</span>
+                        <span className="text-secondary mx-1.5">•</span>
+                        <span className="text-on-surface-variant font-medium">{o.customer_full_name}</span>
+                        <span className="text-secondary mx-1.5">•</span>
+                        <span className="text-secondary/70 text-[10px]">{new Date(o.created_at).toLocaleDateString('ar-SY')}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 self-end">
+                        <button
+                          onClick={() => importCustomer(o)}
+                          disabled={importingRecentOrder !== null}
+                          className="px-2 py-1 rounded bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all font-bold text-[10px]"
+                        >
+                          استيراد العميل
+                        </button>
+                        <button
+                          onClick={() => importProducts(o)}
+                          disabled={importingRecentOrder !== null}
+                          className="px-2 py-1 rounded bg-[#bfa15f]/15 text-[#785600] hover:bg-[#bfa15f]/25 transition-all font-bold text-[10px] flex items-center gap-1"
+                        >
+                          {importingRecentOrder === o.id ? <Loader2 size={10} className="animate-spin" /> : null}
+                          استيراد المنتجات
+                        </button>
+                        <button
+                          onClick={() => importEntireOrder(o)}
+                          disabled={importingRecentOrder !== null}
+                          className="px-2 py-1 rounded bg-primary text-white hover:bg-primary/95 transition-all font-bold text-[10px]"
+                        >
+                          استيراد بالكامل
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {searching && (
               <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary" size={20} /></div>
@@ -471,7 +628,9 @@ export default function NewStaffOrderPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-arabic font-semibold text-on-surface truncate">{p.name}</p>
-                    <p className="text-xs font-label text-secondary">{formatCurrency(p.discount_price_syp ?? p.price_syp, 'SYP')}</p>
+                    <p className="text-xs font-label text-secondary">
+                      {formatCurrency(currency === 'USD' ? (p.discount_price_usd ?? p.price_usd) : (p.discount_price_syp ?? p.price_syp), currency)}
+                    </p>
                   </div>
                   <button
                     onClick={() => addProduct(p)}
@@ -598,7 +757,22 @@ export default function NewStaffOrderPage() {
             <span className="text-sm font-arabic font-bold text-on-surface">تفاصيل الطلب</span>
 
             <div className="grid grid-cols-2 gap-3">
-              <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} className={FIELD}>
+              <select
+                value={currency}
+                onChange={(e) => {
+                  const newCurrency = e.target.value as Currency
+                  // Reset item prices to original DB prices of the new currency
+                  setCart((prev) => prev.map((l) => ({
+                    ...l,
+                    unit_price_syp: l.orig_price_syp,
+                    unit_price_usd: l.orig_price_usd
+                  })))
+                  // Reset shipping fee touched flag so it recalculates automatically in new currency
+                  setShippingFeeTouched(false)
+                  setCurrency(newCurrency)
+                }}
+                className={FIELD}
+              >
                 <option value="SYP">ليرة سورية</option>
                 <option value="USD">دولار</option>
               </select>
