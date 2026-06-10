@@ -441,8 +441,19 @@ export default function ProductForm({
       </section>
 
       <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
-        <h2 className="text-base font-arabic font-semibold">إدارة المخزون (الكميات)</h2>
-        <p className="text-xs font-arabic text-secondary -mt-1 mb-2">أدخل الكمية المتاحة لكل مقاس ولون بدقة.</p>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-base font-arabic font-semibold">إدارة المخزون (الكميات)</h2>
+            <p className="text-xs font-arabic text-secondary mt-0.5">أدخل الكمية المتاحة لكل مقاس ولون بدقة.</p>
+          </div>
+          <div className="bg-[#bfa15f]/10 text-[#785600] px-3.5 py-1.5 rounded-xl border border-[#bfa15f]/20 text-xs font-arabic font-bold flex items-center gap-1.5 shadow-sm shrink-0">
+            <span>إجمالي كمية الموديل:</span>
+            <span className="text-sm font-black text-primary font-label tabular-nums">
+              {watchedVariants.reduce((sum: number, v: any) => sum + (Number(v.quantity) || 0), 0)}
+            </span>
+            <span>قطعة</span>
+          </div>
+        </div>
         
         {(() => {
           const validColors = colorOptions.length > 0 ? colorOptions : [{ label: 'أساسي', value: '' }]
