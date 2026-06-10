@@ -119,6 +119,11 @@ export async function POST(request: NextRequest) {
       .select(`
         id, name, price_syp, price_usd, discount_price_syp, discount_price_usd,
         stock_status, is_published,
+        multi_discount_enabled,
+        multi_discount_2_items_syp,
+        multi_discount_2_items_usd,
+        multi_discount_3_plus_syp,
+        multi_discount_3_plus_usd,
         colors:product_colors(name_ar, is_available),
         sizes:product_sizes(size, is_available),
         variants:product_variants(id, color, size, quantity),
@@ -213,11 +218,41 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // ── Totals (NO discounts of any kind) ────────────────────────────────────────
+    // ── Multi-item discount (per-product) ────────────────────────────────────
+    let multiItemDiscountSyp = 0
+    let multiItemDiscountUsd = 0
+    {
+      // Group quantities by product ID
+      const productQuantities: Record<string, number> = {}
+      sanitizedItems.forEach(item => {
+        productQuantities[item.product_id] = (productQuantities[item.product_id] || 0) + item.quantity
+      })
+
+      // For each product, check its own discount settings
+      const processedProducts = new Set<string>()
+      sanitizedItems.forEach(item => {
+        const pid = item.product_id
+        if (processedProducts.has(pid)) return
+        processedProducts.add(pid)
+
+        const dbProduct = productMap.get(pid)
+        if (!dbProduct?.multi_discount_enabled) return
+
+        const qty = productQuantities[pid] || 0
+        if (qty === 2) {
+          multiItemDiscountSyp += dbProduct.multi_discount_2_items_syp || 0
+          multiItemDiscountUsd += dbProduct.multi_discount_2_items_usd || 0
+        } else if (qty >= 3) {
+          multiItemDiscountSyp += dbProduct.multi_discount_3_plus_syp || 0
+          multiItemDiscountUsd += dbProduct.multi_discount_3_plus_usd || 0
+        }
+      })
+    }
+
     const subtotalSyp = sanitizedItems.reduce((s, i) => s + i.unit_price_syp * i.quantity, 0)
     const subtotalUsd = sanitizedItems.reduce((s, i) => s + i.unit_price_usd * i.quantity, 0)
-    const totalSyp = Math.max(0, subtotalSyp + shippingFeeSyp)
-    const totalUsd = Math.max(0, parseFloat((subtotalUsd + shippingFeeUsd).toFixed(2)))
+    const totalSyp = Math.max(0, subtotalSyp - multiItemDiscountSyp + shippingFeeSyp)
+    const totalUsd = Math.max(0, parseFloat((subtotalUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
 
     // ── Insert order ─────────────────────────────────────────────────────────────
     const orderNumber = await generateSequentialOrderNumber()
@@ -237,12 +272,12 @@ export async function POST(request: NextRequest) {
         shipping_fee_usd:        shippingFeeUsd,
         shipping_fee_determined: shippingFeeDetermined,
         payment_method:          payment_method || 'cod',
-        // NO discounts / loyalty
+        // NO loyalty discount, but include multi-item discount in discount_amount
         loyalty_discount_syp:    0,
         loyalty_discount_usd:    0,
         coupon_code:             null,
-        discount_amount_syp:     0,
-        discount_amount_usd:     0,
+        discount_amount_syp:     multiItemDiscountSyp,
+        discount_amount_usd:     multiItemDiscountUsd,
         subtotal_syp:            subtotalSyp,
         subtotal_usd:            subtotalUsd,
         total_syp:               totalSyp,

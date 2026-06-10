@@ -23,6 +23,11 @@ interface PickerProduct {
   colors: { name_ar: string; is_available: boolean }[]
   sizes: { size: number; is_available: boolean }[]
   variants: { id: string; color: string; size: number; quantity: number }[]
+  multi_discount_enabled?: boolean
+  multi_discount_2_items_syp?: number
+  multi_discount_2_items_usd?: number
+  multi_discount_3_plus_syp?: number
+  multi_discount_3_plus_usd?: number
 }
 
 interface CartLine {
@@ -43,6 +48,11 @@ interface CartLine {
   availColors: string[]
   availSizes: number[]
   variants: { color: string; size: number; quantity: number }[]
+  multi_discount_enabled?: boolean
+  multi_discount_2_items_syp?: number
+  multi_discount_2_items_usd?: number
+  multi_discount_3_plus_syp?: number
+  multi_discount_3_plus_usd?: number
 }
 
 // Recompute available stock for a given color/size from a line's variants
@@ -196,6 +206,11 @@ export default function NewStaffOrderPage() {
           availColors,
           availSizes,
           variants,
+          multi_discount_enabled: p.multi_discount_enabled,
+          multi_discount_2_items_syp: p.multi_discount_2_items_syp,
+          multi_discount_2_items_usd: p.multi_discount_2_items_usd,
+          multi_discount_3_plus_syp: p.multi_discount_3_plus_syp,
+          multi_discount_3_plus_usd: p.multi_discount_3_plus_usd,
         })
       }
 
@@ -294,6 +309,11 @@ export default function NewStaffOrderPage() {
         availColors,
         availSizes,
         variants,
+        multi_discount_enabled: p.multi_discount_enabled,
+        multi_discount_2_items_syp: p.multi_discount_2_items_syp,
+        multi_discount_2_items_usd: p.multi_discount_2_items_usd,
+        multi_discount_3_plus_syp: p.multi_discount_3_plus_syp,
+        multi_discount_3_plus_usd: p.multi_discount_3_plus_usd,
       },
     ])
     toast.success('تمت الإضافة')
@@ -355,6 +375,35 @@ export default function NewStaffOrderPage() {
   )
   const totalItemsCount = cart.reduce((s, l) => s + l.quantity, 0)
 
+  // ── Multi-item discount calculations ──────────────────────────────────────
+  let multiItemDiscountSyp = 0
+  let multiItemDiscountUsd = 0
+  {
+    const productQuantities: Record<string, number> = {}
+    cart.forEach((l) => {
+      productQuantities[l.product_id] = (productQuantities[l.product_id] || 0) + l.quantity
+    })
+
+    const processedProducts = new Set<string>()
+    cart.forEach((l) => {
+      if (processedProducts.has(l.product_id)) return
+      processedProducts.add(l.product_id)
+
+      if (!l.multi_discount_enabled) return
+
+      const qty = productQuantities[l.product_id] || 0
+      if (qty === 2) {
+        multiItemDiscountSyp += l.multi_discount_2_items_syp || 0
+        multiItemDiscountUsd += l.multi_discount_2_items_usd || 0
+      } else if (qty >= 3) {
+        multiItemDiscountSyp += l.multi_discount_3_plus_syp || 0
+        multiItemDiscountUsd += l.multi_discount_3_plus_usd || 0
+      }
+    })
+  }
+
+  const multiItemDiscount = isUSD ? multiItemDiscountUsd : multiItemDiscountSyp
+
   // Auto shipping fee — mirrors the public checkout pricing rules exactly:
   //  • Aleppo (delivery): flat delivery fee
   //  • Governorates (shipping): piece-based (1 / 2 / 3 pieces)
@@ -385,7 +434,10 @@ export default function NewStaffOrderPage() {
   // Effective fee + "determined" flag used for submit and the WhatsApp message.
   const feeDetermined = !shippingFeeTouched && autoShipping.determined
   const feeNum = feeDetermined ? 0 : Math.max(0, Number(shippingFee) || 0)
-  const total = subtotal + feeNum
+  const total = Math.max(0, isUSD 
+    ? parseFloat((subtotal - multiItemDiscount + feeNum).toFixed(2))
+    : subtotal - multiItemDiscount + feeNum
+  )
 
   // ── Submit ──────────────────────────────────────────────────────────────────
   async function handleSubmit() {
@@ -488,6 +540,8 @@ export default function NewStaffOrderPage() {
         shippingFeeSyp: currency === 'SYP' ? feeNum : 0,
         shippingFeeUsd: currency === 'USD' ? feeNum : 0,
         shippingFeeDetermined: feeDetermined,
+        multiItemDiscountSyp,
+        multiItemDiscountUsd,
         subtotalSyp: currency === 'SYP' ? subtotal : 0,
         subtotalUsd: currency === 'USD' ? subtotal : 0,
         totalSyp: currency === 'SYP' ? total : 0,
@@ -872,13 +926,18 @@ export default function NewStaffOrderPage() {
             <div className="flex justify-between text-sm font-arabic text-secondary">
               <span>المجموع الفرعي</span><span className="font-label text-on-surface">{money(subtotal)}</span>
             </div>
+            {multiItemDiscount > 0 && (
+              <div className="flex justify-between text-sm font-arabic text-primary font-bold">
+                <span>خصم تعدد القطع</span><span className="font-label text-primary">-{money(multiItemDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm font-arabic text-secondary">
               <span>رسوم الشحن</span><span className="font-label text-on-surface">{money(feeNum)}</span>
             </div>
             <div className="flex justify-between text-base font-arabic font-black text-on-surface border-t border-outline-variant/30 pt-2 mt-1">
               <span>الإجمالي</span><span className="font-label text-primary">{money(total)}</span>
             </div>
-            <p className="text-[11px] font-arabic text-secondary/70 mt-1">* الأسعار من قاعدة البيانات، وبدون أي خصومات أو نقاط ولاء.</p>
+            <p className="text-[11px] font-arabic text-secondary/70 mt-1">* الأسعار من قاعدة البيانات، بالإضافة لخصم تعدد القطع (إن وجد) وبدون أي خصومات أخرى أو نقاط ولاء.</p>
           </div>
 
           <button
