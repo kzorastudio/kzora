@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { Plus, Search, Package, CheckCircle2, XCircle } from 'lucide-react'
 import StatusBadge from '@/components/admin/StatusBadge'
 import AdminHeader from '@/components/admin/AdminHeader'
-import SendOrderWhatsApp from './SendOrderWhatsApp'
+import CopyOrderButton from './CopyOrderButton'
 import { ORDER_STATUS_OPTIONS, ADMIN_ITEMS_PER_PAGE } from '@/lib/constants'
 import { formatDate, formatPrice, cn } from '@/lib/utils'
 import type { Order, OrderItem, OrderStatus, StaffOrderStat } from '@/types'
@@ -223,7 +223,7 @@ export default function StaffOrdersPage() {
               <span>{formatDate(o.created_at)}</span>
             </div>
             <div className="mt-3 pt-3 border-t border-outline-variant/20 flex justify-end">
-              <SendOrderWhatsApp order={o} shippingMethods={shippingMethods} />
+              <CopyOrderButton order={o} shippingMethods={shippingMethods} />
             </div>
           </div>
         ))}
@@ -264,7 +264,7 @@ export default function StaffOrdersPage() {
                     <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={o.status as OrderStatus} /></td>
                     <td className="px-4 py-3 text-sm font-arabic text-secondary whitespace-nowrap">{formatDate(o.created_at)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <SendOrderWhatsApp order={o} shippingMethods={shippingMethods} />
+                      <CopyOrderButton order={o} shippingMethods={shippingMethods} />
                     </td>
                   </tr>
                 ))
