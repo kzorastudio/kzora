@@ -6,6 +6,12 @@ import { revalidatePath } from 'next/cache'
 
 const norm = (s: string | null) => (s || '').trim()
 
+// Use the client-provided manual price when it's a valid non-negative number, else the product's DB price.
+const priceOf = (v: unknown, fallback: number): number => {
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 0 ? n : fallback
+}
+
 // ─── PUT /api/admin/orders/[id]/items ─────────────────────────────────────────────
 // Edits the products of a STAFF order with full inventory reconciliation:
 //  • returns the old items' quantities back to stock
@@ -20,8 +26,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const role = (session as any).role as 'super_admin' | 'employee' | undefined
     const { id } = params
     const body = await request.json()
-    const newItemsRaw: { product_id: string; color: string | null; size: number | null; quantity: number }[] =
-      Array.isArray(body?.items) ? body.items : []
+    const newItemsRaw: {
+      product_id: string; color: string | null; size: number | null; quantity: number
+      unit_price_syp?: number; unit_price_usd?: number
+    }[] = Array.isArray(body?.items) ? body.items : []
+    // Optional: change the order's currency (no exchange rate — just which price column the order uses).
+    const currencyUsed: 'SYP' | 'USD' | null =
+      body?.currency === 'USD' ? 'USD' : body?.currency === 'SYP' ? 'SYP' : null
 
     if (newItemsRaw.length === 0) {
       return NextResponse.json({ error: 'يجب أن يحتوي الطلب على منتج واحد على الأقل' }, { status: 400 })
@@ -119,8 +130,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         color:          it.color || null,
         size:           it.size || null,
         quantity:       qty,
-        unit_price_syp: p.discount_price_syp ?? p.price_syp,
-        unit_price_usd: p.discount_price_usd ?? p.price_usd,
+        unit_price_syp: priceOf(it.unit_price_syp, p.discount_price_syp ?? p.price_syp),
+        unit_price_usd: priceOf(it.unit_price_usd, p.discount_price_usd ?? p.price_usd),
       })
     }
 
@@ -198,6 +209,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         subtotal_usd: subtotalUsd,
         total_syp:    totalSyp,
         total_usd:    totalUsd,
+        ...(currencyUsed ? { currency_used: currencyUsed } : {}),
         updated_at:   new Date().toISOString(),
       })
       .eq('id', id)

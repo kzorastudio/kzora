@@ -6,7 +6,7 @@ import NextImage from 'next/image'
 import toast from 'react-hot-toast'
 import { Edit2, X, Check, Loader2, Search, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { OrderFull } from '@/types'
+import type { OrderFull, Currency } from '@/types'
 
 interface EditLine {
   uid: string
@@ -18,6 +18,8 @@ interface EditLine {
   quantity: number
   unit_price_syp: number
   unit_price_usd: number
+  orig_price_syp: number
+  orig_price_usd: number
   availColors: string[]
   availSizes: number[]
   variants: { color: string; size: number; quantity: number }[]
@@ -70,12 +72,13 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [lines, setLines] = useState<EditLine[]>([])
+  const [currency, setCurrency] = useState<Currency>(order.currency_used === 'USD' ? 'USD' : 'SYP')
 
   const [searchInput, setSearchInput] = useState('')
   const [results, setResults] = useState<SearchProduct[]>([])
   const [searching, setSearching] = useState(false)
 
-  const isUSD = order.currency_used === 'USD'
+  const isUSD = currency === 'USD'
 
   // ── Open: load each product's variant data, pooling in this order's held qty ──
   async function openEditor() {
@@ -117,6 +120,8 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
           quantity: it.quantity,
           unit_price_syp: it.unit_price_syp,
           unit_price_usd: it.unit_price_usd,
+          orig_price_syp: (p?.discount_price_syp ?? p?.price_syp) ?? it.unit_price_syp,
+          orig_price_usd: (p?.discount_price_usd ?? p?.price_usd) ?? it.unit_price_usd,
           availColors,
           availSizes,
           variants,
@@ -158,6 +163,8 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
         color, size, quantity: 1,
         unit_price_syp: p.discount_price_syp ?? p.price_syp,
         unit_price_usd: p.discount_price_usd ?? p.price_usd,
+        orig_price_syp: p.discount_price_syp ?? p.price_syp,
+        orig_price_usd: p.discount_price_usd ?? p.price_usd,
         availColors, availSizes, variants,
         max_stock: stockFor(variants, color, size),
       },
@@ -174,6 +181,9 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
     return { ...l, color, size: newSize, max_stock: stockFor(l.variants, color, newSize) }
   }))
   const updateSize = (uid: string, size: number) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, size, max_stock: stockFor(l.variants, l.color, size) } : l)))
+  // Manual price override (in the currently selected currency)
+  const updatePrice = (uid: string, v: number) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, ...(isUSD ? { unit_price_usd: v } : { unit_price_syp: v }) } : l)))
+  const resetPrice = (uid: string) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, ...(isUSD ? { unit_price_usd: l.orig_price_usd } : { unit_price_syp: l.orig_price_syp }) } : l)))
 
   const subtotal = lines.reduce((s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0)
 
@@ -199,7 +209,13 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
       const res = await fetch(`/api/admin/orders/${order.id}/items`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: lines.map((l) => ({ product_id: l.product_id, color: l.color, size: l.size, quantity: l.quantity })) }),
+        body: JSON.stringify({
+          currency,
+          items: lines.map((l) => ({
+            product_id: l.product_id, color: l.color, size: l.size, quantity: l.quantity,
+            unit_price_syp: l.unit_price_syp, unit_price_usd: l.unit_price_usd,
+          })),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'فشل الحفظ')
@@ -295,6 +311,32 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
                         </span>
                       )}
                     </div>
+                    {/* Editable unit price (with original reference + reset) */}
+                    {(() => {
+                      const cur = isUSD ? '$' : 'ل.س'
+                      const price = isUSD ? l.unit_price_usd : l.unit_price_syp
+                      const orig = isUSD ? l.orig_price_usd : l.orig_price_syp
+                      const changed = price !== orig
+                      return (
+                        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-outline-variant/20">
+                          <span className="text-xs font-arabic text-secondary">سعر القطعة ({cur}):</span>
+                          <input
+                            type="number" min={0}
+                            value={price}
+                            onChange={(e) => updatePrice(l.uid, parseFloat(e.target.value) || 0)}
+                            className={cn('w-24 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
+                              changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
+                          />
+                          {changed && (
+                            <>
+                              <span className="text-[11px] font-label text-secondary/60 line-through">{orig.toLocaleString()}</span>
+                              <button onClick={() => resetPrice(l.uid)} className="text-[11px] font-arabic text-primary hover:underline">↺ الأصلي</button>
+                            </>
+                          )}
+                          <span className="mr-auto text-xs font-label font-bold text-on-surface">= {(price * l.quantity).toLocaleString()} {cur}</span>
+                        </div>
+                      )
+                    })()}
                   </div>
                 ))}
                 {lines.length === 0 && <p className="text-center text-sm font-arabic text-secondary py-4">لا منتجات — أضف منتجاً واحداً على الأقل</p>}
@@ -304,6 +346,13 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
         </div>
 
         <div className="px-5 py-3 border-t border-outline-variant/30 shrink-0 flex flex-col gap-3 bg-surface-container-lowest">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-arabic text-secondary">عملة الطلب</span>
+            <div className="flex rounded-xl border border-outline-variant/50 overflow-hidden">
+              <button onClick={() => setCurrency('SYP')} className={cn('px-4 py-1.5 text-xs font-arabic font-bold transition', !isUSD ? 'bg-primary text-white' : 'text-secondary hover:bg-surface-container')}>ليرة</button>
+              <button onClick={() => setCurrency('USD')} className={cn('px-4 py-1.5 text-xs font-arabic font-bold transition', isUSD ? 'bg-primary text-white' : 'text-secondary hover:bg-surface-container')}>دولار</button>
+            </div>
+          </div>
           <div className="flex justify-between text-sm font-arabic">
             <span className="text-secondary">المجموع الفرعي الجديد</span>
             <span className="font-label font-bold text-on-surface">{subtotal.toLocaleString()} {isUSD ? '$' : 'ل.س'}</span>

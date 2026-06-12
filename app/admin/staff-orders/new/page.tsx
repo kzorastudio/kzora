@@ -7,8 +7,7 @@ import toast from 'react-hot-toast'
 import { Search, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
-import { formatCurrency, cn, SHIPPING_LABELS } from '@/lib/utils'
-import { buildWhatsAppUrl } from '@/lib/whatsapp'
+import { formatCurrency, cn, SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate } from '@/lib/utils'
 import type { Currency, HomepageSettings } from '@/types'
 
 interface PickerProduct {
@@ -503,65 +502,43 @@ export default function NewStaffOrderPage() {
 
       toast.success(`تم إنشاء الطلب ${data.orderNumber}`)
 
-      // Determine shipping company name
+      // Determine shipping company name (clean, readable label)
       const shippingSlug = deliveryType === 'shipping' ? shippingCompany : ''
       const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
-      const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug
+      let shippingCompanyName =
+        deliveryType === 'delivery'
+          ? 'توصيل عادي (حلب)'
+          : shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug || ''
 
-      // Map cart to CartItem structure expected by buildWhatsAppUrl
-      const itemsForWhatsApp = cart.map((l) => ({
-        id: l.product_id,
-        slug: '',
-        name: l.name,
-        image: l.image || '',
-        color: l.color,
-        color_name: l.color,
-        size: l.size,
-        quantity: l.quantity,
-        price_syp: l.unit_price_syp,
-        price_usd: l.unit_price_usd,
-        discount_price_syp: null,
-        discount_price_usd: null,
-        mold_type: 'normal' as const,
-      }))
-
-      // Construct WhatsApp URL
-      const whatsappUrl = buildWhatsAppUrl({
-        orderNumber: data.orderNumber,
-        customerName: fullName.trim(),
-        customerPhone: phone.trim(),
-        governorate,
-        centerName: centerName.trim() || undefined,
-        address: address.trim() || '',
-        deliveryType,
-        shippingCompany: shippingSlug,
-        shippingCompanyName,
-        items: itemsForWhatsApp as any,
-        shippingFeeSyp: currency === 'SYP' ? feeNum : 0,
-        shippingFeeUsd: currency === 'USD' ? feeNum : 0,
-        shippingFeeDetermined: feeDetermined,
-        multiItemDiscountSyp,
-        multiItemDiscountUsd,
-        subtotalSyp: currency === 'SYP' ? subtotal : 0,
-        subtotalUsd: currency === 'USD' ? subtotal : 0,
-        totalSyp: currency === 'SYP' ? total : 0,
-        totalUsd: currency === 'USD' ? total : 0,
-        currency,
-        paymentMethod,
-        notes: notes.trim() || undefined,
-      })
-
-      // Extract formatted text message from WhatsApp URL and copy to clipboard
-      let textMessage = ''
-      try {
-        const urlObj = new URL(whatsappUrl)
-        textMessage = urlObj.searchParams.get('text') || ''
-      } catch {
-        const textParamIdx = whatsappUrl.indexOf('text=')
-        if (textParamIdx !== -1) {
-          textMessage = decodeURIComponent(whatsappUrl.substring(textParamIdx + 5))
-        }
+      // Strip emojis and parenthesized English text from the shipping name
+      shippingCompanyName = shippingCompanyName.replace(/[\uD800-\uDFFF☀-➿]/g, '').trim()
+      if (shippingCompanyName.includes('(')) {
+        shippingCompanyName = shippingCompanyName.split('(')[0].trim()
       }
+
+      const formattedTotal =
+        currency === 'USD'
+          ? formatCurrency(total, 'USD')
+          : 'السعر : ' + formatCurrency(total, 'SYP')
+
+      const pMethod = paymentMethod === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
+
+      // Build the simple order-details message (same format as the "نسخ الطلب" button)
+      const textMessage = [
+        `رقم الطلب: ${data.orderNumber}`,
+        `الاسم: ${fullName.trim()}`,
+        `الهاتف: ${phone.trim()}`,
+        `المحافظة: ${governorate}`,
+        centerName.trim() ? `المنطقة/المركز: ${centerName.trim()}` : null,
+        address.trim() ? `العنوان: ${address.trim()}` : null,
+        `الشحن: ${shippingCompanyName || 'غير محدد'}`,
+        `طريقة الدفع: ${pMethod}`,
+        `الإجمالي: ${formattedTotal}`,
+        `الحالة: ${ORDER_STATUS_LABELS['pending']}`,
+        `التاريخ: ${formatDate(new Date().toISOString())}`,
+      ]
+        .filter(Boolean)
+        .join('\n')
 
       if (textMessage) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
