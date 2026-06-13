@@ -133,6 +133,9 @@ export interface Order {
   notes: string | null
   // Staff orders & bulk printing
   created_by_admin_id: string | null
+  // Ghost/reservation order: created without deducting stock. On confirmation it
+  // becomes a normal order and deducts inventory like any other order.
+  is_reservation: boolean
   printed: boolean
   printed_at: string | null
   printed_by_id: string | null
@@ -171,6 +174,8 @@ export interface CreateStaffOrderPayload {
   payment_method?: string
   currency_used: Currency
   notes?: string
+  // Ghost/reservation order: does not deduct stock and allows out-of-stock sizes.
+  is_reservation?: boolean
 }
 
 // Lightweight admin reference (for "created by" / "printed by" display)

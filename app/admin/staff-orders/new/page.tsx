@@ -62,7 +62,9 @@ function stockFor(variants: CartLine['variants'], color: string | null, size: nu
 }
 
 // Colors that are actually sellable (have a variant in stock) — mirrors the store.
-function colorOptionsFor(line: Pick<CartLine, 'variants' | 'availColors'>): string[] {
+// In reservation mode (allowAll) every configured color is offered, even out of stock.
+function colorOptionsFor(line: Pick<CartLine, 'variants' | 'availColors'>, allowAll = false): string[] {
+  if (allowAll) return line.availColors.length ? line.availColors : Array.from(new Set(line.variants.map((v) => v.color).filter(Boolean)))
   if (line.variants.length > 0) {
     const set = new Set<string>()
     line.variants.forEach((v) => {
@@ -75,7 +77,9 @@ function colorOptionsFor(line: Pick<CartLine, 'variants' | 'availColors'>): stri
 }
 
 // Sizes sellable for the chosen color (have a variant in stock) — mirrors the store.
-function sizeOptionsFor(line: Pick<CartLine, 'variants' | 'availSizes'>, color: string | null): number[] {
+// In reservation mode (allowAll) every configured size is offered, even out of stock.
+function sizeOptionsFor(line: Pick<CartLine, 'variants' | 'availSizes'>, color: string | null, allowAll = false): number[] {
+  if (allowAll) return [...line.availSizes].sort((a, b) => a - b)
   if (line.variants.length > 0) {
     const sizes = line.variants
       .filter((v) => (v.color || '').trim() === (color || '').trim() && v.quantity > 0)
@@ -120,6 +124,8 @@ export default function NewStaffOrderPage() {
   const [paymentMethod, setPaymentMethod] = useState('cod')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Ghost/reservation order: created without deducting stock; can include out-of-stock sizes.
+  const [isReservation, setIsReservation] = useState(false)
 
   // Shipping data (from DB, like the store)
   const [shippingMethods, setShippingMethods] = useState<{ slug: string; name: string }[]>([])
@@ -273,9 +279,9 @@ export default function NewStaffOrderPage() {
     const meta = { availColors, availSizes, variants }
 
     // Default selection: first sellable color/size
-    const colorOpts = colorOptionsFor(meta)
+    const colorOpts = colorOptionsFor(meta, isReservation)
     let color: string | null = colorOpts[0] ?? null
-    let size: number | null = sizeOptionsFor(meta, color)[0] ?? null
+    let size: number | null = sizeOptionsFor(meta, color, isReservation)[0] ?? null
 
     // Try to land on a color/size combo not already used by this product in the cart,
     // so "add another pair" auto-advances to a free size.
@@ -284,7 +290,7 @@ export default function NewStaffOrderPage() {
     )
     const colorList = colorOpts.length ? colorOpts : [null]
     outer: for (const c of colorList) {
-      const sizeList = sizeOptionsFor(meta, c).length ? sizeOptionsFor(meta, c) : [null]
+      const sizeList = sizeOptionsFor(meta, c, isReservation).length ? sizeOptionsFor(meta, c, isReservation) : [null]
       for (const s of sizeList) {
         if (!usedKeys.has(`${c ?? ''}|${s ?? ''}`)) { color = c; size = s; break outer }
       }
@@ -328,7 +334,7 @@ export default function NewStaffOrderPage() {
     setCart((prev) => prev.map((l) => {
       if (l.id !== id) return l
       // When the color changes, keep the size if it's still valid, else pick the first valid one
-      const sizes = sizeOptionsFor(l, color)
+      const sizes = sizeOptionsFor(l, color, isReservation)
       const newSize = l.size != null && sizes.includes(l.size) ? l.size : (sizes[0] ?? null)
       return { ...l, color, size: newSize, max_stock: stockFor(l.variants, color, newSize) }
     }))
@@ -456,11 +462,14 @@ export default function NewStaffOrderPage() {
       if (existing) existing.quantity += l.quantity
       else merged.set(k, { product_id: l.product_id, color: l.color, size: l.size, quantity: l.quantity, max_stock: l.max_stock, name: l.name, unit_price_syp: l.unit_price_syp, unit_price_usd: l.unit_price_usd })
     }
-    // Stock check (client-side, friendlier than a server error)
-    for (const m of Array.from(merged.values())) {
-      if (m.max_stock !== null && m.quantity > m.max_stock) {
-        toast.error(`الكمية المطلوبة من "${m.name}" (${m.quantity}) تتجاوز المتاح (${m.max_stock})`)
-        return
+    // Stock check (client-side, friendlier than a server error).
+    // Skipped for reservations — they intentionally allow out-of-stock sizes.
+    if (!isReservation) {
+      for (const m of Array.from(merged.values())) {
+        if (m.max_stock !== null && m.quantity > m.max_stock) {
+          toast.error(`الكمية المطلوبة من "${m.name}" (${m.quantity}) تتجاوز المتاح (${m.max_stock})`)
+          return
+        }
       }
     }
 
@@ -490,6 +499,7 @@ export default function NewStaffOrderPage() {
         payment_method: paymentMethod,
         currency_used: currency,
         notes: notes.trim() || undefined,
+        is_reservation: isReservation,
       }
 
       const res = await fetch('/api/admin/staff-orders', {
@@ -500,7 +510,7 @@ export default function NewStaffOrderPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'فشل إنشاء الطلب')
 
-      toast.success(`تم إنشاء الطلب ${data.orderNumber}`)
+      toast.success(`تم إنشاء ${isReservation ? 'الحجز' : 'الطلب'} ${data.orderNumber}`)
 
       // Determine shipping company name (clean, readable label)
       const shippingSlug = deliveryType === 'shipping' ? shippingCompany : ''
@@ -708,7 +718,7 @@ export default function NewStaffOrderPage() {
                           onChange={(e) => updateColor(l.id, e.target.value)}
                           className="rounded-lg border border-outline-variant/50 bg-white px-2 py-1.5 text-xs font-arabic text-on-surface"
                         >
-                          {colorOptionsFor(l).map((c) => <option key={c} value={c}>{c}</option>)}
+                          {colorOptionsFor(l, isReservation).map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                       )}
                       {l.availSizes.length > 0 && (
@@ -717,7 +727,7 @@ export default function NewStaffOrderPage() {
                           onChange={(e) => updateSize(l.id, parseInt(e.target.value))}
                           className="rounded-lg border border-outline-variant/50 bg-white px-2 py-1.5 text-xs font-arabic text-on-surface"
                         >
-                          {sizeOptionsFor(l, l.color).map((s) => <option key={s} value={s}>مقاس {s}</option>)}
+                          {sizeOptionsFor(l, l.color, isReservation).map((s) => <option key={s} value={s}>مقاس {s}</option>)}
                         </select>
                       )}
                       <div className="flex items-center gap-1">
@@ -729,7 +739,11 @@ export default function NewStaffOrderPage() {
                           className="w-14 rounded-lg border border-outline-variant/50 px-2 py-1.5 text-sm text-center"
                         />
                       </div>
-                      {l.max_stock !== null && (
+                      {isReservation ? (
+                        <span className="text-[11px] font-arabic px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700">
+                          حجز — متاح: {l.max_stock ?? 0}
+                        </span>
+                      ) : l.max_stock !== null && (
                         <span className={cn('text-[11px] font-arabic px-1.5 py-0.5 rounded-md', l.max_stock <= 0 ? 'bg-red-50 text-red-600' : l.quantity > l.max_stock ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700')}>
                           متاح: {l.max_stock}
                         </span>
@@ -786,6 +800,22 @@ export default function NewStaffOrderPage() {
 
           <div className="bg-white rounded-2xl p-4 shadow-ambient border border-outline-variant/20 flex flex-col gap-3">
             <span className="text-sm font-arabic font-bold text-on-surface">تفاصيل الطلب</span>
+
+            {/* Ghost / reservation order toggle */}
+            <label className={cn('flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition', isReservation ? 'border-violet-400 bg-violet-50' : 'border-outline-variant/50 bg-white hover:bg-surface-container-low/40')}>
+              <input
+                type="checkbox"
+                checked={isReservation}
+                onChange={(e) => setIsReservation(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-violet-600"
+              />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-arabic font-bold text-on-surface">🔖 طلب وهمي (حجز مبدئي)</span>
+                <span className="text-[11px] font-arabic text-secondary leading-relaxed">
+                  لا يُخصم من المخزون، ويسمح بإضافة مقاسات غير متوفرة. يمكن حذفه لاحقاً أو تثبيته فيتحوّل لطلب عادي ويُخصم من الجرد.
+                </span>
+              </span>
+            </label>
 
             <div className="grid grid-cols-2 gap-3">
               <select
@@ -920,10 +950,11 @@ export default function NewStaffOrderPage() {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full py-3 rounded-2xl bg-primary text-white font-arabic font-bold hover:bg-primary/90 transition disabled:opacity-60 flex items-center justify-center gap-2"
+            className={cn('w-full py-3 rounded-2xl text-white font-arabic font-bold transition disabled:opacity-60 flex items-center justify-center gap-2',
+              isReservation ? 'bg-violet-600 hover:bg-violet-600/90' : 'bg-primary hover:bg-primary/90')}
           >
             {submitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
-            تأكيد إنشاء الطلبية
+            {isReservation ? 'إنشاء حجز مبدئي' : 'تأكيد إنشاء الطلبية'}
           </button>
         </div>
       </div>

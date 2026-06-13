@@ -88,6 +88,8 @@ export async function POST(request: NextRequest) {
       items, customer, delivery_type, shipping_company,
       payment_method, currency_used, notes,
     } = body
+    // Ghost/reservation order: skip stock validation + deduction; allow out-of-stock sizes.
+    const isReservation = body.is_reservation === true
 
     // When the fee is "determined with the seller" (e.g. 4+ pieces shipping),
     // store 0 and flag it — mirrors the public checkout behaviour.
@@ -159,7 +161,9 @@ export async function POST(request: NextRequest) {
       if (!dbProduct) {
         return NextResponse.json({ error: 'المنتج المطلوب غير موجود' }, { status: 400 })
       }
-      if (dbProduct.stock_status === 'out_of_stock') {
+      // Reservation orders may include out-of-stock products / sizes; availability is
+      // re-checked only at confirmation time.
+      if (!isReservation && dbProduct.stock_status === 'out_of_stock') {
         return NextResponse.json({ error: `المنتج "${dbProduct.name}" نفد من المخزن` }, { status: 400 })
       }
 
@@ -176,18 +180,22 @@ export async function POST(request: NextRequest) {
         const colorLabel = item.color ? ` - اللون: ${item.color}` : ''
         const sizeLabel  = item.size  ? ` - المقاس: ${item.size}` : ''
         if (!found) {
-          return NextResponse.json(
-            { error: `المنتج "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفر. اختر تركيبة أخرى.` },
-            { status: 400 }
-          )
-        }
-        variantId = found.id
-        availableQuantity = found.quantity ?? 0
-        if (qty > availableQuantity) {
-          return NextResponse.json(
-            { error: `الكمية المطلوبة من "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفرة. المتاح: ${availableQuantity}` },
-            { status: 400 }
-          )
+          // Reservations allow sizes/colors that have no variant yet (out of inventory).
+          if (!isReservation) {
+            return NextResponse.json(
+              { error: `المنتج "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفر. اختر تركيبة أخرى.` },
+              { status: 400 }
+            )
+          }
+        } else {
+          variantId = found.id
+          availableQuantity = found.quantity ?? 0
+          if (!isReservation && qty > availableQuantity) {
+            return NextResponse.json(
+              { error: `الكمية المطلوبة من "${dbProduct.name}"${colorLabel}${sizeLabel} غير متوفرة. المتاح: ${availableQuantity}` },
+              { status: 400 }
+            )
+          }
         }
       }
 
@@ -286,6 +294,7 @@ export async function POST(request: NextRequest) {
         status:                  'pending',
         notes:                   notes || null,
         created_by_admin_id:     adminId,
+        is_reservation:          isReservation,
       })
       .select()
       .single()
@@ -317,23 +326,26 @@ export async function POST(request: NextRequest) {
     if (itemsError) console.error('Staff order items insert error:', itemsError)
 
     // ── Decrement variant stock (same behaviour as the store) ────────────────────
-    const productIdsToCheck = new Set<string>()
-    for (const item of sanitizedItems) {
-      if (item.variant_id) {
-        const newQty = Math.max(0, item.available_quantity - item.quantity)
-        await supabaseAdmin.from('product_variants').update({ quantity: newQty }).eq('id', item.variant_id)
-        productIdsToCheck.add(item.product_id)
+    // Reservation orders do NOT touch inventory — stock is deducted only on confirmation.
+    if (!isReservation) {
+      const productIdsToCheck = new Set<string>()
+      for (const item of sanitizedItems) {
+        if (item.variant_id) {
+          const newQty = Math.max(0, item.available_quantity - item.quantity)
+          await supabaseAdmin.from('product_variants').update({ quantity: newQty }).eq('id', item.variant_id)
+          productIdsToCheck.add(item.product_id)
+        }
       }
-    }
-    for (const pid of Array.from(productIdsToCheck)) {
-      const { data: variants } = await supabaseAdmin
-        .from('product_variants').select('quantity').eq('product_id', pid)
-      if (variants) {
-        const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
-        if (totalStock <= 0) {
-          await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
-          revalidatePath('/')
-          revalidatePath('/products')
+      for (const pid of Array.from(productIdsToCheck)) {
+        const { data: variants } = await supabaseAdmin
+          .from('product_variants').select('quantity').eq('product_id', pid)
+        if (variants) {
+          const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
+          if (totalStock <= 0) {
+            await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
+            revalidatePath('/')
+            revalidatePath('/products')
+          }
         }
       }
     }

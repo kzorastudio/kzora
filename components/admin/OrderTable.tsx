@@ -49,7 +49,7 @@ export default function OrderTable({
   const router = useRouter()
   const { data: session } = useSession()
   const isEmployee = session?.user?.role === 'employee'
-  const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string } | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string; isReservation: boolean } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   function handleRowClick(id: string) {
@@ -63,7 +63,7 @@ export default function OrderTable({
 
   function openDeleteModal(e: React.MouseEvent, order: Order) {
     e.stopPropagation()
-    setPendingDelete({ id: order.id, orderNumber: order.order_number })
+    setPendingDelete({ id: order.id, orderNumber: order.order_number, isReservation: !!order.is_reservation })
   }
 
   async function handleCopyOrder(e: React.MouseEvent, order: Order) {
@@ -159,6 +159,7 @@ export default function OrderTable({
       {pendingDelete && (
         <DeleteOrderModal
           orderNumber={pendingDelete.orderNumber}
+          isReservation={pendingDelete.isReservation}
           loading={deleteLoading}
           onClose={() => { if (!deleteLoading) setPendingDelete(null) }}
           onDeleteOnly={handleDeleteOnly}
@@ -197,6 +198,7 @@ export default function OrderTable({
                 )}
                 <span className="text-sm font-label font-bold text-primary">{order.order_number}</span>
                 {order.printed && <span className="text-[9px] font-arabic bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">🖨️</span>}
+                {order.is_reservation && <span className="text-[9px] font-arabic bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full">🔖 حجز</span>}
               </div>
               <StatusBadge status={order.status} />
             </div>
@@ -292,6 +294,7 @@ export default function OrderTable({
                       <div className="flex items-center gap-1.5">
                         {order.order_number}
                         {order.printed && <span className="text-[9px] font-arabic bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">🖨️ مطبوع</span>}
+                        {order.is_reservation && <span className="text-[9px] font-arabic bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full">🔖 حجز</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">

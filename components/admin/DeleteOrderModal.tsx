@@ -8,6 +8,9 @@ interface DeleteOrderModalProps {
   onDeleteOnly: () => void
   onDeleteAndRestore: () => void
   loading?: boolean
+  // Ghost/reservation order — it never deducted stock, so "restore" must be hidden
+  // (restoring would inflate inventory with quantities that were never taken).
+  isReservation?: boolean
 }
 
 export default function DeleteOrderModal({
@@ -16,6 +19,7 @@ export default function DeleteOrderModal({
   onDeleteOnly,
   onDeleteAndRestore,
   loading = false,
+  isReservation = false,
 }: DeleteOrderModalProps) {
   return (
     <div
@@ -53,7 +57,7 @@ export default function DeleteOrderModal({
           <p className="text-sm font-arabic text-on-surface-variant leading-relaxed">
             هل تريد حذف الطلب{' '}
             <span className="font-semibold text-primary font-label">{orderNumber}</span>
-            ؟ اختر أحد الخيارين:
+            ؟ {isReservation ? 'هذا طلب وهمي (حجز) لم يُخصم من المخزون، لذا سيُحذف دون أي تأثير على الجرد.' : 'اختر أحد الخيارين:'}
           </p>
 
           {/* Option 1 — Delete only */}
@@ -76,7 +80,8 @@ export default function DeleteOrderModal({
             </div>
           </button>
 
-          {/* Option 2 — Delete + restore stock */}
+          {/* Option 2 — Delete + restore stock (hidden for reservations: nothing was deducted) */}
+          {!isReservation && (
           <button
             onClick={onDeleteAndRestore}
             disabled={loading}
@@ -95,6 +100,7 @@ export default function DeleteOrderModal({
               </span>
             </div>
           </button>
+          )}
         </div>
 
         {/* Footer */}

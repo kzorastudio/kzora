@@ -41,11 +41,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // ── Fetch order ──────────────────────────────────────────────────────────────
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
-      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd')
+      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation')
       .eq('id', id)
       .single()
 
     if (orderErr || !order) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
+    // Reservation orders never touched inventory, so editing them must not either.
+    const isReservation = order.is_reservation === true
 
     // Items editing is only for staff orders (their totals are simple: no discounts).
     if (order.created_by_admin_id == null) {
@@ -95,12 +97,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const delta = new Map<string, number>()
     const addDelta = (vid: string, d: number) => delta.set(vid, (delta.get(vid) || 0) + d)
 
-    // ── Returns from old items ───────────────────────────────────────────────────
-    for (const it of oldItems || []) {
-      const p = productMap.get(it.product_id)
-      if (!p || !p.variants?.length) continue
-      const v = p.variants.find((x: any) => norm(x.color) === norm(it.color) && (x.size || 0) === (it.size || 0))
-      if (v) addDelta(v.id, it.quantity)
+    // ── Returns from old items (skipped for reservations — they never deducted) ──
+    if (!isReservation) {
+      for (const it of oldItems || []) {
+        const p = productMap.get(it.product_id)
+        if (!p || !p.variants?.length) continue
+        const v = p.variants.find((x: any) => norm(x.color) === norm(it.color) && (x.size || 0) === (it.size || 0))
+        if (v) addDelta(v.id, it.quantity)
+      }
     }
 
     // ── Validate new items + takes ───────────────────────────────────────────────
@@ -115,7 +119,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       const qty = Math.max(1, Number(it.quantity) || 0)
       if (!p) return NextResponse.json({ error: 'أحد المنتجات غير موجود' }, { status: 400 })
 
-      if (p.variants?.length) {
+      // Reservations may include sizes/colors with no variant yet; they don't deduct stock.
+      if (!isReservation && p.variants?.length) {
         const v = p.variants.find((x: any) => norm(x.color) === norm(it.color) && (x.size || 0) === (it.size || 0))
         const label = `${p.name}${it.color ? ` - ${it.color}` : ''}${it.size ? ` - مقاس ${it.size}` : ''}`
         if (!v) return NextResponse.json({ error: `التركيبة غير متوفرة: ${label}` }, { status: 400 })
@@ -135,41 +140,44 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       })
     }
 
-    // ── Validate final stock (no negative) ───────────────────────────────────────
-    for (const [vid, d] of Array.from(delta.entries())) {
-      const final = (variantQty.get(vid) ?? 0) + d
-      if (final < 0) {
-        const pid = variantProduct.get(vid)
-        const pName = productMap.get(pid as string)?.name || 'المنتج'
-        return NextResponse.json(
-          { error: `الكمية المطلوبة من "${pName}" تتجاوز المتاح في المخزون` },
-          { status: 400 }
-        )
+    // ── Stock validation + updates (skipped entirely for reservations) ───────────
+    if (!isReservation) {
+      // Validate final stock (no negative)
+      for (const [vid, d] of Array.from(delta.entries())) {
+        const final = (variantQty.get(vid) ?? 0) + d
+        if (final < 0) {
+          const pid = variantProduct.get(vid)
+          const pName = productMap.get(pid as string)?.name || 'المنتج'
+          return NextResponse.json(
+            { error: `الكمية المطلوبة من "${pName}" تتجاوز المتاح في المخزون` },
+            { status: 400 }
+          )
+        }
       }
-    }
 
-    // ── Apply variant stock updates ──────────────────────────────────────────────
-    const affectedProducts = new Set<string>()
-    for (const [vid, d] of Array.from(delta.entries())) {
-      if (d === 0) continue
-      const final = (variantQty.get(vid) ?? 0) + d
-      await supabaseAdmin.from('product_variants').update({ quantity: final }).eq('id', vid)
-      affectedProducts.add(variantProduct.get(vid) as string)
-    }
-
-    // ── Re-evaluate stock_status for affected products ───────────────────────────
-    for (const pid of Array.from(affectedProducts)) {
-      const { data: vs } = await supabaseAdmin.from('product_variants').select('quantity').eq('product_id', pid)
-      if (!vs) continue
-      const total = vs.reduce((s: number, v: any) => s + (v.quantity ?? 0), 0)
-      const current = productMap.get(pid)?.stock_status
-      if (total <= 0) {
-        await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
-      } else if (current === 'out_of_stock') {
-        await supabaseAdmin.from('products').update({ stock_status: 'in_stock' }).eq('id', pid)
+      // Apply variant stock updates
+      const affectedProducts = new Set<string>()
+      for (const [vid, d] of Array.from(delta.entries())) {
+        if (d === 0) continue
+        const final = (variantQty.get(vid) ?? 0) + d
+        await supabaseAdmin.from('product_variants').update({ quantity: final }).eq('id', vid)
+        affectedProducts.add(variantProduct.get(vid) as string)
       }
-      revalidatePath('/')
-      revalidatePath('/products')
+
+      // Re-evaluate stock_status for affected products
+      for (const pid of Array.from(affectedProducts)) {
+        const { data: vs } = await supabaseAdmin.from('product_variants').select('quantity').eq('product_id', pid)
+        if (!vs) continue
+        const total = vs.reduce((s: number, v: any) => s + (v.quantity ?? 0), 0)
+        const current = productMap.get(pid)?.stock_status
+        if (total <= 0) {
+          await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
+        } else if (current === 'out_of_stock') {
+          await supabaseAdmin.from('products').update({ stock_status: 'in_stock' }).eq('id', pid)
+        }
+        revalidatePath('/')
+        revalidatePath('/products')
+      }
     }
 
     // ── Replace order items (insert new first, then delete old to avoid a gap) ────

@@ -13,6 +13,7 @@ import OrderDetailsEditor from './OrderDetailsEditor'
 import OrderItemsEditor from './OrderItemsEditor'
 import CopyOrderButton from './CopyOrderButton'
 import SendWhatsAppButton from './SendWhatsAppButton'
+import ConfirmReservationButton from './ConfirmReservationButton'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -118,12 +119,18 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 طلب {order.order_number}
               </h1>
               <StatusBadge status={order.status} />
+              {order.is_reservation && (
+                <span className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-arabic font-bold bg-violet-100 text-violet-700 border border-violet-200">
+                  🔖 طلب وهمي (حجز)
+                </span>
+              )}
             </div>
             <p className="text-sm font-arabic text-secondary mt-0.5">
               {formatDate(order.created_at)}
             </p>
           </div>
           <div className="shrink-0 flex items-center gap-2">
+            {order.is_reservation && <ConfirmReservationButton orderId={order.id} />}
             <SendWhatsAppButton order={order} />
             <CopyOrderButton order={order} />
           </div>
