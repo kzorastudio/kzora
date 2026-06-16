@@ -30,25 +30,59 @@ export default function CopyOrderButton({ order, shippingMethods, className }: P
     }
     shippingName = shippingName.trim()
 
-    const formattedTotal = order.currency_used === 'USD'
-      ? formatCurrency(order.total_usd, 'USD')
-      : 'السعر : ' + formatCurrency(order.total_syp, 'SYP')
+    const isAleppo = order.delivery_type === 'delivery'
+    const cur: 'SYP' | 'USD' = order.currency_used === 'USD' ? 'USD' : 'SYP'
+    const pick = (syp: number, usd: number) => (cur === 'USD' ? usd : syp)
 
     const statusLabel = ORDER_STATUS_LABELS[order.status] || order.status
 
-    const copyText = [
+    const lines: (string | null)[] = [
       `رقم الطلب: ${order.order_number}`,
       `الاسم: ${order.customer_full_name}`,
       `الهاتف: ${order.customer_phone}`,
       `المحافظة: ${order.customer_governorate}`,
       order.center_name ? `المنطقة/المركز: ${order.center_name}` : null,
-      order.customer_address ? `العنوان: ${order.customer_address}` : null,
+      // Aleppo orders carry a real street address; shipping orders to other
+      // governorates only use the center, so skip the duplicated العنوان line.
+      isAleppo && order.customer_address ? `العنوان: ${order.customer_address}` : null,
       `الشحن: ${shippingName || 'غير محدد'}`,
       `طريقة الدفع: ${order.payment_method === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'}`,
-      `الإجمالي: ${formattedTotal}`,
-      `الحالة: ${statusLabel}`,
-      `التاريخ: ${formatDate(order.created_at)}`,
-    ].filter(Boolean).join('\n')
+    ]
+
+    if (isAleppo) {
+      const formattedTotal = cur === 'USD'
+        ? formatCurrency(order.total_usd, 'USD')
+        : 'السعر : ' + formatCurrency(order.total_syp, 'SYP')
+      lines.push(`الإجمالي: ${formattedTotal}`)
+    } else {
+      // Other governorates: list each model with color/size/per-piece price,
+      // and show the total WITHOUT the shipping fee.
+      const items = order.items ?? []
+      if (items.length) {
+        lines.push('المنتجات:')
+        items.forEach((it, i) => {
+          lines.push(`${i + 1}. ${it.product_name}`)
+          const details: string[] = []
+          if (it.color) details.push(`اللون: ${it.color}`)
+          if (it.size != null) details.push(`النمرة: ${it.size}`)
+          if (details.length) lines.push(`   ${details.join(' - ')}`)
+          const unit = pick(it.unit_price_syp, it.unit_price_usd)
+          lines.push(
+            it.quantity > 1
+              ? `   الكمية: ${it.quantity} × ${formatCurrency(unit, cur)} = ${formatCurrency(unit * it.quantity, cur)}`
+              : `   الكمية: ${it.quantity} × ${formatCurrency(unit, cur)}`
+          )
+        })
+      }
+      const shippingFee = order.shipping_fee_determined ? 0 : pick(order.shipping_fee_syp, order.shipping_fee_usd)
+      const totalWithoutShipping = pick(order.total_syp, order.total_usd) - shippingFee
+      lines.push(`الإجمالي بدون الشحن: ${formatCurrency(totalWithoutShipping, cur)}`)
+    }
+
+    lines.push(`الحالة: ${statusLabel}`)
+    lines.push(`التاريخ: ${formatDate(order.created_at)}`)
+
+    const copyText = lines.filter(Boolean).join('\n')
 
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {

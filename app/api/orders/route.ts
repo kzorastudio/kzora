@@ -5,7 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
-import { generateSequentialOrderNumber } from '@/lib/orderNumber'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -427,8 +426,15 @@ export async function POST(request: NextRequest) {
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))
 
-    // ── Step 10: Generate order number ────────────────────────────────────────
-    const orderNumber = await generateSequentialOrderNumber()
+    // ── Step 10: Generate order number (atomic, race-free via DB sequence) ────
+    const { data: orderNumber, error: numberError } = await supabaseAdmin.rpc('next_order_number')
+    if (numberError || !orderNumber) {
+      console.error('Order number generation error:', numberError)
+      return NextResponse.json(
+        { error: 'تعذر إنشاء رقم الطلب. يرجى المحاولة مرة أخرى.' },
+        { status: 500 }
+      )
+    }
 
     // ── Step 11: Insert order ─────────────────────────────────────────────────
     const { data: order, error: orderError } = await supabaseAdmin
@@ -497,19 +503,39 @@ export async function POST(request: NextRequest) {
       // Order was created; items failure is logged but we don't abort
     }
 
-    // ── Step 13: Decrement variant stock ──────────────────────────────────────
+    // ── Step 13: Atomic stock reservation (prevents overselling) ──────────────
+    // Decrement every variant in ONE all-or-nothing DB transaction. If another
+    // order grabbed the last piece a moment earlier, this rejects atomically and
+    // we roll back the order we just created so no phantom order survives.
     const productIdsToCheck = new Set<string>()
+    const reservePayload = sanitizedItems
+      .filter((item) => item.variant_id)
+      .map((item) => ({
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+        product_name: item.product_name,
+      }))
 
-    for (const item of sanitizedItems) {
-      if (item.variant_id) {
-        const newQty = Math.max(0, item.available_quantity - item.quantity)
-        await supabaseAdmin
-          .from('product_variants')
-          .update({ quantity: newQty })
-          .eq('id', item.variant_id)
-
-        productIdsToCheck.add(item.product_id)
+    if (reservePayload.length > 0) {
+      const { error: reserveError } = await supabaseAdmin.rpc('reserve_stock', { p_items: reservePayload })
+      if (reserveError) {
+        // Roll back the just-created order (cascades to items / history / loyalty)
+        await supabaseAdmin.from('orders').delete().eq('id', order.id)
+        const soldOutName = reserveError.message?.split('OUT_OF_STOCK:')[1]?.trim()
+        return NextResponse.json(
+          {
+            error: reserveError.message?.includes('OUT_OF_STOCK')
+              ? (soldOutName
+                  ? `نفدت الكمية من "${soldOutName}". ربما سبقك طلب آخر على القطعة الأخيرة.`
+                  : 'نفدت الكمية المطلوبة. ربما سبقك طلب آخر.')
+              : 'تعذر حجز الكمية. يرجى المحاولة مرة أخرى.',
+          },
+          { status: 409 }
+        )
       }
+      sanitizedItems.forEach((item) => {
+        if (item.variant_id) productIdsToCheck.add(item.product_id)
+      })
     }
 
     // Mark product out_of_stock if all variants reached 0
@@ -532,12 +558,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Step 14: Coupon increment (AFTER order succeeds) ──────────────────────
+    // ── Step 14: Coupon increment (AFTER order succeeds, conditional & atomic) ─
+    // Uses a DB-side conditional increment so concurrent uses can never push
+    // used_count past max_uses.
     if (couponId !== null) {
-      await supabaseAdmin
-        .from('coupons')
-        .update({ used_count: couponUsedCount + 1 })
-        .eq('id', couponId)
+      await supabaseAdmin.rpc('increment_coupon_usage', { p_coupon_id: couponId })
     }
 
     // ── Step 15: Order status history ─────────────────────────────────────────

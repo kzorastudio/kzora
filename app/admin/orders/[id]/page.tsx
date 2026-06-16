@@ -149,8 +149,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     المنتجات ({order.items.length})
                   </h2>
                 </div>
-                {/* Item editing with inventory reconciliation — staff orders only */}
-                {order.created_by_admin_id != null && <OrderItemsEditor order={order} />}
+                {/* Item editing with inventory reconciliation — all orders.
+                    Store orders keep their stored discount amount on recompute. */}
+                <OrderItemsEditor order={order} />
               </div>
               <div className="divide-y divide-outline-variant/20">
                 {order.items.map((item) => (

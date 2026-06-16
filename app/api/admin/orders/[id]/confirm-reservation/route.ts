@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const productMap = new Map((dbProducts || []).map((p: any) => [p.id, p]))
 
     // ── Validate availability + compute deductions (no DB writes yet) ────────────
-    const deductions: { variantId: string; newQty: number; productId: string }[] = []
+    const deductions: { variantId: string; quantity: number; productId: string; productName: string }[] = []
     for (const it of items) {
       const p = productMap.get(it.product_id as string)
       const label = `${it.product_name}${it.color ? ` - ${it.color}` : ''}${it.size ? ` - مقاس ${it.size}` : ''}`
@@ -84,14 +84,37 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           { status: 400 }
         )
       }
-      deductions.push({ variantId: v.id, newQty: available - it.quantity, productId: it.product_id as string })
+      deductions.push({
+        variantId: v.id,
+        quantity: it.quantity,
+        productId: it.product_id as string,
+        productName: label,
+      })
     }
 
-    // ── Apply deductions (validation passed) ─────────────────────────────────────
+    // ── Apply deductions atomically (prevents overselling on concurrent confirms) ─
+    // The pre-checks above give friendly per-item messages, but reserve_stock is the
+    // real guard: it re-checks and decrements in one all-or-nothing transaction.
     const affectedProducts = new Set<string>()
-    for (const d of deductions) {
-      await supabaseAdmin.from('product_variants').update({ quantity: d.newQty }).eq('id', d.variantId)
-      affectedProducts.add(d.productId)
+    if (deductions.length > 0) {
+      const reservePayload = deductions.map((d) => ({
+        variant_id: d.variantId,
+        quantity: d.quantity,
+        product_name: d.productName,
+      }))
+      const { error: reserveError } = await supabaseAdmin.rpc('reserve_stock', { p_items: reservePayload })
+      if (reserveError) {
+        const soldOutName = reserveError.message?.split('OUT_OF_STOCK:')[1]?.trim()
+        return NextResponse.json(
+          {
+            error: soldOutName
+              ? `الكمية المتاحة من "${soldOutName}" لم تعد كافية — أضِف للمخزون ثم ثبّت الطلب.`
+              : 'الكمية لم تعد كافية. أضِف للمخزون ثم حاول مجدداً.',
+          },
+          { status: 409 }
+        )
+      }
+      deductions.forEach((d) => affectedProducts.add(d.productId))
     }
 
     // ── Re-evaluate stock_status for affected products ───────────────────────────

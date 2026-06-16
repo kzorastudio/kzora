@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // ── Fetch order ──────────────────────────────────────────────────────────────
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
-      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation')
+      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation, discount_amount_syp, discount_amount_usd')
       .eq('id', id)
       .single()
 
@@ -49,11 +49,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Reservation orders never touched inventory, so editing them must not either.
     const isReservation = order.is_reservation === true
 
-    // Items editing is only for staff orders (their totals are simple: no discounts).
-    if (order.created_by_admin_id == null) {
-      return NextResponse.json({ error: 'تعديل المنتجات متاح لطلبيات الموظفين فقط' }, { status: 400 })
-    }
-    // Ownership: employees can only edit their own orders.
+    // Editing is allowed for both staff orders and store (customer) orders.
+    // Ownership: employees can only edit their own staff orders. Store orders
+    // (created_by_admin_id == null) are never owned by an employee, so this also
+    // blocks employees from editing customer orders.
     if (role === 'employee' && order.created_by_admin_id !== (session as any).id) {
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
@@ -204,11 +203,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       await supabaseAdmin.from('order_items').delete().in('id', oldIds)
     }
 
-    // ── Recompute totals (staff order = subtotal + shipping, no discounts) ───────
+    // ── Recompute totals ─────────────────────────────────────────────────────────
+    // total = new subtotal − stored discount + shipping. The stored discount amount
+    // (coupon + loyalty + multi-piece for store orders, multi-piece for staff orders)
+    // is preserved as-is so manual item edits don't silently wipe an applied discount.
     const subtotalSyp = sanitizedNew.reduce((s, i) => s + i.unit_price_syp * i.quantity, 0)
     const subtotalUsd = sanitizedNew.reduce((s, i) => s + i.unit_price_usd * i.quantity, 0)
-    const totalSyp = Math.max(0, subtotalSyp + (order.shipping_fee_syp || 0))
-    const totalUsd = Math.max(0, parseFloat((subtotalUsd + (order.shipping_fee_usd || 0)).toFixed(2)))
+    const discountSyp = order.discount_amount_syp || 0
+    const discountUsd = order.discount_amount_usd || 0
+    const totalSyp = Math.max(0, subtotalSyp - discountSyp + (order.shipping_fee_syp || 0))
+    const totalUsd = Math.max(0, parseFloat((subtotalUsd - discountUsd + (order.shipping_fee_usd || 0)).toFixed(2)))
 
     await supabaseAdmin
       .from('orders')

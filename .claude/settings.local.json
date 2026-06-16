@@ -64,7 +64,11 @@
       "Bash(lsof -ti:3000)",
       "Bash(node -e ' *)",
       "Bash(git check-ignore *)",
-      "Bash(xargs kill -9)"
+      "Bash(xargs kill -9)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(git merge *)",
+      "Bash(git add *)"
     ]
   }
 }

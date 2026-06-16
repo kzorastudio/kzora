@@ -5,7 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateStaffOrderPayload } from '@/types'
 import { normalizePhone } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
-import { generateSequentialOrderNumber } from '@/lib/orderNumber'
 
 // ─── GET /api/admin/staff-orders ────────────────────────────────────────────────
 // Returns staff-created orders. Employees see only their own; super_admin sees all
@@ -263,7 +262,11 @@ export async function POST(request: NextRequest) {
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
 
     // ── Insert order ─────────────────────────────────────────────────────────────
-    const orderNumber = await generateSequentialOrderNumber()
+    const { data: orderNumber, error: numberError } = await supabaseAdmin.rpc('next_order_number')
+    if (numberError || !orderNumber) {
+      console.error('Staff order number generation error:', numberError)
+      return NextResponse.json({ error: 'تعذر إنشاء رقم الطلب' }, { status: 500 })
+    }
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
@@ -325,26 +328,49 @@ export async function POST(request: NextRequest) {
       )
     if (itemsError) console.error('Staff order items insert error:', itemsError)
 
-    // ── Decrement variant stock (same behaviour as the store) ────────────────────
+    // ── Atomic stock reservation (same behaviour as the store) ───────────────────
     // Reservation orders do NOT touch inventory — stock is deducted only on confirmation.
     if (!isReservation) {
-      const productIdsToCheck = new Set<string>()
-      for (const item of sanitizedItems) {
-        if (item.variant_id) {
-          const newQty = Math.max(0, item.available_quantity - item.quantity)
-          await supabaseAdmin.from('product_variants').update({ quantity: newQty }).eq('id', item.variant_id)
-          productIdsToCheck.add(item.product_id)
+      const reservePayload = sanitizedItems
+        .filter((item) => item.variant_id)
+        .map((item) => ({
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+          product_name: item.product_name,
+        }))
+
+      if (reservePayload.length > 0) {
+        const { error: reserveError } = await supabaseAdmin.rpc('reserve_stock', { p_items: reservePayload })
+        if (reserveError) {
+          // Roll back the just-created order (cascades to items / history)
+          await supabaseAdmin.from('orders').delete().eq('id', order.id)
+          const soldOutName = reserveError.message?.split('OUT_OF_STOCK:')[1]?.trim()
+          return NextResponse.json(
+            {
+              error: reserveError.message?.includes('OUT_OF_STOCK')
+                ? (soldOutName
+                    ? `نفدت الكمية من "${soldOutName}". ربما سبق طلب آخر على القطعة الأخيرة.`
+                    : 'نفدت الكمية المطلوبة.')
+                : 'تعذر حجز الكمية. يرجى المحاولة مرة أخرى.',
+            },
+            { status: 409 }
+          )
         }
-      }
-      for (const pid of Array.from(productIdsToCheck)) {
-        const { data: variants } = await supabaseAdmin
-          .from('product_variants').select('quantity').eq('product_id', pid)
-        if (variants) {
-          const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
-          if (totalStock <= 0) {
-            await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
-            revalidatePath('/')
-            revalidatePath('/products')
+
+        const productIdsToCheck = new Set<string>()
+        sanitizedItems.forEach((item) => {
+          if (item.variant_id) productIdsToCheck.add(item.product_id)
+        })
+        for (const pid of Array.from(productIdsToCheck)) {
+          const { data: variants } = await supabaseAdmin
+            .from('product_variants').select('quantity').eq('product_id', pid)
+          if (variants) {
+            const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
+            if (totalStock <= 0) {
+              await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
+              revalidatePath('/')
+              revalidatePath('/products')
+            }
           }
         }
       }

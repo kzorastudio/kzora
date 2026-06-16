@@ -17,6 +17,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [shippingMethods, setShippingMethods] = useState<any[]>([])
+  const [methodsLoading, setMethodsLoading] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -33,39 +34,46 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
   // Fetch shipping methods dynamically from DB
   useEffect(() => {
     if (isEditing) {
+      setMethodsLoading(true)
       fetch('/api/shipping')
         .then(r => r.json())
         .then(d => setShippingMethods(d.methods || []))
         .catch(() => {})
+        .finally(() => setMethodsLoading(false))
     }
   }, [isEditing])
 
-  // Get branch addresses for the selected governorate and shipping company
+  // Branch addresses for the selected company + governorate ONLY (strict — no
+  // falling back to other companies). Empty when that company has no branch in
+  // this governorate, which blocks saving with a clear reason.
   const availableBranches = useMemo(() => {
-    if (!formData.customer_governorate) return []
-    
-    // If shipping company is selected, filter by it
-    if (formData.shipping_company) {
-      const company = shippingMethods.find(m => m.slug === formData.shipping_company)
-      const gov = company?.governorates?.find((g: any) => g.name === formData.customer_governorate)
-      if (gov?.branch_addresses) {
-        return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
-      }
+    if (!formData.customer_governorate || !formData.shipping_company) return []
+    const company = shippingMethods.find(m => m.slug === formData.shipping_company)
+    const gov = company?.governorates?.find((g: any) => g.name === formData.customer_governorate)
+    if (gov?.branch_addresses) {
+      return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
     }
-
-    // Fallback: aggregated branches from all companies for this governorate
-    const all = new Set<string>()
-    shippingMethods.forEach(m => {
-      const gov = m.governorates?.find((g: any) => g.name === formData.customer_governorate)
-      if (gov?.branch_addresses) {
-        gov.branch_addresses.split('\n').forEach((s: string) => all.add(s.trim()))
-      }
-    })
-    return Array.from(all).filter(Boolean).sort()
+    return []
   }, [formData.customer_governorate, formData.shipping_company, shippingMethods])
 
+  // For shipping orders to non-Aleppo governorates, the address must be one of the
+  // system's preset branches for the chosen company + governorate. Aleppo / home
+  // delivery are left exactly as before (free text, never block-disabled).
+  const isBranchMode = formData.delivery_type !== 'delivery' && formData.customer_governorate !== 'حلب'
+  const addressInvalid = isBranchMode && (availableBranches.length === 0 || !availableBranches.includes(formData.customer_address))
+
   async function handleUpdate() {
-    if (!formData.customer_address) {
+    if (isBranchMode) {
+      if (availableBranches.length === 0) {
+        toast.error('لا توجد فروع مسجّلة لهذه الشركة في هذه المحافظة. اختر شركة أخرى أو أضِف الفرع من لوحة الشحن.')
+        return
+      }
+      if (!availableBranches.includes(formData.customer_address)) {
+        toast.error('يرجى اختيار العنوان بالتفصيل من القائمة')
+        return
+      }
+    } else if (!formData.customer_address) {
+      // Aleppo / home delivery — original validation, unchanged.
       toast.error('يرجى اختيار العنوان بالتفصيل')
       return
     }
@@ -203,7 +211,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                 <select
                   value={formData.shipping_company || ''}
                   onChange={(e) => {
-                    setFormData({ ...formData, shipping_company: e.target.value, customer_address: '' })
+                    setFormData({ ...formData, shipping_company: e.target.value })
                   }}
                   className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
                 >
@@ -222,6 +230,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
               <MapPin size={14} /> العنوان بالتفصيل <span className="text-error">*</span>
             </label>
             {formData.delivery_type === 'delivery' || formData.customer_governorate === 'حلب' ? (
+              /* Aleppo / home delivery → free text address (kept as-is). */
               <textarea
                 rows={2}
                 value={formData.customer_address}
@@ -229,33 +238,40 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                 placeholder="أدخل العنوان بالتفصيل..."
                 className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none"
               />
-            ) : (
+            ) : methodsLoading ? (
+              /* Still loading the company branches from the system. */
+              <div className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-4 flex items-center text-sm font-arabic text-secondary">
+                جارٍ تحميل العناوين...
+              </div>
+            ) : availableBranches.length > 0 ? (
+              /* Other governorates → choose ONLY from the system's branches for this
+                 company + governorate. No free typing. */
               <div className="relative">
                 <select
-                  value={formData.customer_address}
+                  value={availableBranches.includes(formData.customer_address) ? formData.customer_address : ''}
                   onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
                   className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container pr-4 pl-10 text-sm font-arabic focus:outline-none focus:border-primary/60 transition appearance-none"
                 >
-                  {!formData.customer_governorate ? (
-                    <option value="">يرجى اختيار المحافظة أولاً...</option>
-                  ) : availableBranches.length > 0 ? (
-                    <>
-                      <option value={formData.customer_address}>{formData.customer_address || 'اختر العنوان بالتفصيل...'}</option>
-                      {availableBranches.map((branch: string, idx: number) => {
-                        if (branch === formData.customer_address) return null; // Avoid duplicate
-                        return <option key={idx} value={branch}>{branch}</option>
-                      })}
-                      {formData.center_name && !availableBranches.includes(formData.center_name) && (
-                         <option value={formData.center_name}>{formData.center_name}</option> 
-                      )}
-                    </>
-                  ) : (
-                    <option value={formData.customer_address}>{formData.customer_address || (formData.center_name || 'لا تتوفر فروع حالياً لهده الخصائص')}</option>
-                  )}
+                  <option value="">اختر العنوان بالتفصيل...</option>
+                  {availableBranches.map((branch: string, idx: number) => (
+                    <option key={idx} value={branch}>{branch}</option>
+                  ))}
                 </select>
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary/40">
                   <ChevronDown size={16} />
                 </div>
+              </div>
+            ) : (
+              /* No system branch for this company + governorate → block saving and explain why. */
+              <div className="flex flex-col gap-1.5">
+                <div className="w-full h-11 rounded-xl border border-error/40 bg-error-container/20 px-4 flex items-center text-sm font-arabic font-bold text-error">
+                  لا يوجد
+                </div>
+                <p className="text-xs font-arabic text-error leading-relaxed">
+                  لا توجد فروع مُسجّلة لشركة الشحن المختارة في محافظة «{formData.customer_governorate || '—'}».
+                  لا يمكن حفظ التغييرات حتى تختار شركة لها فرع في هذه المحافظة، أو تُضيف الفرع من
+                  لوحة التحكم ▸ الشحن.
+                </p>
               </div>
             )}
           </div>
@@ -279,8 +295,9 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
         <div className="flex items-center gap-3 p-6 border-t border-outline-variant/20 bg-surface-container-lowest">
           <button
             onClick={handleUpdate}
-            disabled={updating}
-            className="flex-1 h-11 rounded-xl bg-primary text-white font-arabic font-bold flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-[0.98] disabled:opacity-60"
+            disabled={updating || addressInvalid}
+            title={addressInvalid ? 'لا يمكن الحفظ: لا يوجد عنوان متاح لهذه الشركة في هذه المحافظة' : undefined}
+            className="flex-1 h-11 rounded-xl bg-primary text-white font-arabic font-bold flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
             حفظ التغييرات

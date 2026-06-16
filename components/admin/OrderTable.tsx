@@ -68,33 +68,93 @@ export default function OrderTable({
 
   async function handleCopyOrder(e: React.MouseEvent, order: Order) {
     e.stopPropagation()
-    const shippingLabel =
-      order.delivery_type === 'delivery'
-        ? 'توصيل عادي (حلب)'
-        : (SHIPPING_DISPLAY[order.shipping_company!] || order.shipping_company || 'شحن للمحافظات')
-    const totalStr =
-      order.currency_used === 'USD'
-        ? formatPrice(order.total_usd, 'USD')
-        : formatPrice(order.total_syp, 'SYP')
+    const isAleppo = order.delivery_type === 'delivery'
+    const cur = order.currency_used === 'USD' ? 'USD' : 'SYP'
+    const pick = (syp: number, usd: number) => (cur === 'USD' ? usd : syp)
+    const shippingLabel = isAleppo
+      ? 'توصيل عادي (حلب)'
+      : (SHIPPING_DISPLAY[order.shipping_company!] || order.shipping_company || 'شحن للمحافظات')
     const pMethod = order.payment_method === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
 
-    const lines = [
+    const statusLabel = ORDER_STATUS_OPTIONS.find((o) => o.id === order.status)?.label ?? order.status
+
+    const lines: (string | null)[] = [
       `رقم الطلب: ${order.order_number}`,
       `الاسم: ${order.customer_full_name}`,
       `الهاتف: ${order.customer_phone}`,
       `المحافظة: ${order.customer_governorate}`,
       order.center_name ? `المنطقة/المركز: ${order.center_name}` : null,
-      order.customer_address ? `العنوان: ${order.customer_address}` : null,
+      // Aleppo orders carry a real street address; shipping orders to other
+      // governorates only use the center, so skip the duplicated العنوان line.
+      isAleppo && order.customer_address ? `العنوان: ${order.customer_address}` : null,
       `الشحن: ${shippingLabel}`,
       `طريقة الدفع: ${pMethod}`,
-      !isEmployee ? `الإجمالي: ${totalStr}` : null,
-      `الحالة: ${ORDER_STATUS_OPTIONS.find((o) => o.id === order.status)?.label ?? order.status}`,
-      `التاريخ: ${formatDate(order.created_at)}`,
-    ].filter(Boolean)
+    ]
 
-    const text = lines.join('\n')
+    if (isAleppo) {
+      // Aleppo: keep the original simple format (total includes delivery).
+      const totalStr = formatPrice(pick(order.total_syp, order.total_usd), cur)
+      if (!isEmployee) lines.push(`الإجمالي: ${totalStr}`)
+    } else {
+      // Other governorates: list each model with color/size/per-piece price,
+      // and show the total WITHOUT the shipping fee.
+      let items: { product_name: string; color: string | null; size: number | null; quantity: number; unit_price_syp: number; unit_price_usd: number }[] = []
+      try {
+        const res = await fetch(`/api/orders/${order.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          items = data.order?.items ?? []
+        }
+      } catch {
+        /* fall through — copy without items if the fetch fails */
+      }
+
+      if (items.length) {
+        lines.push('المنتجات:')
+        items.forEach((it, i) => {
+          lines.push(`${i + 1}. ${it.product_name}`)
+          const details: string[] = []
+          if (it.color) details.push(`اللون: ${it.color}`)
+          if (it.size != null) details.push(`النمرة: ${it.size}`)
+          if (details.length) lines.push(`   ${details.join(' - ')}`)
+          if (!isEmployee) {
+            const unit = pick(it.unit_price_syp, it.unit_price_usd)
+            const lineTotal = unit * it.quantity
+            lines.push(
+              it.quantity > 1
+                ? `   الكمية: ${it.quantity} × ${formatPrice(unit, cur)} = ${formatPrice(lineTotal, cur)}`
+                : `   الكمية: ${it.quantity} × ${formatPrice(unit, cur)}`
+            )
+          } else {
+            lines.push(`   الكمية: ${it.quantity}`)
+          }
+        })
+      }
+
+      if (!isEmployee) {
+        const shippingFee = order.shipping_fee_determined ? 0 : pick(order.shipping_fee_syp, order.shipping_fee_usd)
+        const totalWithoutShipping = pick(order.total_syp, order.total_usd) - shippingFee
+        lines.push(`الإجمالي بدون الشحن: ${formatPrice(totalWithoutShipping, cur)}`)
+      }
+    }
+
+    lines.push(`الحالة: ${statusLabel}`)
+    lines.push(`التاريخ: ${formatDate(order.created_at)}`)
+
+    const text = lines.filter(Boolean).join('\n')
     try {
-      await navigator.clipboard.writeText(text)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        textArea.style.position = 'fixed'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
       toast.success('تم نسخ تفاصيل الطلب')
     } catch {
       toast.error('تعذر النسخ')
