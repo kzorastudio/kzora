@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { ChevronRight, ChevronLeft, Trash2, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate, formatPrice } from '@/lib/utils'
+import { formatDate, formatPrice, toArabicNumerals } from '@/lib/utils'
 import StatusBadge from './StatusBadge'
 import DeleteOrderModal from './DeleteOrderModal'
 import { cn } from '@/lib/utils'
@@ -105,7 +105,9 @@ export default function OrderTable({
       if (items.length) {
         lines.push('المنتجات:')
         items.forEach((it, i) => {
-          lines.push(`${i + 1}. ${it.product_name}`)
+          // RLM (\u200F) forces the line right-to-left so the number stays on
+          // the right even when the product name is in English/Latin letters.
+          lines.push(`\u200F${toArabicNumerals(i + 1)}. ${it.product_name}`)
           const details: string[] = []
           if (it.color) details.push(`اللون: ${it.color}`)
           if (it.size != null) details.push(`النمرة: ${it.size}`)

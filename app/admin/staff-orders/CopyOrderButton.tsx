@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Order, OrderItem } from '@/types'
-import { SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate, formatCurrency } from '@/lib/utils'
+import { SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate, formatCurrency, toArabicNumerals } from '@/lib/utils'
 
 type OrderWithItems = Order & { items?: OrderItem[] }
 
@@ -61,7 +61,7 @@ export default function CopyOrderButton({ order, shippingMethods, className }: P
       if (items.length) {
         lines.push('المنتجات:')
         items.forEach((it, i) => {
-          lines.push(`${i + 1}. ${it.product_name}`)
+          lines.push(`\u200F${toArabicNumerals(i + 1)}. ${it.product_name}`)
           const details: string[] = []
           if (it.color) details.push(`اللون: ${it.color}`)
           if (it.size != null) details.push(`النمرة: ${it.size}`)

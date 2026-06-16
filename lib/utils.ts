@@ -137,6 +137,11 @@ export function normalizePhone(phone: string): string {
   if (clean.startsWith('0')) {
     clean = clean.substring(1);
   }
-  
   return clean;
+}
+
+export function toArabicNumerals(num: number | string): string {
+  const englishDigits = '0123456789'
+  const arabicDigits = '٠١٢٣٤٥٦٧٨٩'
+  return String(num).replace(/[0-9]/g, (w) => arabicDigits[englishDigits.indexOf(w)])
 }

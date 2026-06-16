@@ -4,7 +4,7 @@ import { ClipboardCheck, Copy } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import type { OrderFull } from '@/types'
-import { formatDate, formatPrice, SHIPPING_LABELS } from '@/lib/utils'
+import { formatDate, formatPrice, SHIPPING_LABELS, toArabicNumerals } from '@/lib/utils'
 
 import { useSession } from 'next-auth/react'
 
@@ -26,7 +26,7 @@ export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
         : (SHIPPING_LABELS[order.shipping_company!] || order.shipping_company || 'شحن خارجي')
 
       const itemsText = order.items.map((item, idx) => (
-        `${idx + 1}. ${item.product_name}\n   (اللون: ${item.color || '-'} | المقاس: ${item.size || '-'} | الكمية: ${item.quantity})`
+        `\u200F${toArabicNumerals(idx + 1)}. ${item.product_name}\n   (اللون: ${item.color || '-'} | المقاس: ${item.size || '-'} | الكمية: ${item.quantity})`
       )).join('\n')
 
       const totalPrice = order.currency_used === 'USD'

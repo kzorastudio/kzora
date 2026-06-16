@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { Search, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
-import { formatCurrency, cn, SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate } from '@/lib/utils'
+import { formatCurrency, cn, SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate, toArabicNumerals } from '@/lib/utils'
 import type { Currency, HomepageSettings } from '@/types'
 
 interface PickerProduct {
@@ -551,7 +551,7 @@ export default function NewStaffOrderPage() {
         if (cart.length) {
           msgLines.push('المنتجات:')
           cart.forEach((l, i) => {
-            msgLines.push(`${i + 1}. ${l.name}`)
+            msgLines.push(`\u200F${toArabicNumerals(i + 1)}. ${l.name}`)
             const details: string[] = []
             if (l.color) details.push(`اللون: ${l.color}`)
             if (l.size != null) details.push(`النمرة: ${l.size}`)
