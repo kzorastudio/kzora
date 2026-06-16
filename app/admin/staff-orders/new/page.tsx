@@ -542,28 +542,29 @@ export default function NewStaffOrderPage() {
         `طريقة الدفع: ${pMethod}`,
       ]
 
+      if (cart.length) {
+        msgLines.push('المنتجات:')
+        cart.forEach((l, i) => {
+          msgLines.push(`\u200F${toArabicNumerals(i + 1)}. ${l.name}`)
+          const details: string[] = []
+          if (l.color) details.push(`اللون: ${l.color}`)
+          if (l.size != null) details.push(`النمرة: ${l.size}`)
+          if (details.length) msgLines.push(`   ${details.join(' - ')}`)
+          const unit = isUSD ? l.unit_price_usd : l.unit_price_syp
+          msgLines.push(
+            l.quantity > 1
+              ? `   الكمية: ${l.quantity} × ${formatCurrency(unit, currency)} = ${formatCurrency(unit * l.quantity, currency)}`
+              : `   الكمية: ${l.quantity} × ${formatCurrency(unit, currency)}`
+          )
+        })
+      }
+
       if (isAleppoOrder) {
         const formattedTotal = isUSD
           ? formatCurrency(total, 'USD')
           : 'السعر : ' + formatCurrency(total, 'SYP')
         msgLines.push(`الإجمالي: ${formattedTotal}`)
       } else {
-        if (cart.length) {
-          msgLines.push('المنتجات:')
-          cart.forEach((l, i) => {
-            msgLines.push(`\u200F${toArabicNumerals(i + 1)}. ${l.name}`)
-            const details: string[] = []
-            if (l.color) details.push(`اللون: ${l.color}`)
-            if (l.size != null) details.push(`النمرة: ${l.size}`)
-            if (details.length) msgLines.push(`   ${details.join(' - ')}`)
-            const unit = isUSD ? l.unit_price_usd : l.unit_price_syp
-            msgLines.push(
-              l.quantity > 1
-                ? `   الكمية: ${l.quantity} × ${formatCurrency(unit, currency)} = ${formatCurrency(unit * l.quantity, currency)}`
-                : `   الكمية: ${l.quantity} × ${formatCurrency(unit, currency)}`
-            )
-          })
-        }
         const totalWithoutShipping = total - feeNum
         msgLines.push(`الإجمالي بدون الشحن: ${formatCurrency(totalWithoutShipping, currency)}`)
       }

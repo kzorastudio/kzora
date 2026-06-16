@@ -91,42 +91,39 @@ export default function OrderTable({
       `طريقة الدفع: ${pMethod}`,
     ]
 
-    if (isAleppo) {
-      // Aleppo: keep the original simple format (total includes delivery).
-      const totalStr = formatPrice(pick(order.total_syp, order.total_usd), cur)
-      if (!isEmployee) lines.push(`الإجمالي: ${totalStr}`)
-    } else {
-      // Other governorates: list each model with color/size/per-piece price,
-      // and show the total WITHOUT the shipping fee.
-      // Items arrive with the orders list response — NO async fetch here, so the
-      // clipboard write below stays inside the user's tap (required on mobile).
-      const items = (((order as any).items ?? []) as { product_name: string; color: string | null; size: number | null; quantity: number; unit_price_syp: number; unit_price_usd: number }[])
+    const items = (((order as any).items ?? []) as { product_name: string; color: string | null; size: number | null; quantity: number; unit_price_syp: number; unit_price_usd: number }[])
 
-      if (items.length) {
-        lines.push('المنتجات:')
-        items.forEach((it, i) => {
-          // RLM (\u200F) forces the line right-to-left so the number stays on
-          // the right even when the product name is in English/Latin letters.
-          lines.push(`\u200F${toArabicNumerals(i + 1)}. ${it.product_name}`)
-          const details: string[] = []
-          if (it.color) details.push(`اللون: ${it.color}`)
-          if (it.size != null) details.push(`النمرة: ${it.size}`)
-          if (details.length) lines.push(`   ${details.join(' - ')}`)
-          if (!isEmployee) {
-            const unit = pick(it.unit_price_syp, it.unit_price_usd)
-            const lineTotal = unit * it.quantity
-            lines.push(
-              it.quantity > 1
-                ? `   الكمية: ${it.quantity} × ${formatPrice(unit, cur)} = ${formatPrice(lineTotal, cur)}`
-                : `   الكمية: ${it.quantity} × ${formatPrice(unit, cur)}`
-            )
-          } else {
-            lines.push(`   الكمية: ${it.quantity}`)
-          }
-        })
-      }
+    if (items.length) {
+      lines.push('المنتجات:')
+      items.forEach((it, i) => {
+        // RLM (\u200F) forces the line right-to-left so the number stays on
+        // the right even when the product name is in English/Latin letters.
+        lines.push(`\u200F${toArabicNumerals(i + 1)}. ${it.product_name}`)
+        const details: string[] = []
+        if (it.color) details.push(`اللون: ${it.color}`)
+        if (it.size != null) details.push(`النمرة: ${it.size}`)
+        if (details.length) lines.push(`   ${details.join(' - ')}`)
+        if (!isEmployee) {
+          const unit = pick(it.unit_price_syp, it.unit_price_usd)
+          const lineTotal = unit * it.quantity
+          lines.push(
+            it.quantity > 1
+              ? `   الكمية: ${it.quantity} × ${formatPrice(unit, cur)} = ${formatPrice(lineTotal, cur)}`
+              : `   الكمية: ${it.quantity} × ${formatPrice(unit, cur)}`
+          )
+        } else {
+          lines.push(`   الكمية: ${it.quantity}`)
+        }
+      })
+    }
 
-      if (!isEmployee) {
+    if (!isEmployee) {
+      if (isAleppo) {
+        // Aleppo: keep the original simple format (total includes delivery).
+        const totalStr = formatPrice(pick(order.total_syp, order.total_usd), cur)
+        lines.push(`الإجمالي: ${totalStr}`)
+      } else {
+        // Other governorates: show the total WITHOUT the shipping fee.
         const shippingFee = order.shipping_fee_determined ? 0 : pick(order.shipping_fee_syp, order.shipping_fee_usd)
         const totalWithoutShipping = pick(order.total_syp, order.total_usd) - shippingFee
         lines.push(`الإجمالي بدون الشحن: ${formatPrice(totalWithoutShipping, cur)}`)
