@@ -98,16 +98,9 @@ export default function OrderTable({
     } else {
       // Other governorates: list each model with color/size/per-piece price,
       // and show the total WITHOUT the shipping fee.
-      let items: { product_name: string; color: string | null; size: number | null; quantity: number; unit_price_syp: number; unit_price_usd: number }[] = []
-      try {
-        const res = await fetch(`/api/orders/${order.id}`)
-        if (res.ok) {
-          const data = await res.json()
-          items = data.order?.items ?? []
-        }
-      } catch {
-        /* fall through — copy without items if the fetch fails */
-      }
+      // Items arrive with the orders list response — NO async fetch here, so the
+      // clipboard write below stays inside the user's tap (required on mobile).
+      const items = (((order as any).items ?? []) as { product_name: string; color: string | null; size: number | null; quantity: number; unit_price_syp: number; unit_price_usd: number }[])
 
       if (items.length) {
         lines.push('المنتجات:')
