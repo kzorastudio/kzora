@@ -526,50 +526,79 @@ export default function NewStaffOrderPage() {
         shippingCompanyName = shippingCompanyName.split('(')[0].trim()
       }
 
-      const formattedTotal =
-        currency === 'USD'
-          ? formatCurrency(total, 'USD')
-          : 'السعر : ' + formatCurrency(total, 'SYP')
-
       const pMethod = paymentMethod === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
+      const isAleppoOrder = deliveryType === 'delivery'
 
-      // Build the simple order-details message (same format as the "نسخ الطلب" button)
-      const textMessage = [
+      // Build the order-details message (same NEW format as the "نسخ الطلب" button).
+      const msgLines: (string | null)[] = [
         `رقم الطلب: ${data.orderNumber}`,
         `الاسم: ${fullName.trim()}`,
         `الهاتف: ${phone.trim()}`,
         `المحافظة: ${governorate}`,
         centerName.trim() ? `المنطقة/المركز: ${centerName.trim()}` : null,
-        address.trim() ? `العنوان: ${address.trim()}` : null,
+        // Only Aleppo carries a real street address; other governorates use the center.
+        isAleppoOrder && address.trim() ? `العنوان: ${address.trim()}` : null,
         `الشحن: ${shippingCompanyName || 'غير محدد'}`,
         `طريقة الدفع: ${pMethod}`,
-        `الإجمالي: ${formattedTotal}`,
-        `الحالة: ${ORDER_STATUS_LABELS['pending']}`,
-        `التاريخ: ${formatDate(new Date().toISOString())}`,
       ]
-        .filter(Boolean)
-        .join('\n')
 
-      if (textMessage) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(textMessage)
-          toast.success('تم نسخ رسالة الطلب بنجاح!')
-        } else {
-          const textArea = document.createElement('textarea')
-          textArea.value = textMessage
-          textArea.style.position = 'fixed'
-          document.body.appendChild(textArea)
-          textArea.focus()
-          textArea.select()
-          try {
-            document.execCommand('copy')
-            toast.success('تم نسخ رسالة الطلب بنجاح!')
-          } catch (err) {
-            toast.error('تعذر نسخ الرسالة تلقائياً')
-          }
-          document.body.removeChild(textArea)
+      if (isAleppoOrder) {
+        const formattedTotal = isUSD
+          ? formatCurrency(total, 'USD')
+          : 'السعر : ' + formatCurrency(total, 'SYP')
+        msgLines.push(`الإجمالي: ${formattedTotal}`)
+      } else {
+        if (cart.length) {
+          msgLines.push('المنتجات:')
+          cart.forEach((l, i) => {
+            msgLines.push(`${i + 1}. ${l.name}`)
+            const details: string[] = []
+            if (l.color) details.push(`اللون: ${l.color}`)
+            if (l.size != null) details.push(`النمرة: ${l.size}`)
+            if (details.length) msgLines.push(`   ${details.join(' - ')}`)
+            const unit = isUSD ? l.unit_price_usd : l.unit_price_syp
+            msgLines.push(
+              l.quantity > 1
+                ? `   الكمية: ${l.quantity} × ${formatCurrency(unit, currency)} = ${formatCurrency(unit * l.quantity, currency)}`
+                : `   الكمية: ${l.quantity} × ${formatCurrency(unit, currency)}`
+            )
+          })
         }
+        const totalWithoutShipping = total - feeNum
+        msgLines.push(`الإجمالي بدون الشحن: ${formatCurrency(totalWithoutShipping, currency)}`)
       }
+
+      msgLines.push(`الحالة: ${ORDER_STATUS_LABELS['pending']}`)
+      msgLines.push(`التاريخ: ${formatDate(new Date().toISOString())}`)
+
+      const textMessage = msgLines.filter(Boolean).join('\n')
+
+      // Auto-copy — best-effort, with a legacy fallback. A copy failure must never
+      // turn the successful order into an error, so it's isolated from the main flow.
+      const autoCopy = async (text: string): Promise<boolean> => {
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text)
+            return true
+          }
+        } catch { /* fall through to the legacy method */ }
+        try {
+          const ta = document.createElement('textarea')
+          ta.value = text
+          ta.style.position = 'fixed'
+          ta.style.opacity = '0'
+          document.body.appendChild(ta)
+          ta.focus()
+          ta.select()
+          const ok = document.execCommand('copy')
+          document.body.removeChild(ta)
+          return ok
+        } catch { return false }
+      }
+
+      const copied = await autoCopy(textMessage)
+      if (copied) toast.success('تم نسخ تفاصيل الطلب تلقائياً')
+      else toast('تم إنشاء الطلب — استخدم زر «نسخ الطلب» لنسخ التفاصيل', { icon: 'ℹ️' })
 
       router.push('/admin/staff-orders')
     } catch (e: any) {
