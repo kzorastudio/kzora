@@ -244,20 +244,98 @@ export async function PUT(
     }
 
     if (variants !== undefined) {
-      await supabaseAdmin.from('product_variants').delete().eq('product_id', id)
-      if (variants.length > 0) {
-        const { error: variantError } = await supabaseAdmin
-          .from('product_variants')
-          .insert(variants.map((v: any) => ({
-             product_id: id,
-             color: v.color || '',
-             size: v.size || 0,
-             quantity: v.quantity || 0,
-          })))
-        if (variantError) {
-          console.error('Variant insert error:', variantError)
-          throw new Error('Failed to insert variants: ' + variantError.message)
+      // ── Safe variant reconciliation (no destructive delete-all + re-insert) ──
+      // The old code wiped every row and re-inserted the quantities held in the
+      // admin form. If a sale happened while the form was open, that sale was
+      // silently overwritten — the #1 cause of "wrong inventory" across devices.
+      //
+      // Instead we diff against the CURRENT database state:
+      //   • combo the admin didn't touch  → leave the DB value (preserves sales)
+      //   • combo the admin changed, DB unchanged since load → apply the new value
+      //   • combo the admin changed AND a sale moved it meanwhile → CONFLICT (409)
+      //   • combo new to this save         → insert
+      //   • combo removed in the form      → delete
+      const norm = (s: any) => (s || '').toString().trim()
+      const keyOf = (c: any, s: any) => `${norm(c)}|${Number(s) || 0}`
+
+      const { data: currentRows } = await supabaseAdmin
+        .from('product_variants')
+        .select('id, color, size, quantity')
+        .eq('product_id', id)
+
+      const currentMap = new Map(
+        (currentRows || []).map((r: any) => [keyOf(r.color, r.size), r])
+      )
+      const incomingKeys = new Set(variants.map((v: any) => keyOf(v.color, v.size)))
+
+      // 1) Conflict detection — only for combos the admin actually edited.
+      const conflicts: { color: string; size: number; snapshot: number; current: number; your_value: number }[] = []
+      for (const v of variants) {
+        const orig = v.original_quantity
+        if (orig === null || orig === undefined) continue // brand-new combo, nothing to conflict with
+        const cur = currentMap.get(keyOf(v.color, v.size)) as any
+        const curQty = cur ? (cur.quantity ?? 0) : 0
+        const adminChanged = (v.quantity ?? 0) !== orig
+        const dbDrifted = curQty !== orig
+        if (adminChanged && dbDrifted) {
+          conflicts.push({
+            color: norm(v.color),
+            size: Number(v.size) || 0,
+            snapshot: orig,
+            current: curQty,
+            your_value: v.quantity ?? 0,
+          })
         }
+      }
+      if (conflicts.length > 0) {
+        return NextResponse.json(
+          {
+            error: 'تغيّر الجرد أثناء التعديل (حصل بيع). لم يتم الحفظ لحماية الأرقام.',
+            conflicts,
+          },
+          { status: 409 }
+        )
+      }
+
+      // 2) Apply changes row-by-row (no global wipe).
+      for (const v of variants) {
+        const k = keyOf(v.color, v.size)
+        const cur = currentMap.get(k) as any
+        const orig = v.original_quantity
+        const newQty = v.quantity ?? 0
+
+        if (!cur) {
+          // New combo → insert.
+          const { error: insErr } = await supabaseAdmin.from('product_variants').insert({
+            product_id: id,
+            color: norm(v.color),
+            size: Number(v.size) || 0,
+            quantity: newQty,
+          })
+          if (insErr) {
+            console.error('Variant insert error:', insErr)
+            throw new Error('Failed to insert variant: ' + insErr.message)
+          }
+        } else if (orig === null || orig === undefined || newQty !== orig) {
+          // Admin deliberately set a value and the DB hadn't drifted (checked above) → update.
+          const { error: updErr } = await supabaseAdmin
+            .from('product_variants')
+            .update({ quantity: newQty })
+            .eq('id', cur.id)
+          if (updErr) {
+            console.error('Variant update error:', updErr)
+            throw new Error('Failed to update variant: ' + updErr.message)
+          }
+        }
+        // else: admin left this combo untouched → keep the DB value (preserves concurrent sales).
+      }
+
+      // 3) Delete combos the admin removed from the form (color/size no longer offered).
+      const toDelete = (currentRows || []).filter(
+        (r: any) => !incomingKeys.has(keyOf(r.color, r.size))
+      )
+      for (const r of toDelete as any[]) {
+        await supabaseAdmin.from('product_variants').delete().eq('id', r.id)
       }
     }
 

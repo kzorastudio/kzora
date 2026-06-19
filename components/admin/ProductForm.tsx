@@ -245,10 +245,28 @@ export default function ProductForm({
         finalStockStatus = 'out_of_stock'
       }
 
+    // Build a snapshot of the quantities that were loaded into this form.
+    // The server reconciles against this so that any sale that happened while the
+    // form was open is never silently overwritten (see PUT /api/products/[id]).
+    const originalQtyMap = new Map(
+      (initialData?.variants ?? []).map((v: any) => [
+        `${(v.color || '').trim()}|${v.size || 0}`,
+        v.quantity ?? 0,
+      ])
+    )
+
     const payload = {
         ...data,
         colors: (data.colors || []).map(c => ({ ...c, name_ar: c.name_ar.trim() })),
-        variants: (data.variants || []).map(v => ({ ...v, color: v.color?.trim() })),
+        variants: (data.variants || []).map(v => {
+          const key = `${(v.color || '').trim()}|${v.size || 0}`
+          return {
+            ...v,
+            color: v.color?.trim(),
+            // null = a combo that didn't exist when the form loaded (brand new)
+            original_quantity: originalQtyMap.has(key) ? originalQtyMap.get(key) : null,
+          }
+        }),
         stock_status: finalStockStatus,
         category_id: data.category_id === '' ? null : data.category_id,
         images: updatedImages.map((img: UploadedImage, idx: number) => ({
@@ -267,7 +285,22 @@ export default function ProductForm({
         body: JSON.stringify(payload),
       })
 
-      if (!res.ok) throw new Error('حدث خطأ أثناء الحفظ')
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({} as any))
+        // 409 = the stock changed (a sale happened) while this form was open.
+        // We refuse to overwrite it; show the admin exactly what changed.
+        if (res.status === 409 && Array.isArray(errData.conflicts) && errData.conflicts.length > 0) {
+          const lines = errData.conflicts
+            .map((c: any) => `• ${c.color || ''} مقاس ${c.size}: كان ${c.snapshot}، صار ${c.current} (بيع جديد)`)
+            .join('\n')
+          toast.error(
+            `تغيّر الجرد أثناء التعديل — تم تجاهل الحفظ لحماية الأرقام:\n${lines}\nرجاءً أعد فتح الصفحة لتشوف الأرقام الحالية ثم عدّل من جديد.`,
+            { duration: 9000 }
+          )
+          return
+        }
+        throw new Error(errData.error || 'حدث خطأ أثناء الحفظ')
+      }
       onSuccess()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'حدث خطأ')

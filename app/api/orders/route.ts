@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
     const { data: dbProducts, error: productsError } = await supabaseAdmin
       .from('products')
       .select(`
-        id, name, price_syp, price_usd, discount_price_syp, discount_price_usd,
-        stock_status, is_published,
+        id, name, slug, price_syp, price_usd, discount_price_syp, discount_price_usd,
+        stock_status, is_published, categories(slug),
         multi_discount_enabled, multi_discount_2_items_syp, multi_discount_2_items_usd,
         multi_discount_3_plus_syp, multi_discount_3_plus_usd,
         colors:product_colors(name_ar, is_available),
@@ -538,7 +538,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Mark product out_of_stock if all variants reached 0
+    // Mark product out_of_stock if all variants reached 0, and refresh its pages.
     for (const pid of Array.from(productIdsToCheck)) {
       const { data: variants } = await supabaseAdmin
         .from('product_variants')
@@ -552,10 +552,22 @@ export async function POST(request: NextRequest) {
             .from('products')
             .update({ stock_status: 'out_of_stock' })
             .eq('id', pid)
-          revalidatePath('/')
-          revalidatePath('/products')
         }
       }
+
+      // Refresh this product's own cached page on EVERY sale (not just sell-out),
+      // so the size availability customers see updates immediately instead of
+      // waiting up to 5 minutes for ISR. The product/category data was fetched above.
+      const sold = productMap.get(pid) as any
+      if (sold?.slug) revalidatePath(`/product/${sold.slug}`)
+      const catSlug = sold?.categories?.slug
+      if (catSlug) revalidatePath(`/category/${catSlug}`)
+    }
+
+    // Listing pages aggregate many products — refresh them once if anything changed.
+    if (productIdsToCheck.size > 0) {
+      revalidatePath('/')
+      revalidatePath('/products')
     }
 
     // ── Step 14: Coupon increment (AFTER order succeeds, conditional & atomic) ─

@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
     const { data: dbProducts, error: productsError } = await supabaseAdmin
       .from('products')
       .select(`
-        id, name, price_syp, price_usd, discount_price_syp, discount_price_usd,
-        stock_status, is_published,
+        id, name, slug, price_syp, price_usd, discount_price_syp, discount_price_usd,
+        stock_status, is_published, categories(slug),
         multi_discount_enabled,
         multi_discount_2_items_syp,
         multi_discount_2_items_usd,
@@ -368,10 +368,17 @@ export async function POST(request: NextRequest) {
             const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
             if (totalStock <= 0) {
               await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
-              revalidatePath('/')
-              revalidatePath('/products')
             }
           }
+          // Refresh this product's own page on every sale so availability updates fast.
+          const sold = productMap.get(pid) as any
+          if (sold?.slug) revalidatePath(`/product/${sold.slug}`)
+          const catSlug = sold?.categories?.slug
+          if (catSlug) revalidatePath(`/category/${catSlug}`)
+        }
+        if (productIdsToCheck.size > 0) {
+          revalidatePath('/')
+          revalidatePath('/products')
         }
       }
     }
