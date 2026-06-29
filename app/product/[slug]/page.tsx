@@ -115,7 +115,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     getProductReviews(product.id),
   ])
 
-  const hasDiscountSchema = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
+  const hasDiscountSchema = (product.discount_price_syp != null && product.discount_price_syp < product.price_syp) ||
+                            (product.discount_price_usd != null && product.discount_price_usd < product.price_usd)
 
   // priceValidUntil — only meaningful when discounted. Default to 30 days from now.
   const priceValidUntil = (() => {

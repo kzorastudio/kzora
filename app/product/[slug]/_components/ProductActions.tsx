@@ -154,13 +154,29 @@ export default function ProductActions({ product, settings, activeColorName, ini
     }
   }, [effectiveMax, selectedColorId, selectedSize, quantity])
 
-  const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
-  const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
+  const hasDiscount = currency === 'SYP'
+    ? (product.discount_price_syp != null && product.discount_price_syp < product.price_syp)
+    : (product.discount_price_usd != null && product.discount_price_usd < product.price_usd)
+
+  const discountPct = hasDiscount
+    ? (currency === 'SYP'
+        ? getDiscountPercent(product.price_syp, product.discount_price_syp!)
+        : getDiscountPercent(product.price_usd, product.discount_price_usd!)
+      )
+    : 0
 
   const currentPriceSyp = product.discount_price_syp ?? product.price_syp
   const currentPriceUsd = product.discount_price_usd ?? product.price_usd
   const displayPrice = currency === 'SYP' ? currentPriceSyp : currentPriceUsd
   const originalPrice = currency === 'SYP' ? product.price_syp : product.price_usd
+
+  const hasDiscount2Items = currency === 'SYP'
+    ? (product.multi_discount_2_items_syp || 0) > 0
+    : (product.multi_discount_2_items_usd || 0) > 0 || (product.multi_discount_2_items_syp || 0) > 0
+
+  const hasDiscount3PlusItems = currency === 'SYP'
+    ? (product.multi_discount_3_plus_syp || 0) > 0
+    : (product.multi_discount_3_plus_usd || 0) > 0 || (product.multi_discount_3_plus_syp || 0) > 0
 
   // Multi-item discount calculation
   const multiItemDiscountSyp = useMemo(() => {
@@ -320,7 +336,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
         </div>
 
         {/* Multi-item discount banner — per product */}
-        {product.multi_discount_enabled && (
+        {product.multi_discount_enabled && (hasDiscount2Items || hasDiscount3PlusItems) && (
           <div className="bg-[#E8F5E9] border border-[#2E7D32]/20 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-right-2 duration-500">
             <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center shrink-0">
               <BadgePercent size={18} className="text-white" />
@@ -328,16 +344,20 @@ export default function ProductActions({ product, settings, activeColorName, ini
             <div className="flex flex-col gap-0.5">
               <p className="text-xs font-arabic font-bold text-[#1B5E20]">وفّر أكثر مع كزورا!</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span className="text-[11px] font-arabic text-[#1B5E20]/80">
-                  حسم <span className="font-bold underline">
-                    {formatCurrency(currency === 'SYP' ? (product.multi_discount_2_items_syp || 0) : (product.multi_discount_2_items_usd || ((product.multi_discount_2_items_syp || 0) * (currentPriceUsd/currentPriceSyp))), currency)}
-                  </span> عند شراء قطعتين
-                </span>
-                <span className="text-[11px] font-arabic text-[#1B5E20]/80">
-                  حسم <span className="font-bold underline">
-                    {formatCurrency(currency === 'SYP' ? (product.multi_discount_3_plus_syp || 0) : (product.multi_discount_3_plus_usd || ((product.multi_discount_3_plus_syp || 0) * (currentPriceUsd/currentPriceSyp))), currency)}
-                  </span> عند شراء 3 قطع+
-                </span>
+                {hasDiscount2Items && (
+                  <span className="text-[11px] font-arabic text-[#1B5E20]/80">
+                    حسم <span className="font-bold underline">
+                      {formatCurrency(currency === 'SYP' ? (product.multi_discount_2_items_syp || 0) : (product.multi_discount_2_items_usd || ((product.multi_discount_2_items_syp || 0) * (currentPriceUsd/currentPriceSyp))), currency)}
+                    </span> عند شراء قطعتين
+                  </span>
+                )}
+                {hasDiscount3PlusItems && (
+                  <span className="text-[11px] font-arabic text-[#1B5E20]/80">
+                    حسم <span className="font-bold underline">
+                      {formatCurrency(currency === 'SYP' ? (product.multi_discount_3_plus_syp || 0) : (product.multi_discount_3_plus_usd || ((product.multi_discount_3_plus_syp || 0) * (currentPriceUsd/currentPriceSyp))), currency)}
+                    </span> عند شراء 3 قطع+
+                  </span>
+                )}
               </div>
             </div>
           </div>

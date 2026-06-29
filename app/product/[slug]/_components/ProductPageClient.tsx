@@ -53,8 +53,14 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
       .catch(() => {})
   }, [product.id])
 
-  const hasDiscount = product.discount_price_syp != null && product.discount_price_syp < product.price_syp
-  const discountPct = hasDiscount ? getDiscountPercent(product.price_syp, product.discount_price_syp!) : 0
+  const hasDiscount = (product.discount_price_syp != null && product.discount_price_syp < product.price_syp) ||
+                      (product.discount_price_usd != null && product.discount_price_usd < product.price_usd)
+  const discountPct = hasDiscount
+    ? (product.discount_price_syp != null && product.discount_price_syp < product.price_syp
+        ? getDiscountPercent(product.price_syp, product.discount_price_syp)
+        : getDiscountPercent(product.price_usd, product.discount_price_usd!)
+      )
+    : 0
 
   const accordionContent = [
     { title: 'الوصف', content: product.description || 'لا يوجد وصف متاح.', defaultOpen: true },

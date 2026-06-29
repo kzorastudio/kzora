@@ -66,12 +66,15 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
 
   const currentPriceSyp = product.discount_price_syp ?? product.price_syp
   const currentPriceUsd = product.discount_price_usd ?? product.price_usd
-  const hasDiscount =
-    product.discount_price_syp != null &&
-    product.discount_price_syp < product.price_syp
+  const hasDiscount = currency === 'SYP'
+    ? (product.discount_price_syp != null && product.discount_price_syp < product.price_syp)
+    : (product.discount_price_usd != null && product.discount_price_usd < product.price_usd)
 
   const discountPct = hasDiscount
-    ? getDiscountPercent(product.price_syp, product.discount_price_syp!)
+    ? (currency === 'SYP'
+        ? getDiscountPercent(product.price_syp, product.discount_price_syp!)
+        : getDiscountPercent(product.price_usd, product.discount_price_usd!)
+      )
     : 0
 
   const displayPrice = currency === 'SYP' ? currentPriceSyp : currentPriceUsd
