@@ -162,9 +162,15 @@ export default function PrintPreparationPage() {
                 const sub = o.currency_used === 'USD' ? o.subtotal_usd : o.subtotal_syp
                 const ship = o.currency_used === 'USD' ? o.shipping_fee_usd : o.shipping_fee_syp
                 const tot = o.currency_used === 'USD' ? o.total_usd : o.total_syp
+                const discount = o.currency_used === 'USD' ? (o.discount_amount_usd || 0) : (o.discount_amount_syp || 0)
+                const hasDiscount = discount > 0
                 return (
                   <>
-                    <p className="text-gray-600">المجموع الفرعي: {sub.toLocaleString()} {cur}</p>
+                    {hasDiscount ? (
+                      <p className="text-gray-600">الإجمالي بعد الخصم: {Math.max(0, sub - discount).toLocaleString()} {cur}</p>
+                    ) : (
+                      <p className="text-gray-600">المجموع الفرعي: {sub.toLocaleString()} {cur}</p>
+                    )}
                     <p className="text-gray-600">الشحن: {ship.toLocaleString()} {cur}</p>
                     <p className="text-base font-black border-t border-gray-300 pt-1 mt-1">الإجمالي: {tot.toLocaleString()} {cur}</p>
                   </>
