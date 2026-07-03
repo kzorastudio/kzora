@@ -133,6 +133,11 @@ export interface Order {
   notes: string | null
   // Staff orders & bulk printing
   created_by_admin_id: string | null
+  creator?: {
+    id: string
+    name: string
+    role: string
+  } | null
   // Ghost/reservation order: created without deducting stock. On confirmation it
   // becomes a normal order and deducts inventory like any other order.
   is_reservation: boolean

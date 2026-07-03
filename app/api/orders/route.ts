@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin
       .from('orders')
-      .select('*, items:order_items(*)', { count: 'exact' })
+      .select('*, items:order_items(*), creator:created_by_admin_id(id, name, role)', { count: 'exact' })
       .order('created_at', { ascending: false })
 
     // ─── Role-based isolation (enforced server-side, never trust the client) ───

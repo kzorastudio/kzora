@@ -267,8 +267,26 @@ export default function OrderTable({
                 </span>
               )}
               <span>{order.customer_governorate}</span>
-              <div className="flex items-center gap-1.5 bg-surface-container-high px-2 py-0.5 rounded-lg border border-outline-variant/30 text-[10px] font-arabic font-bold text-on-surface-variant">
-                <span>{order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}</span>
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 bg-surface-container-high px-2 py-0.5 rounded-lg border border-outline-variant/30 text-[10px] font-arabic font-bold text-on-surface-variant">
+                  <span>{order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}</span>
+                </div>
+                <div className={cn(
+                  "flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-arabic font-bold",
+                  !order.creator 
+                    ? "bg-blue-50 text-blue-700 border-blue-200/60" 
+                    : order.creator.role === 'super_admin'
+                      ? "bg-amber-50 text-amber-700 border-amber-200/60"
+                      : "bg-purple-50 text-purple-700 border-purple-200/60"
+                )}>
+                  <span>
+                    {!order.creator 
+                      ? '🌐 المتجر' 
+                      : order.creator.role === 'super_admin'
+                        ? `👑 الأدمن (${order.creator.name})`
+                        : `👤 الموظف (${order.creator.name})`}
+                  </span>
+                </div>
               </div>
               <span>{formatDate(order.created_at)}</span>
             </div>
@@ -311,7 +329,7 @@ export default function OrderTable({
             <thead>
               <tr className="border-b border-outline-variant/40">
                 {selectable && <th className="px-3 py-3 w-10"></th>}
-                {['رقم الطلب','العميل','المحافظة','الإجمالي','الدفع','شركة الشحن','الحالة','التاريخ','الإجراءات'].map((col) => (
+                {['رقم الطلب','العميل','المحافظة','الإجمالي','الدفع','المصدر','شركة الشحن','الحالة','التاريخ','الإجراءات'].map((col) => (
                   <th key={col} className="px-4 py-3 text-right text-xs font-arabic font-semibold text-secondary uppercase tracking-wide whitespace-nowrap">{col}</th>
                 ))}
               </tr>
@@ -320,13 +338,13 @@ export default function OrderTable({
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-outline-variant/20 last:border-0">
-                    {Array.from({ length: 8 }).map((__, j) => (
+                    {Array.from({ length: selectable ? 11 : 10 }).map((__, j) => (
                       <td key={j} className="px-4 py-3"><div className="h-4 rounded bg-surface-container-high animate-pulse w-3/4" /></td>
                     ))}
                   </tr>
                 ))
               ) : orders.length === 0 ? (
-                <tr><td colSpan={selectable ? 10 : 9} className="px-4 py-16 text-center text-sm font-arabic text-secondary">لا توجد طلبات</td></tr>
+                <tr><td colSpan={selectable ? 11 : 10} className="px-4 py-16 text-center text-sm font-arabic text-secondary">لا توجد طلبات</td></tr>
               ) : (
                 orders.map((order) => (
                   <tr key={order.id} onClick={() => handleRowClick(order.id)}
@@ -367,6 +385,22 @@ export default function OrderTable({
                           : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                       )}>
                         {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={cn(
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold",
+                        !order.creator 
+                          ? "bg-blue-100 text-blue-800 border border-blue-200" 
+                          : order.creator.role === 'super_admin'
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : "bg-purple-100 text-purple-800 border border-purple-200"
+                      )}>
+                        {!order.creator 
+                          ? '🌐 المتجر' 
+                          : order.creator.role === 'super_admin'
+                            ? `👑 الأدمن (${order.creator.name})`
+                            : `👤 الموظف (${order.creator.name})`}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface-variant whitespace-nowrap">

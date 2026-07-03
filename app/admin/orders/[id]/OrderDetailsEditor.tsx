@@ -56,11 +56,22 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     return []
   }, [formData.customer_governorate, formData.shipping_company, shippingMethods])
 
+  // Check if the shipping settings are unchanged, allowing the original address to be considered valid
+  const shippingSettingsUnchanged = 
+    formData.customer_governorate === order.customer_governorate &&
+    formData.shipping_company === order.shipping_company &&
+    formData.delivery_type === ((order as any).delivery_type || 'shipping')
+
+  const isOriginalAddressValid = 
+    shippingSettingsUnchanged && 
+    formData.customer_address === order.customer_address && 
+    !!formData.customer_address
+
   // For shipping orders to non-Aleppo governorates, the address must be one of the
   // system's preset branches for the chosen company + governorate. Aleppo / home
   // delivery are left exactly as before (free text, never block-disabled).
   const isBranchMode = formData.delivery_type !== 'delivery' && formData.customer_governorate !== 'حلب'
-  const addressInvalid = isBranchMode && (availableBranches.length === 0 || !availableBranches.includes(formData.customer_address))
+  const addressInvalid = isBranchMode && !availableBranches.includes(formData.customer_address) && !isOriginalAddressValid
 
   async function handleUpdate() {
     if (isBranchMode) {
@@ -68,7 +79,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
         toast.error('لا توجد فروع مسجّلة لهذه الشركة في هذه المحافظة. اختر شركة أخرى أو أضِف الفرع من لوحة الشحن.')
         return
       }
-      if (!availableBranches.includes(formData.customer_address)) {
+      if (!availableBranches.includes(formData.customer_address) && !isOriginalAddressValid) {
         toast.error('يرجى اختيار العنوان بالتفصيل من القائمة')
         return
       }
@@ -211,7 +222,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                 <select
                   value={formData.shipping_company || ''}
                   onChange={(e) => {
-                    setFormData({ ...formData, shipping_company: e.target.value })
+                    setFormData({ ...formData, shipping_company: e.target.value, customer_address: '' })
                   }}
                   className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition"
                 >
@@ -248,10 +259,15 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                  company + governorate. No free typing. */
               <div className="relative">
                 <select
-                  value={availableBranches.includes(formData.customer_address) ? formData.customer_address : ''}
+                  value={availableBranches.includes(formData.customer_address) || (formData.customer_address === order.customer_address && shippingSettingsUnchanged) ? formData.customer_address : ''}
                   onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
                   className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container pr-4 pl-10 text-sm font-arabic focus:outline-none focus:border-primary/60 transition appearance-none"
                 >
+                  {!availableBranches.includes(order.customer_address) && shippingSettingsUnchanged && order.customer_address && (
+                    <option value={order.customer_address}>
+                      {order.customer_address} (العنوان الحالي)
+                    </option>
+                  )}
                   <option value="">اختر العنوان بالتفصيل...</option>
                   {availableBranches.map((branch: string, idx: number) => (
                     <option key={idx} value={branch}>{branch}</option>

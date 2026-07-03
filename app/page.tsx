@@ -176,7 +176,7 @@ export default async function HomePage() {
       <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-32 text-right">
         {/* SEO Accessibility H1 */}
         <h1 className="sr-only">
-          متجر كزورا Kzora للأحذية — أفضل متجر أحذية أونلاين في سوريا وحلب. أحذية رجالية، أحذية نسائية، أحذية رياضية، وأحذية جلد طبيعي فاخرة.
+          متجر كزورا Kzora للأحذية — أفضل متجر أحذية أونلاين في سوريا وحلب. أحذية رجالية ونسائية، كوتشيات رياضية (سبور وسنيكرز)، وأحذية جلد طبيعي فاخرة مع الدفع عند الاستلام والتوصيل لكل المحافظات.
         </h1>
 
         {/* 1. Hero Slider */}
@@ -261,10 +261,10 @@ export default async function HomePage() {
                   يعتبر متجر <span className="text-primary font-bold">كزورا Kzora</span> الوجهة الأولى لعشاق الأناقة والجودة في <span className="font-bold text-on-surface">سوريا</span>. نحن نفخر بتقديم تشكيلة واسعة من <span className="font-bold">الأحذية الرجالية الفاخرة</span> و <span className="font-bold">الأحذية النسائية العصرية</span> التي تناسب كافة الأذواق والمناسبات.
                 </p>
                 <p className="text-secondary font-arabic text-sm leading-relaxed mb-4">
-                  سواء كنت تبحث عن <span className="font-bold">أحذية رياضية (سبور)</span> مريحة للمشي والركض، أو <span className="font-bold">أحذية رسمية</span> للمناسبات الخاصة، أو حتى <span className="font-bold">أحذية طبية</span> توفر الراحة لقدميك، فإن كزورا توفر لك الأفضل بأعلى معايير الجودة وأنسب <span className="font-bold">أسعار الأحذية في سوريا</span>.
+                  سواء كنت تبحث عن <span className="font-bold">كوتشيات رياضية (سبور وسنيكرز)</span> مريحة للمشي والركض، أو <span className="font-bold">أحذية رسمية</span> للمناسبات الخاصة، أو <span className="font-bold">جزم وصنادل وأحذية كاجوال</span>، أو حتى <span className="font-bold">أحذية طبية</span> توفر الراحة لقدميك، فإن كزورا توفر لك الأفضل بأعلى معايير الجودة وأنسب <span className="font-bold">أسعار الأحذية في سوريا</span>.
                 </p>
                 <p className="text-secondary font-arabic text-sm leading-relaxed">
-                  نحن نتخذ من مدينة <span className="font-bold text-on-surface">حلب</span> مركزاً لنا وفخورون بخدمة زبائننا في كافة المحافظات (دمشق، حمص، حماة، اللاذقية، طرطوس) مع نظام توصيل سريع ودقيق. تسوق الآن عبر الإنترنت وتمتع بتجربة شراء أحذية سهلة وآمنة.
+                  نحن نتخذ من مدينة <span className="font-bold text-on-surface">حلب</span> مركزاً لنا وفخورون بخدمة زبائننا في كافة المحافظات (دمشق، حمص، حماة، اللاذقية، طرطوس، إدلب، دير الزور، الحسكة، القامشلي، درعا، السويداء) مع خدمة <span className="font-bold text-on-surface">الدفع عند الاستلام</span> ونظام توصيل سريع ودقيق. تسوق أحذيتك أونلاين الآن وتمتع بتجربة شراء سهلة وآمنة.
                 </p>
               </div>
               <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/30">
@@ -280,11 +280,11 @@ export default async function HomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    أحذية رياضية (سنيكرز) ماركات
+                    كوتشيات رياضية (سنيكرز وسبور)
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    صبابات ولحف جلد طبيعي
+                    صنادل وشباشب جلد طبيعي
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />

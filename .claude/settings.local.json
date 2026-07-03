@@ -69,7 +69,10 @@
       "Bash(git rev-list *)",
       "Bash(git merge *)",
       "Bash(git add *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "WebSearch",
+      "WebFetch(domain:www.kzora.co)",
+      "PowerShell(npx tsc --noEmit 2>&1)"
     ]
   }
 }

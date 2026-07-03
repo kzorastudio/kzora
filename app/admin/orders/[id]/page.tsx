@@ -28,7 +28,8 @@ async function getOrder(id: string): Promise<OrderFull | null> {
       `
       *,
       items:order_items(*),
-      status_history:order_status_history(*)
+      status_history:order_status_history(*),
+      creator:created_by_admin_id(id, name, role)
       `
     )
     .eq('id', id)
@@ -392,6 +393,16 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     <span className="text-secondary text-xs">طريقة الدفع</span>
                     <span className="text-[11px] font-arabic font-bold text-on-surface">
                       {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
+                    <span className="text-secondary text-xs">مصدر الطلب</span>
+                    <span className="text-[11px] font-arabic font-bold text-on-surface">
+                      {!(order as any).creator 
+                        ? '🌐 المتجر' 
+                        : (order as any).creator.role === 'super_admin'
+                          ? `👑 الأدمن (${(order as any).creator.name})`
+                          : `👤 الموظف (${(order as any).creator.name})`}
                     </span>
                   </div>
                   <div className="text-xs text-secondary text-center mt-1">
