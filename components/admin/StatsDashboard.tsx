@@ -471,17 +471,17 @@ export default function StatsDashboard({
   }
 
   return (
-    <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-6 md:gap-8 max-w-[1600px] mx-auto w-full">
+    <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-5 md:gap-8 max-w-[1600px] mx-auto w-full">
       {/* Upper Control Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-[2rem] border border-outline-variant/10 shadow-ambient">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 md:p-5 rounded-3xl md:rounded-[2rem] border border-outline-variant/10 shadow-ambient">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-[#FAF8F5] rounded-xl text-[#785600]">
+            <span className="p-2 bg-[#FAF8F5] rounded-xl text-[#785600] shrink-0">
               <BarChart3 size={20} />
             </span>
-            <h1 className="text-xl md:text-2xl font-arabic font-black text-[#1A1A1A]">الإحصائيات والتحليلات للمتجر</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-arabic font-black text-[#1A1A1A]">الإحصائيات والتحليلات للمتجر</h1>
           </div>
-          <p className="text-xs font-arabic text-secondary">
+          <p className="text-[11px] sm:text-xs font-arabic text-secondary">
             متابعة دقيقة للأداء المالي، المبيعات وحالة المخزون بشكل تفاعلي ومباشر.
           </p>
         </div>
@@ -546,9 +546,9 @@ export default function StatsDashboard({
       </div>
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Metric 1: Selected Period Revenue */}
-        <div className="bg-white rounded-[2.5rem] p-6 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
+        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-6 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">مبيعات الفترة المحددة</span>
             <span className="p-2 bg-green-50 text-green-600 rounded-2xl text-xs font-bold flex items-center gap-0.5">
@@ -578,7 +578,7 @@ export default function StatsDashboard({
         </div>
 
         {/* Metric 2: Current Month Total Sales (Regardless of Status) */}
-        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#333333] rounded-[2.5rem] p-6 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#333333] rounded-3xl md:rounded-[2.5rem] p-5 md:p-6 shadow-xl flex flex-col justify-between relative overflow-hidden group">
           <div className="relative z-10 flex items-center justify-between mb-4">
             <span className="text-[10px] font-arabic font-bold text-white/60 uppercase tracking-wider">مبيعات الشهر الحالي (الإجمالي)</span>
             <span className="p-1.5 bg-white/10 text-[#C5A059] rounded-xl text-[9px] font-arabic font-bold flex items-center gap-1">
@@ -609,7 +609,7 @@ export default function StatsDashboard({
         </div>
 
         {/* Metric 3: Total Pieces Sold */}
-        <div className="bg-white rounded-[2.5rem] p-6 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
+        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-6 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">القطع المباعة (الفترة)</span>
             <span className="p-2 bg-[#FAF8F5] text-[#785600] rounded-2xl text-xs font-bold flex items-center gap-1">
@@ -619,7 +619,7 @@ export default function StatsDashboard({
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-label font-black text-[#1A1A1A]">{kpiData.piecesSold}</span>
+              <span className="text-3xl md:text-4xl font-label font-black text-[#1A1A1A]">{kpiData.piecesSold}</span>
               <span className="text-xs font-arabic font-bold text-secondary">قطعة مباعة</span>
             </div>
             <span className="text-xs font-arabic text-secondary">
@@ -635,7 +635,7 @@ export default function StatsDashboard({
         </div>
 
         {/* Metric 4: Pieces In Stock (Total Inventory) */}
-        <div className="bg-white rounded-[2.5rem] p-6 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
+        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-6 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">المخزون المتوفر لدينا</span>
             <span className="p-2 bg-amber-50 text-amber-600 rounded-2xl text-xs font-bold flex items-center gap-1">
@@ -645,7 +645,7 @@ export default function StatsDashboard({
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-label font-black text-[#1A1A1A]">{stockStats.totalStock}</span>
+              <span className="text-3xl md:text-4xl font-label font-black text-[#1A1A1A]">{stockStats.totalStock}</span>
               <span className="text-xs font-arabic font-bold text-secondary">قطعة متوفرة</span>
             </div>
             <span className="text-xs font-arabic text-secondary">
@@ -661,30 +661,31 @@ export default function StatsDashboard({
       </div>
 
       {/* Main Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 md:gap-8">
         
         {/* Interactive SVG Sales Area Chart */}
-        <div className="xl:col-span-2 bg-white rounded-[2.5rem] p-6 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="xl:col-span-2 bg-white rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 md:mb-6">
             <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-arabic font-black text-[#1A1A1A]">حركة المبيعات والطلب عبر الزمن</h2>
-              <p className="text-xs font-arabic text-secondary">أداء الإيرادات بالـ ({currency === 'SYP' ? 'ليرة السورية' : 'الدولار الأمريكي'})</p>
+              <h2 className="text-base sm:text-lg font-arabic font-black text-[#1A1A1A]">حركة المبيعات والطلب عبر الزمن</h2>
+              <p className="text-[11px] sm:text-xs font-arabic text-secondary">أداء الإيرادات بالـ ({currency === 'SYP' ? 'ليرة السورية' : 'الدولار الأمريكي'})</p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-arabic text-secondary">
+            <div className="flex items-center gap-2 text-[11px] sm:text-xs font-arabic text-secondary">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-[#785600]" />
                 <span>الإيرادات النشطة</span>
               </div>
-              <span className="mx-2 text-divider">|</span>
+              <span className="mx-1 sm:mx-2 text-divider">|</span>
               <div className="flex items-center gap-1">
                 <Info size={12} className="text-secondary/60" />
-                <span>مرر الماوس للتفاصيل</span>
+                <span className="hidden sm:inline">مرر الماوس للتفاصيل</span>
+                <span className="sm:hidden">اضغط للتفاصيل</span>
               </div>
             </div>
           </div>
 
           {/* SVG Area Chart */}
-          <div className="relative flex-1 min-h-[260px] w-full mt-2">
+          <div className="relative flex-1 aspect-[16/10] sm:aspect-auto sm:min-h-[260px] w-full mt-2">
             {chartConfig.points.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-secondary font-arabic">
                 لا توجد بيانات مبيعات متوفرة لهذه الفترة.
@@ -819,16 +820,17 @@ export default function StatsDashboard({
                         </>
                       )}
                       
-                      {/* Interactive invisible hover block */}
-                      <rect 
-                        x={pt.x - (chartConfig.chartWidth / chartConfig.points.length) / 2} 
-                        y={chartConfig.paddingTop} 
-                        width={chartConfig.chartWidth / chartConfig.points.length} 
-                        height={chartConfig.chartHeight} 
-                        fill="transparent" 
+                      {/* Interactive invisible hover / touch block */}
+                      <rect
+                        x={pt.x - (chartConfig.chartWidth / chartConfig.points.length) / 2}
+                        y={chartConfig.paddingTop}
+                        width={chartConfig.chartWidth / chartConfig.points.length}
+                        height={chartConfig.chartHeight}
+                        fill="transparent"
                         className="cursor-pointer"
                         onMouseEnter={() => setHoveredIdx(idx)}
                         onMouseLeave={() => setHoveredIdx(null)}
+                        onTouchStart={() => setHoveredIdx(idx)}
                       />
                     </g>
                   ))}
@@ -872,7 +874,7 @@ export default function StatsDashboard({
         </div>
 
         {/* Top Governorates list */}
-        <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col">
+        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col">
           <div className="flex items-center gap-2 mb-6">
             <span className="p-2 bg-[#FAF8F5] rounded-xl text-[#785600]">
               <MapPin size={18} />
@@ -922,23 +924,23 @@ export default function StatsDashboard({
       </div>
 
       {/* Second Row: Distributions & Top Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8">
         
         {/* Top Selling Products Component */}
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-6 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <span className="p-2 bg-[#FAF8F5] rounded-xl text-[#785600]">
+        <div className="lg:col-span-2 bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col">
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="p-2 bg-[#FAF8F5] rounded-xl text-[#785600] shrink-0">
                 <Package size={18} />
               </span>
-              <div className="flex flex-col">
-                <h2 className="text-base md:text-lg font-arabic font-black text-[#1A1A1A]">المنتجات الأكثر طلباً ومبيعاً</h2>
+              <div className="flex flex-col min-w-0">
+                <h2 className="text-sm sm:text-base md:text-lg font-arabic font-black text-[#1A1A1A]">المنتجات الأكثر طلباً ومبيعاً</h2>
                 <p className="text-[10px] font-arabic text-secondary">الترتيب بحسب الكمية الكلية المباعة للفترة المحددة</p>
               </div>
             </div>
-            <Link 
+            <Link
               href="/admin/products"
-              className="text-xs font-arabic font-bold text-[#785600] hover:underline"
+              className="text-[11px] sm:text-xs font-arabic font-bold text-[#785600] hover:underline whitespace-nowrap shrink-0"
             >
               إدارة المنتجات
             </Link>
@@ -992,7 +994,7 @@ export default function StatsDashboard({
         </div>
 
         {/* Status Distribution Donut Chart */}
-        <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col justify-between">
+        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 shadow-ambient border border-outline-variant/10 flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-6">
             <span className="p-2 bg-[#FAF8F5] rounded-xl text-[#785600]">
               <Layers size={18} />
