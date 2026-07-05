@@ -130,8 +130,14 @@ export default async function AdminDashboardPage() {
                 </div>
                 <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                     <Link
-                        href="/admin/products/new"
+                        href="/admin/stats"
                         className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl bg-white text-[#785600] font-arabic font-black text-sm shadow-sm hover:bg-opacity-90 transition-all active:scale-95"
+                    >
+                        الإحصائيات والتحليلات 📊
+                    </Link>
+                    <Link
+                        href="/admin/products/new"
+                        className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl bg-white/10 text-white border border-white/20 font-arabic font-black text-sm hover:bg-white/25 transition-all active:scale-95"
                     >
                         إضافة منتج جديد
                     </Link>

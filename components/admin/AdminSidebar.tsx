@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Users,
   ClipboardList,
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin',            label: 'الرئيسية',         icon: LayoutDashboard, exact: true  },
+  { href: '/admin/stats',      label: 'الإحصائيات',       icon: BarChart3,        exact: false },
   { href: '/admin/products',   label: 'المنتجات',         icon: Package,          exact: false },
   { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false },
   { href: '/admin/staff-orders', label: 'الطلبيات اليدوية', icon: ClipboardList,  exact: false },
