@@ -10,6 +10,7 @@ import type { ProductFull, ProductColor, HomepageSettings } from '@/types'
 import ProductActions from './ProductActions'
 import AccordionItemClient from './AccordionItemClient'
 import ProductReviews from './ProductReviews'
+import { trackViewContent } from '@/lib/analytics'
 
 interface Props {
   product: ProductFull
@@ -43,7 +44,10 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
   React.useEffect(() => {
     // Increment view count
     fetch(`/api/products/${product.id}/view`, { method: 'POST' }).catch(() => {})
-    
+
+    // Meta Pixel + GA — تتبّع مشاهدة المنتج
+    trackViewContent(product)
+
     // Fetch review metadata
     fetch(`/api/products/${product.id}/reviews`)
       .then(res => res.json())

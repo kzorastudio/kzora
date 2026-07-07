@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -12,6 +12,7 @@ import CheckoutForm from '@/components/checkout/CheckoutForm'
 import OrderSummaryPanel from '@/components/checkout/OrderSummaryPanel'
 import { useCartStore } from '@/store/cartStore'
 import { useCurrencyStore } from '@/store/currencyStore'
+import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import { SHIPPING_LABELS } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
@@ -86,6 +87,15 @@ export default function CheckoutPage() {
       .then(d => setShippingMethods(d.methods || []))
       .catch(() => {})
   }, [])
+
+  // Meta Pixel + GA — تتبّع بدء إتمام الطلب (مرّة واحدة عند دخول الصفحة بسلة غير فارغة)
+  const initiateTracked = useRef(false)
+  useEffect(() => {
+    if (initiateTracked.current) return
+    if (items.length === 0) return
+    initiateTracked.current = true
+    trackInitiateCheckout(items, subtotalUsd(), subtotalSyp())
+  }, [items, subtotalUsd, subtotalSyp])
 
   const handleCouponApply = useCallback(
     (code: string, dSyp: number, dUsd: number) => {
@@ -244,6 +254,19 @@ export default function CheckoutPage() {
         }
 
         const { orderId, orderNumber } = data as { orderId: string; orderNumber: string }
+
+        // Meta Pixel + GA — تتبّع الشراء (نفس orderId يمنع التكرار مع حدث السيرفر CAPI)
+        {
+          const finalTotalUsd = Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
+          const finalTotalSyp = Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp - multiItemDiscountSyp + shippingFeeSyp)
+          const useUsd = finalTotalUsd > 0
+          trackPurchase(
+            orderId,
+            useUsd ? finalTotalUsd : finalTotalSyp,
+            items,
+            useUsd ? 'USD' : 'SYP'
+          )
+        }
 
         // Find shipping company display name dynamically
         const shippingSlug = (formData.shipping_company as string) ?? ''

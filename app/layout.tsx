@@ -6,6 +6,7 @@ import Providers from '@/components/Providers'
 import ScrollToTop from '@/components/layout/ScrollToTop'
 import VisitTracker from '@/components/analytics/VisitTracker'
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
+import MetaPixel from '@/components/analytics/MetaPixel'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -237,6 +238,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {process.env.NEXT_PUBLIC_GA_ID && (
             <GoogleAnalytics ga_id={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
+          {process.env.NEXT_PUBLIC_FB_PIXEL_ID && (
+            <MetaPixel pixel_id={process.env.NEXT_PUBLIC_FB_PIXEL_ID} />
           )}
           <VisitTracker />
           <ScrollToTop />

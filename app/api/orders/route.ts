@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
+import { sendPurchaseEvent } from '@/lib/metaCapi'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -599,6 +600,42 @@ export async function POST(request: NextRequest) {
         .from('loyalty_points')
         .update({ cycle_used: true })
         .in('id', loyaltyPointsToUpdate)
+    }
+
+    // ── Step 17: Meta Conversions API — server-side Purchase ──────────────────
+    // نرسل حدث الشراء من السيرفر لحظة تسجيل الطلب. هذا الأهم لأن العميل يغادر
+    // إلى الواتساب قبل أن يطلق بكسل المتصفح حدث Purchase. نفس الـ event_id
+    // (رقم الطلب) يمنع التكرار مع البكسل. فشل التتبّع لا يكسر إنشاء الطلب.
+    try {
+      const fbp = request.cookies.get('_fbp')?.value
+      const fbc = request.cookies.get('_fbc')?.value
+      const ip =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('x-real-ip') ||
+        undefined
+      const useUsd = (order.total_usd ?? 0) > 0
+      await sendPurchaseEvent({
+        orderId: order.id,
+        value: useUsd ? order.total_usd : order.total_syp,
+        currency: useUsd ? 'USD' : 'SYP',
+        customer: {
+          phone: order.customer_phone,
+          fullName: order.customer_full_name,
+          city: order.customer_governorate,
+        },
+        contents: sanitizedItems.map((i) => ({
+          id: i.product_id as string,
+          quantity: i.quantity,
+          item_price: useUsd ? i.unit_price_usd : i.unit_price_syp,
+        })),
+        clientUserAgent: request.headers.get('user-agent'),
+        clientIpAddress: ip,
+        fbp,
+        fbc,
+        eventSourceUrl: request.headers.get('referer'),
+      })
+    } catch (capiErr) {
+      console.error('Meta CAPI dispatch error:', capiErr)
     }
 
     return NextResponse.json(
