@@ -12,7 +12,7 @@ import CheckoutForm from '@/components/checkout/CheckoutForm'
 import OrderSummaryPanel from '@/components/checkout/OrderSummaryPanel'
 import { useCartStore } from '@/store/cartStore'
 import { useCurrencyStore } from '@/store/currencyStore'
-import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics'
+import { trackInitiateCheckout, trackGAEvent } from '@/lib/analytics'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import { SHIPPING_LABELS } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
@@ -255,17 +255,18 @@ export default function CheckoutPage() {
 
         const { orderId, orderNumber } = data as { orderId: string; orderNumber: string }
 
-        // Meta Pixel + GA — تتبّع الشراء (نفس orderId يمنع التكرار مع حدث السيرفر CAPI)
+        // GA فقط — نسجّل الطلب داخلياً هنا. أما حدث Purchase لفيس بوك فيُرسَل من
+        // السيرفر عند تأكيدك للطلب (مبيعات مؤكّدة فقط)، وليس عند تعبئة الفورم.
         {
           const finalTotalUsd = Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
           const finalTotalSyp = Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp - multiItemDiscountSyp + shippingFeeSyp)
           const useUsd = finalTotalUsd > 0
-          trackPurchase(
-            orderId,
-            useUsd ? finalTotalUsd : finalTotalSyp,
-            items,
-            useUsd ? 'USD' : 'SYP'
-          )
+          trackGAEvent('purchase', {
+            transaction_id: orderId,
+            value: useUsd ? finalTotalUsd : finalTotalSyp,
+            currency: useUsd ? 'USD' : 'SYP',
+            items: items.map((i) => ({ item_id: i.id, item_name: i.name, price: i.price_syp, quantity: i.quantity })),
+          })
         }
 
         // Find shipping company display name dynamically

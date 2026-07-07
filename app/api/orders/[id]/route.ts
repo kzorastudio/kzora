@@ -3,6 +3,7 @@ import { getAuthSession } from '@/lib/getSession'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { OrderStatus } from '@/types'
 import { normalizePhone } from '@/lib/utils'
+import { sendPurchaseEvent } from '@/lib/metaCapi'
 
 // ─── GET /api/orders/[id] ─────────────────────────────────────────────────────
 // Admin only. Returns full order with items and status history.
@@ -186,6 +187,50 @@ export async function PUT(
         }
       } catch (e) {
         console.error('[ORDER_UPDATE_API] Loyalty logic soft fail:', e)
+      }
+
+      // ─── Meta Conversions API — Purchase عند تأكيد الطلب ──────────────────
+      // نرسل الحدث مرّة واحدة فقط عندما يصبح الطلب مؤكّداً (أو مشحوناً/مُسلّماً)،
+      // مستخدمين بيانات المتصفّح المخزّنة وقت الإنشاء. fb_purchase_sent يمنع
+      // الإرسال المكرّر. Soft-fail: لا يؤثّر على تحديث الطلب إطلاقاً.
+      const confirmedStatuses = ['confirmed', 'shipped', 'delivered']
+      if (confirmedStatuses.includes(status) && !(updatedOrder as any).fb_purchase_sent) {
+        try {
+          const { data: fbItems } = await supabaseAdmin
+            .from('order_items')
+            .select('product_id, quantity, unit_price_syp, unit_price_usd')
+            .eq('order_id', id)
+
+          const useUsd = ((updatedOrder as any).total_usd ?? 0) > 0
+          await sendPurchaseEvent({
+            orderId: id,
+            value: useUsd ? (updatedOrder as any).total_usd : (updatedOrder as any).total_syp,
+            currency: useUsd ? 'USD' : 'SYP',
+            customer: {
+              phone: (updatedOrder as any).customer_phone,
+              fullName: (updatedOrder as any).customer_full_name,
+              city: (updatedOrder as any).customer_governorate,
+            },
+            contents: (fbItems ?? []).map((i: any) => ({
+              id: i.product_id,
+              quantity: i.quantity,
+              item_price: useUsd ? i.unit_price_usd : i.unit_price_syp,
+            })),
+            clientUserAgent: (updatedOrder as any).fb_client_ua,
+            clientIpAddress: (updatedOrder as any).fb_client_ip,
+            fbp: (updatedOrder as any).fb_fbp,
+            fbc: (updatedOrder as any).fb_fbc,
+            eventSourceUrl: (updatedOrder as any).fb_event_source_url,
+          })
+
+          // علّم الطلب أنّ الحدث أُرسل حتى لا يتكرّر
+          await supabaseAdmin
+            .from('orders')
+            .update({ fb_purchase_sent: true })
+            .eq('id', id)
+        } catch (e) {
+          console.error('[ORDER_UPDATE_API] Meta CAPI Purchase soft fail:', e)
+        }
       }
     }
 
