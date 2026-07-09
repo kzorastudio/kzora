@@ -16,6 +16,8 @@ export default function MetaPixel({ pixel_id }: { pixel_id: string }) {
   const pathname = usePathname()
   const initialized = useRef(false)
 
+  if (!pixel_id) return null
+
   // Fire PageView on client-side route changes (fbq is initialised by the inline
   // script below on first load; SPA navigations need a manual PageView).
   useEffect(() => {
