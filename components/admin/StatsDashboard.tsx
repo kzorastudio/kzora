@@ -520,7 +520,7 @@ export default function StatsDashboard({
       </div>
 
       {/* Timeframe Filter Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
         {[
           { key: 'current_month', label: 'الشهر الحالي' },
           { key: 'last_month', label: 'الشهر الماضي' },
@@ -685,7 +685,7 @@ export default function StatsDashboard({
           </div>
 
           {/* SVG Area Chart */}
-          <div className="relative flex-1 aspect-[16/10] sm:aspect-auto sm:min-h-[260px] w-full mt-2">
+          <div className="relative flex-1 aspect-[4/3] sm:aspect-auto sm:min-h-[260px] w-full mt-2">
             {chartConfig.points.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-secondary font-arabic">
                 لا توجد بيانات مبيعات متوفرة لهذه الفترة.
@@ -707,7 +707,6 @@ export default function StatsDashboard({
                   {/* Horizontal Gridlines */}
                   {[0, 0.25, 0.5, 0.75, 1].map((pct, idx) => {
                     const y = chartConfig.paddingTop + chartConfig.chartHeight * (1 - pct)
-                    const labelVal = chartConfig.maxVal * pct
                     return (
                       <g key={idx} className="opacity-40">
                         <line 
@@ -719,14 +718,6 @@ export default function StatsDashboard({
                           strokeWidth="1" 
                           strokeDasharray="4 4" 
                         />
-                        <text 
-                          x={chartConfig.paddingLeft - 10} 
-                          y={y + 4} 
-                          textAnchor="end" 
-                          className="font-label font-bold text-[10px] fill-secondary"
-                        >
-                          {formatShorthand(labelVal)}
-                        </text>
                       </g>
                     )
                   })}
@@ -750,25 +741,6 @@ export default function StatsDashboard({
                     stroke="#E4E2DF" 
                     strokeWidth="1.5" 
                   />
-
-                  {/* X Axis Labels */}
-                  {chartConfig.points.map((pt, idx) => {
-                    // Show thin label layout for density
-                    const skipCount = Math.ceil(chartConfig.points.length / 8)
-                    if (idx % skipCount !== 0 && idx !== chartConfig.points.length - 1) return null
-
-                    return (
-                      <text
-                        key={idx}
-                        x={pt.x}
-                        y={chartConfig.height - 15}
-                        textAnchor="middle"
-                        className="font-arabic font-bold text-[9px] fill-secondary"
-                      >
-                        {pt.label}
-                      </text>
-                    )
-                  })}
 
                   {/* Animated Area Gradient */}
                   <motion.path 
@@ -836,6 +808,49 @@ export default function StatsDashboard({
                   ))}
                 </svg>
 
+                {/* Y-axis Labels (HTML Overlay) */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {[0, 0.25, 0.5, 0.75, 1].map((pct, idx) => {
+                    const y = chartConfig.paddingTop + chartConfig.chartHeight * (1 - pct)
+                    const labelVal = chartConfig.maxVal * pct
+                    return (
+                      <div 
+                        key={idx}
+                        className="absolute font-label font-bold text-[9px] sm:text-[10px] text-secondary/80 select-none"
+                        style={{
+                          left: '4px',
+                          top: `${(y / chartConfig.height) * 100}%`,
+                          transform: 'translateY(-50%)',
+                        }}
+                      >
+                        {formatShorthand(labelVal)}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* X-axis Labels (HTML Overlay) */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {chartConfig.points.map((pt, idx) => {
+                    const skipCount = Math.ceil(chartConfig.points.length / 8)
+                    if (idx % skipCount !== 0 && idx !== chartConfig.points.length - 1) return null
+
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute font-arabic font-bold text-[9px] text-secondary/80 select-none"
+                        style={{
+                          left: `${(pt.x / chartConfig.width) * 100}%`,
+                          top: `${((chartConfig.height - 15) / chartConfig.height) * 100}%`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        {pt.label}
+                      </div>
+                    )
+                  })}
+                </div>
+
                 {/* HTML Tooltip (Absolute overlayed box) */}
                 <AnimatePresence>
                   {hoveredIdx !== null && chartConfig.points[hoveredIdx] && (
@@ -846,8 +861,12 @@ export default function StatsDashboard({
                       className="absolute p-3 rounded-2xl bg-white border border-outline-variant/20 shadow-ambient-lg text-right z-10 flex flex-col gap-1 pointer-events-none"
                       style={{
                         left: `${(chartConfig.points[hoveredIdx].x / chartConfig.width) * 100}%`,
-                        top: `${(chartConfig.points[hoveredIdx].y / chartConfig.height) * 100 - 30}%`,
-                        transform: 'translate(-50%, -100%)',
+                        top: `calc(${(chartConfig.points[hoveredIdx].y / chartConfig.height) * 100}% - 12px)`,
+                        transform: hoveredIdx < 2 
+                          ? 'translate(-10%, -100%)' 
+                          : hoveredIdx > chartConfig.points.length - 3 
+                            ? 'translate(-90%, -100%)' 
+                            : 'translate(-50%, -100%)',
                       }}
                     >
                       <span className="text-[10px] font-arabic font-bold text-secondary">{chartConfig.points[hoveredIdx].label}</span>
@@ -946,7 +965,41 @@ export default function StatsDashboard({
             </Link>
           </div>
 
-          <div className="flex-1 overflow-x-auto">
+          {/* Mobile cards view */}
+          <div className="flex flex-col divide-y divide-outline-variant/10 md:hidden mt-2">
+            {topProducts.length === 0 ? (
+              <div className="text-center py-10 text-secondary font-arabic text-xs">
+                لا تتوفر تفاصيل مبيعات منتجات بعد.
+              </div>
+            ) : (
+              topProducts.map((prod, idx) => (
+                <div key={idx} className="flex flex-col gap-2 py-4 hover:bg-[#FAF8F5] transition-colors">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 rounded-full bg-gradient-to-br from-[#785600] to-[#C5A059]/40 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="font-arabic font-black text-[#1A1A1A] text-xs truncate">{prod.name}</span>
+                    </div>
+                    <span className="px-2.5 py-1 bg-[#FAF8F5] border border-divider text-[#1A1A1A] font-bold rounded-lg text-[11px] shrink-0">
+                      {prod.qty} قطعة
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] pt-1">
+                    <span className="text-secondary font-arabic">الإيراد بالليرة:</span>
+                    <span className="font-label font-bold text-[#1A1A1A]">{formatCurrency(prod.revSYP, 'SYP')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-secondary font-arabic">الإيراد بالدولار:</span>
+                    <span className="font-label font-bold text-[#785600]">{formatCurrency(prod.revUSD, 'USD')}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop table view */}
+          <div className="hidden md:block flex-1 overflow-x-auto">
             <table className="w-full text-right border-collapse min-w-[500px]">
               <thead>
                 <tr className="border-b border-divider bg-[#FAF8F5]/50 text-[10px] text-secondary font-arabic">
