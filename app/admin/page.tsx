@@ -2,20 +2,25 @@ import { Package, ShoppingBag, Clock, AlertTriangle, TrendingUp, Info, DollarSig
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
-import RefreshButton from '@/components/admin/RefreshButton'
+import DashboardOverview from '@/components/admin/DashboardOverview'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 import StatsCard from '@/components/admin/StatsCard'
 import StatusBadge from '@/components/admin/StatusBadge'
-import { formatDate, formatPrice } from '@/lib/utils'
+import { formatDate, formatPrice, getSyriaDateParts, formatDateTime } from '@/lib/utils'
 import type { Order } from '@/types'
 
 async function getDashboardStats() {
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const { year, month, day } = getSyriaDateParts(now)
+  
+  // Syria is UTC+3. Start of day in Syria is 00:00:00 local time, which is 21:00:00 UTC the previous day.
+  const todayStartUTC = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
+  todayStartUTC.setUTCHours(todayStartUTC.getUTCHours() - 3)
+  const todayStart = todayStartUTC.toISOString()
+
   const last15m = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
-  const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
   const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -26,12 +31,8 @@ async function getDashboardStats() {
     { count: confirmedOrders },
     { count: deliveredOrders },
     { count: lowStockProducts },
-    { data: revenueData },
-    { data: todayOrders },
-    { data: visits15m },
-    { data: visits24h },
-    { data: visits7d },
-    { data: visits30d },
+    { data: allOrdersData },
+    { data: visitsData },
   ] = await Promise.all([
     supabaseAdmin.from('products').select('id', { count: 'exact', head: true }),
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
@@ -39,29 +40,56 @@ async function getDashboardStats() {
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'confirmed'),
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'delivered'),
     supabaseAdmin.from('products').select('id', { count: 'exact', head: true }).in('stock_status', ['low_stock', 'out_of_stock']),
-    // Revenue for delivered orders
-    supabaseAdmin.from('orders').select('total_syp, total_usd').eq('status', 'delivered'),
-    // Orders today
-    supabaseAdmin.from('orders').select('total_syp, total_usd').gte('created_at', todayStart),
-    // Visitors
-    supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last15m),
-    supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last24h),
-    supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last7d),
-    supabaseAdmin.from('site_visits').select('session_id').gte('visited_at', last30d),
+    // Fetch all active/delivered/pending orders to compute timeframes in-memory
+    supabaseAdmin.from('orders').select('total_syp, total_usd, status, created_at').limit(100000),
+    // Fetch last 30 days visits in one query (prevent the 1000 postgrest limit cap)
+    supabaseAdmin.from('site_visits').select('session_id, visited_at').gte('visited_at', last30d).limit(100000),
   ])
 
-  // Calculate Revenue
-  const totalRevenueSYP = (revenueData || []).reduce((sum, o) => sum + Number(o.total_syp), 0)
-  const totalRevenueUSD = (revenueData || []).reduce((sum, o) => sum + Number(o.total_usd), 0)
-  
-  const todayRevenueSYP = (todayOrders || []).reduce((sum, o) => sum + Number(o.total_syp), 0)
-  const todayRevenueUSD = (todayOrders || []).reduce((sum, o) => sum + Number(o.total_usd), 0)
+  const allOrders = allOrdersData || []
+  const visits = visitsData || []
 
-  // Unique session IDs
-  const unique15m = new Set((visits15m || []).map(v => v.session_id)).size
-  const unique24h = new Set((visits24h || []).map(v => v.session_id)).size
-  const unique7d = new Set((visits7d || []).map(v => v.session_id)).size
-  const unique30d = new Set((visits30d || []).map(v => v.session_id)).size
+  // Filter function for visits
+  const filterVisits = (since: Date) => visits.filter(v => new Date(v.visited_at) >= since)
+
+  const activeNowVisits = filterVisits(new Date(now.getTime() - 15 * 60 * 1000))
+  const todayVisits = filterVisits(new Date(todayStart))
+  const last7dVisits = filterVisits(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000))
+  const last30dVisits = visits
+
+  // Unique session counters
+  const uniqueNow = new Set(activeNowVisits.map(v => v.session_id)).size
+  const uniqueToday = new Set(todayVisits.map(v => v.session_id)).size
+  const unique7d = new Set(last7dVisits.map(v => v.session_id)).size
+  const unique30d = new Set(last30dVisits.map(v => v.session_id)).size
+
+  // Helper to compute period sales & orders count
+  const getPeriodStats = (since: string | null) => {
+    const ordersFiltered = since 
+      ? allOrders.filter(o => o.created_at >= since)
+      : allOrders
+
+    // We filter for active/delivered/pending. We exclude cancelled/failed orders.
+    const activeOrders = ordersFiltered.filter(o => o.status !== 'cancelled' && o.status !== 'failed')
+
+    const syp = activeOrders.reduce((sum, o) => sum + Number(o.total_syp), 0)
+    const usd = activeOrders.reduce((sum, o) => sum + Number(o.total_usd), 0)
+
+    return {
+      syp,
+      usd,
+      count: activeOrders.length
+    }
+  }
+
+  const todayStats = getPeriodStats(todayStart)
+  const last7dStats = getPeriodStats(last7d)
+  const last30dStats = getPeriodStats(last30d)
+  const allTimeStats = getPeriodStats(null)
+
+  // Calculate overall delivered revenue
+  const totalRevenueSYP = allOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_syp), 0)
+  const totalRevenueUSD = allOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + Number(o.total_usd), 0)
 
   return {
     totalProducts: totalProducts ?? 0,
@@ -70,18 +98,16 @@ async function getDashboardStats() {
     confirmedOrders: confirmedOrders ?? 0,
     deliveredOrders: deliveredOrders ?? 0,
     lowStockProducts: lowStockProducts ?? 0,
+    activeNow: uniqueNow,
     revenue: {
       totalSYP: totalRevenueSYP,
-      totalUSD: totalRevenueUSD,
-      todaySYP: todayRevenueSYP,
-      todayUSD: todayRevenueUSD,
-      todayCount: todayOrders?.length || 0
+      totalUSD: totalRevenueUSD
     },
-    visitorStats: {
-      activeNow: unique15m,
-      last24h: { unique: unique24h, total: visits24h?.length || 0 },
-      last7d: { unique: unique7d, total: visits7d?.length || 0 },
-      last30d: { unique: unique30d, total: visits30d?.length || 0 }
+    periods: {
+      today: { ...todayStats, uniqueVisitors: uniqueToday },
+      last7d: { ...last7dStats, uniqueVisitors: unique7d },
+      last30d: { ...last30dStats, uniqueVisitors: unique30d },
+      allTime: { ...allTimeStats, uniqueVisitors: unique30d }
     }
   }
 }
@@ -113,7 +139,7 @@ export default async function AdminDashboardPage() {
   ])
 
   return (
-    <div className="flex flex-col min-h-screen" dir="rtl">
+    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden" dir="rtl">
       <AdminHeader />
 
       <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-5 md:gap-8 max-w-[1600px] mx-auto w-full">
@@ -155,113 +181,26 @@ export default async function AdminDashboardPage() {
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-black/10 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
         </div>
 
-        {/* Visitor Statistics Section */}
-        {/* Today's Pulse - Real-time Highlights */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 shadow-ambient border border-outline-variant/10 overflow-hidden relative">
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-arabic font-black text-[#1A1A1A]">نشاط المتجر اليوم</h2>
-                  <p className="text-xs font-arabic text-secondary">ماذا حدث منذ بداية اليوم وحتى الآن</p>
-                </div>
-                <RefreshButton />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="bg-[#FAF8F5] p-5 rounded-3xl border border-divider flex flex-col gap-1">
-                  <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">مبيعات اليوم</span>
-                  <div className="flex flex-col">
-                    <span className="text-lg font-label font-black text-[#1A1A1A]">{formatPrice(stats.revenue.todaySYP, 'SYP')}</span>
-                    <span className="text-xs font-label font-bold text-[#785600]">{formatPrice(stats.revenue.todayUSD, 'USD')}</span>
-                  </div>
-                </div>
-                <div className="bg-[#FAF8F5] p-5 rounded-3xl border border-divider flex flex-col gap-1">
-                  <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">طلبات اليوم</span>
-                  <span className="text-2xl font-label font-black text-[#1A1A1A]">{stats.revenue.todayCount}</span>
-                  <span className="text-[10px] font-arabic text-[#9E9890]">زيادة إيجابية</span>
-                </div>
-                 <div className="bg-[#FAF8F5] p-5 rounded-3xl border border-divider flex flex-col gap-1">
-                  <span className="text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider">زوار المتجر (الآن)</span>
-                  <span className="text-2xl font-label font-black text-[#1A1A1A]">{stats.visitorStats.activeNow}</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-arabic text-green-600 font-bold">نشط حالياً</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Real-time Dashboard Overview (Interactive Client Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-w-0">
+          <div className="lg:col-span-2 flex flex-col w-full min-w-0">
+            <DashboardOverview stats={stats} />
           </div>
 
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#333333] rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
-             <div className="relative z-10 h-full flex flex-col justify-between">
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-white/60 font-arabic text-[10px] font-bold uppercase tracking-widest">إجمالي الأرباح المستلمة</h3>
-                  <div className="flex flex-col gap-1 mt-2">
-                    <span className="text-3xl font-label font-black text-white">{formatPrice(stats.revenue.totalSYP, 'SYP')}</span>
-                    <span className="text-lg font-label font-bold text-[#C5A059]">{formatPrice(stats.revenue.totalUSD, 'USD')}</span>
-                  </div>
-                </div>
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <p className="text-white/40 text-[10px] font-arabic leading-relaxed">
-                    يتم احتساب هذه الأرباح فقط من الطلبات التي تم تعليمها كـ <span className="text-white font-bold">"تم التوصيل"</span>.
-                  </p>
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#333333] rounded-3xl p-5 md:p-8 shadow-xl relative overflow-hidden group flex flex-col justify-between min-h-[200px] h-full">
+             <div className="relative z-10 flex flex-col gap-1.5">
+                <h3 className="text-white/60 font-arabic text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">إجمالي الأرباح المستلمة</h3>
+                <div className="flex flex-col gap-1 mt-2">
+                  <span className="text-base sm:text-2xl md:text-3xl font-label font-black text-white">{formatPrice(stats.revenue.totalSYP, 'SYP').replace('السعر : ', '')}</span>
+                  <span className="text-[10px] sm:text-sm font-label font-bold text-[#C5A059]">{formatPrice(stats.revenue.totalUSD, 'USD').replace('السعر : ', '')}</span>
                 </div>
              </div>
-             <DollarSign className="absolute -bottom-6 -right-6 text-white/5 w-40 h-40 transform -rotate-12 group-hover:scale-110 transition-transform" />
-          </div>
-        </div>
-
-        {/* Visitor Statistics Details */}
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-ambient border border-outline-variant/10">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-arabic font-black text-[#1A1A1A]">تحليل الزيارات التفصيلي</h2>
-              <p className="text-xs font-arabic text-secondary">مراقبة حركة الزوار عبر الفترات الزمنية</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-arabic font-bold text-secondary">آخر ٢٤ ساعة</span>
-                <Info size={14} className="text-secondary/40" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last24h.unique}</span>
-                  <span className="text-xs font-arabic font-bold text-secondary">شخص</span>
-                </div>
-                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الحركات: {stats.visitorStats.last24h.total}</span>
-              </div>
-            </div>
-            {/* Last 7 Days */}
-            <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-arabic font-bold text-secondary">آخر أسبوع</span>
-                <Info size={14} className="text-secondary/40" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last7d.unique}</span>
-                  <span className="text-xs font-arabic font-bold text-secondary">شخص</span>
-                </div>
-                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الحركات: {stats.visitorStats.last7d.total}</span>
-              </div>
-            </div>
-            {/* Last 30 Days */}
-            <div className="bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 rounded-3xl border border-[#E8E3DB] flex flex-col gap-3 group hover:border-[#785600]/30 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-arabic font-bold text-secondary">آخر شهر</span>
-                <Info size={14} className="text-secondary/40" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-label font-black text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{stats.visitorStats.last30d.unique}</span>
-                  <span className="text-xs font-arabic font-bold text-secondary">شخص</span>
-                </div>
-                <span className="text-[10px] font-arabic text-[#9E9890] mt-1">إجمالي الحركات: {stats.visitorStats.last30d.total}</span>
-              </div>
-            </div>
+             <div className="relative z-10 mt-6 pt-6 border-t border-white/10">
+                <p className="text-white/40 text-[9px] sm:text-[10px] font-arabic leading-relaxed">
+                  يتم احتساب هذه الأرباح فقط من الطلبات التي تم تعليمها كـ <span className="text-white font-bold">"تم التوصيل"</span>.
+                </p>
+             </div>
+             <DollarSign className="absolute -bottom-6 -right-6 text-white/5 w-32 h-32 sm:w-40 sm:h-40 transform -rotate-12 group-hover:scale-110 transition-transform" />
           </div>
         </div>
 
@@ -331,7 +270,7 @@ export default async function AdminDashboardPage() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-[#9E9890]">
                   <span dir="ltr">{order.customer_phone}</span>
-                  <span>{formatDate(order.created_at)}</span>
+                  <span>{formatDateTime(order.created_at)}</span>
                 </div>
               </Link>
             ))}
@@ -370,7 +309,7 @@ export default async function AdminDashboardPage() {
                     </td>
                     <td className="px-8 py-5 whitespace-nowrap"><StatusBadge status={order.status} /></td>
                     <td className="px-8 py-5">
-                      <span className="text-[11px] font-arabic font-bold text-[#1A1A1A]">{formatDate(order.created_at)}</span>
+                      <span className="text-[11px] font-arabic font-bold text-[#1A1A1A]">{formatDateTime(order.created_at)}</span>
                     </td>
                   </tr>
                 ))}

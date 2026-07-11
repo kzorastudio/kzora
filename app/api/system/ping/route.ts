@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'missing fields' }, { status: 400 })
     }
 
-    // Basic bot/crawler filtering
-    const isBot = /bot|crawler|spider|google|bing|yandex|slurp|duckduckbot|facebookexternalhit|linkedinbot|embedly|lighthouse|headless|screenshot|preview|whatsapp/i.test(ua)
+    // Basic bot/crawler filtering (enhanced with automated HTTP clients)
+    const isBot = /bot|crawler|spider|google|bing|yandex|slurp|duckduckbot|facebookexternalhit|linkedinbot|embedly|lighthouse|headless|screenshot|preview|whatsapp|python|curl|wget|axios|http/i.test(ua)
     
     if (isBot) {
       return NextResponse.json({ success: true, skipped: 'bot' })

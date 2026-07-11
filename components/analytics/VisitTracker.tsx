@@ -27,10 +27,20 @@ export default function VisitTracker() {
       trackedPaths.current.add(pathname)
 
       try {
-        let visitorId = localStorage.getItem('kzora_visitor_id')
+        let visitorId = null
+        try {
+          visitorId = localStorage.getItem('kzora_visitor_id')
+        } catch (e) {
+          // localStorage blocked (e.g. incognito mode)
+        }
+
         if (!visitorId) {
           visitorId = crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15)
-          localStorage.setItem('kzora_visitor_id', visitorId)
+          try {
+            localStorage.setItem('kzora_visitor_id', visitorId)
+          } catch (e) {
+            // localStorage write blocked
+          }
         }
 
         // Use sendBeacon for reliability (won't be cancelled on navigation)

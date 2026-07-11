@@ -93,11 +93,74 @@ export function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength).trimEnd() + '...'
 }
 
-// Format date in Arabic
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ar-SY', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  })
+// Format date in Arabic (Syrian Timezone)
+export function formatDate(dateStr: string | Date): string {
+  try {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    return date.toLocaleDateString('ar-SY', {
+      timeZone: 'Asia/Damascus',
+      year: 'numeric', month: 'long', day: 'numeric',
+    })
+  } catch (e) {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    return date.toLocaleDateString('ar-SY', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    })
+  }
+}
+
+// Format date and time in Arabic (Syrian Timezone)
+export function formatDateTime(dateStr: string | Date): string {
+  try {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    return date.toLocaleString('ar-SY', {
+      timeZone: 'Asia/Damascus',
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    })
+  } catch (e) {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    return date.toLocaleString('ar-SY', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    })
+  }
+}
+
+// Get date parts adjusted to Syria timezone (Asia/Damascus)
+export function getSyriaDateParts(dateInput: string | Date | number) {
+  const date = new Date(dateInput)
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Damascus',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    })
+    const parts = formatter.formatToParts(date)
+    const partMap = Object.fromEntries(parts.map(p => [p.type, p.value]))
+    return {
+      year: parseInt(partMap.year),
+      month: parseInt(partMap.month) - 1, // 0-indexed to match JS getMonth()
+      day: parseInt(partMap.day),
+      hour: parseInt(partMap.hour),
+      minute: parseInt(partMap.minute),
+      second: parseInt(partMap.second),
+    }
+  } catch (e) {
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      day: date.getDate(),
+      hour: date.getHours(),
+      minute: date.getMinutes(),
+      second: date.getSeconds(),
+    }
+  }
 }
 
 // Check if product is new (within 14 days)

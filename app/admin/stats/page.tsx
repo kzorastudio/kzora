@@ -15,12 +15,15 @@ export default async function AdminStatsPage() {
     redirect('/admin/products')
   }
 
-  // Fetch orders, order items, product variants, and products in parallel
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+
+  // Fetch orders, order items, product variants, products, and site visits in parallel
   const [
     { data: ordersData },
     { data: orderItemsData },
     { data: variantsData },
-    { data: productsData }
+    { data: productsData },
+    { data: visitsData }
   ] = await Promise.all([
     supabaseAdmin
       .from('orders')
@@ -36,21 +39,29 @@ export default async function AdminStatsPage() {
       .select('product_id, color, size, quantity'),
     supabaseAdmin
       .from('products')
-      .select('id, name, price_syp, price_usd, stock_status')
+      .select('id, name, price_syp, price_usd, stock_status'),
+    supabaseAdmin
+      .from('site_visits')
+      .select('session_id, page_path, user_agent, visited_at')
+      .gte('visited_at', ninetyDaysAgo)
+      .order('visited_at', { ascending: true })
+      .limit(100000) // Increase limit to fetch up to 100k visits and avoid the 1000-cap bug
   ])
 
   const orders = ordersData || []
   const orderItems = orderItemsData || []
   const variants = variantsData || []
   const products = productsData || []
+  const visits = visitsData || []
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface" dir="rtl">
+    <div className="flex flex-col min-h-screen bg-surface w-full max-w-full overflow-x-hidden" dir="rtl">
       <StatsDashboard 
         initialOrders={orders} 
         initialOrderItems={orderItems} 
         initialVariants={variants} 
         initialProducts={products} 
+        initialVisits={visits}
       />
     </div>
   )
