@@ -31,6 +31,23 @@ export default function MetaPixel({ pixel_id }: { pixel_id: string }) {
     }
   }, [pathname])
 
+  // التقاط fbclid من رابط الإعلان وحفظه كـ _fbc.
+  // على iOS تُمسح كوكيز الجافاسكريبت بعد 7 أيام، فنحفظ نسخة في localStorage
+  // أيضاً ليبقى ربط الطلب بنقرة الإعلان ممكناً حتى لو تأخّر الشراء — بدون هذا
+  // يخسر فيس بوك نسب جزء كبير من التحويلات إلى إعلاناتها.
+  useEffect(() => {
+    try {
+      const fbclid = new URLSearchParams(window.location.search).get('fbclid')
+      if (!fbclid) return
+      const fbc = `fb.1.${Date.now()}.${fbclid}`
+      localStorage.setItem('_kz_fbc', fbc)
+      const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('_fbc='))
+      if (!hasCookie) {
+        document.cookie = `_fbc=${fbc}; max-age=7776000; path=/; SameSite=Lax`
+      }
+    } catch {}
+  }, [pathname])
+
   return (
     <>
       <Script

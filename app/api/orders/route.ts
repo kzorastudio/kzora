@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
+import { sendPurchaseEvent } from '@/lib/metaCapi'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -601,28 +602,64 @@ export async function POST(request: NextRequest) {
         .in('id', loyaltyPointsToUpdate)
     }
 
-    // ── Step 17: Store Meta browser data for a deferred Purchase event ────────
-    // لا نرسل Purchase الآن — بل نخزّن بيانات متصفّح الزبون (خاصة fbc = معرّف
-    // نقرة الإعلان) على الطلب. يُرسَل حدث Purchase لاحقاً عند تأكيد الطلب من لوحة
-    // الأدمن (PUT /api/orders/[id])، فيتعلّم فيس بوك من المبيعات المؤكّدة فقط.
-    // Soft-fail: إن لم تكن أعمدة fb_* موجودة بعد، لا يتأثّر إنشاء الطلب إطلاقاً.
+    // ── Step 17: Meta CAPI — Purchase فور تأكيد الزبون للطلب ─────────────────
+    // يُرسَل حدث Purchase من السيرفر مباشرة لحظة ضغط "تأكيد الطلب"، بنفس
+    // event_id (رقم الطلب) الذي يستخدمه بكسل المتصفح فلا يُحسب الحدث مرّتين.
+    // هكذا يصل الحدث لفيس بوك حتى لو حُجب البكسل أو غادر الزبون إلى واتساب.
+    // Soft-fail: أي فشل هنا يُسجَّل فقط ولا يؤثّر على إنشاء الطلب إطلاقاً.
     try {
       const ip =
         request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
         request.headers.get('x-real-ip') ||
         null
+      // الكوكيز أولاً، ثم القيم المرسلة من المتصفح في جسم الطلب كاحتياط
+      // (iOS يمسح كوكيز الجافاسكريبت بعد 7 أيام لكن localStorage يبقى)
+      const fbp = request.cookies.get('_fbp')?.value ?? body.fbp ?? null
+      const fbc = request.cookies.get('_fbc')?.value ?? body.fbc ?? null
+      const clientUa = request.headers.get('user-agent')
+      const sourceUrl = request.headers.get('referer')
+
+      // نخزّن بيانات المتصفّح على الطلب (تبقى مفيدة للمراجعة وللطلبات القديمة)
       await supabaseAdmin
         .from('orders')
         .update({
-          fb_fbp: request.cookies.get('_fbp')?.value ?? null,
-          fb_fbc: request.cookies.get('_fbc')?.value ?? null,
+          fb_fbp: fbp,
+          fb_fbc: fbc,
           fb_client_ip: ip,
-          fb_client_ua: request.headers.get('user-agent'),
-          fb_event_source_url: request.headers.get('referer'),
+          fb_client_ua: clientUa,
+          fb_event_source_url: sourceUrl,
         })
         .eq('id', order.id)
+
+      const useUsd = (totalUsd ?? 0) > 0
+      await sendPurchaseEvent({
+        orderId: order.id,
+        value: useUsd ? totalUsd : totalSyp,
+        currency: useUsd ? 'USD' : 'SYP',
+        customer: {
+          phone: customer.phone,
+          fullName: customer.full_name,
+          city: customer.governorate,
+        },
+        contents: sanitizedItems.map((item) => ({
+          id: item.product_id,
+          quantity: item.quantity,
+          item_price: useUsd ? item.unit_price_usd : item.unit_price_syp,
+        })),
+        clientUserAgent: clientUa,
+        clientIpAddress: ip,
+        fbp,
+        fbc,
+        eventSourceUrl: sourceUrl,
+      })
+
+      // علّم الطلب أنّ الحدث أُرسل حتى لا يُعاد إرساله عند تأكيد الأدمن لاحقاً
+      await supabaseAdmin
+        .from('orders')
+        .update({ fb_purchase_sent: true })
+        .eq('id', order.id)
     } catch (fbErr) {
-      console.error('Meta browser-data store soft fail:', fbErr)
+      console.error('Meta CAPI Purchase-at-creation soft fail:', fbErr)
     }
 
     return NextResponse.json(

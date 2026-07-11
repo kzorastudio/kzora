@@ -12,7 +12,13 @@ import CheckoutForm from '@/components/checkout/CheckoutForm'
 import OrderSummaryPanel from '@/components/checkout/OrderSummaryPanel'
 import { useCartStore } from '@/store/cartStore'
 import { useCurrencyStore } from '@/store/currencyStore'
-import { trackInitiateCheckout, trackGAEvent } from '@/lib/analytics'
+import {
+  trackInitiateCheckout,
+  trackPurchase,
+  trackAddPaymentInfo,
+  setFbAdvancedMatching,
+  getFbBrowserData,
+} from '@/lib/analytics'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
 import { SHIPPING_LABELS } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
@@ -210,7 +216,26 @@ export default function CheckoutPage() {
 
       setIsSubmitting(true)
 
+      // Advanced Matching — نمرّر بيانات العميل للبكسل (يهشّرها بنفسه) قبل إطلاق
+      // أحداث AddPaymentInfo و Purchase، فترتفع جودة المطابقة لدى ميتا.
+      setFbAdvancedMatching({
+        phone: formData.phone,
+        fullName: formData.full_name,
+        city: formData.governorate ?? undefined,
+      })
+
+      // الإجماليات النهائية (تُستخدم في أحداث التتبّع أدناه)
+      const finalTotalUsd = Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
+      const finalTotalSyp = Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp - multiItemDiscountSyp + shippingFeeSyp)
+      const useUsd = finalTotalUsd > 0
+
+      // AddPaymentInfo — الزبون أكمل بياناته وضغط تأكيد الطلب
+      trackAddPaymentInfo(items, useUsd ? finalTotalUsd : finalTotalSyp, useUsd ? 'USD' : 'SYP')
+
       try {
+        // معرّفات فيس بوك (fbp/fbc) تُرسل مع الطلب كاحتياط إن لم تصل الكوكيز
+        const fbData = getFbBrowserData()
+
         const payload: CreateOrderPayload = {
           items: items.map((item) => ({
             product_id:    item.id,
@@ -237,6 +262,8 @@ export default function CheckoutPage() {
           coupon_code:      couponCode,
           currency_used:    currency,
           notes:            formData.notes ?? undefined,
+          fbp:              fbData.fbp,
+          fbc:              fbData.fbc,
         }
 
 
@@ -255,19 +282,14 @@ export default function CheckoutPage() {
 
         const { orderId, orderNumber } = data as { orderId: string; orderNumber: string }
 
-        // GA فقط — نسجّل الطلب داخلياً هنا. أما حدث Purchase لفيس بوك فيُرسَل من
-        // السيرفر عند تأكيدك للطلب (مبيعات مؤكّدة فقط)، وليس عند تعبئة الفورم.
-        {
-          const finalTotalUsd = Math.max(0, parseFloat((sub_usd - discountUsd - loyaltyDiscountUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
-          const finalTotalSyp = Math.max(0, sub_syp - discountSyp - loyaltyDiscountSyp - multiItemDiscountSyp + shippingFeeSyp)
-          const useUsd = finalTotalUsd > 0
-          trackGAEvent('purchase', {
-            transaction_id: orderId,
-            value: useUsd ? finalTotalUsd : finalTotalSyp,
-            currency: useUsd ? 'USD' : 'SYP',
-            items: items.map((i) => ({ item_id: i.id, item_name: i.name, price: i.price_syp, quantity: i.quantity })),
-          })
-        }
+        // Purchase — يُطلق فوراً عند ضغط "تأكيد الطلب" على البكسل (المتصفح) وعلى
+        // GA معاً. eventID = رقم الطلب ليُطابق حدث السيرفر (CAPI) فلا يُحسب مرّتين.
+        trackPurchase(
+          orderId,
+          useUsd ? finalTotalUsd : finalTotalSyp,
+          items,
+          useUsd ? 'USD' : 'SYP'
+        )
 
         // Find shipping company display name dynamically
         const shippingSlug = (formData.shipping_company as string) ?? ''

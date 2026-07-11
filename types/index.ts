@@ -425,6 +425,9 @@ export interface CreateOrderPayload {
   coupon_code?: string
   currency_used: Currency
   notes?: string
+  /** معرّفات فيس بوك من المتصفح — احتياط إن لم تصل الكوكيز مع الطلب */
+  fbp?: string
+  fbc?: string
 }
 
 export interface CouponValidationResult {

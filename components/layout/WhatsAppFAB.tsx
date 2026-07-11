@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { trackContact } from '@/lib/analytics'
 
 interface WhatsAppFABProps {
   /** WhatsApp phone number in international format without + e.g. "963991234567" */
@@ -35,6 +36,7 @@ export function WhatsAppFAB({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackContact()}
       aria-label="تواصل معنا على واتساب"
       className={cn(
         // Fixed position — bottom-left because RTL (start side is right in Arabic, but FAB conventionally sits bottom-left in LTR)

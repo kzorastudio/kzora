@@ -11,6 +11,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { MobileMenu } from './MobileMenu'
 
 import { supabase } from '@/lib/supabase'
+import { trackSearch } from '@/lib/analytics'
 import type { Category } from '@/types'
 
 const FIXED_LINKS_START = [
@@ -58,6 +59,7 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     (e: React.FormEvent) => {
       e.preventDefault()
       if (query.trim()) {
+        trackSearch(query.trim())
         router.push(`/products?search=${encodeURIComponent(query.trim())}`)
         onClose()
       }

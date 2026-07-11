@@ -69,10 +69,17 @@ export async function sendPurchaseEvent(input: PurchaseEventInput): Promise<void
   try {
     const userData: Record<string, unknown> = {}
     const ph = hashPhone(input.customer.phone)
-    const fn = hash(input.customer.fullName?.split(' ')[0])
-    const ct = hash(input.customer.city)
-    if (ph) userData.ph = [ph]
+    const nameParts = input.customer.fullName?.trim().split(/\s+/) ?? []
+    const fn = hash(nameParts[0])
+    const ln = nameParts.length > 1 ? hash(nameParts.slice(1).join(' ')) : undefined
+    const ct = hash(input.customer.city?.replace(/\s+/g, ''))
+    if (ph) {
+      userData.ph = [ph]
+      // رقم الهاتف المهشّر كمعرّف خارجي ثابت — يحسّن مطابقة نفس العميل عبر الطلبات
+      userData.external_id = [ph]
+    }
     if (fn) userData.fn = [fn]
+    if (ln) userData.ln = [ln]
     if (ct) userData.ct = [ct]
     userData.country = [hash('sy')]
     if (input.clientUserAgent) userData.client_user_agent = input.clientUserAgent
