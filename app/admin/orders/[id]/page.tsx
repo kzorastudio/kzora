@@ -232,6 +232,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                         <StatusBadge status={entry.status} />
                         <p className="text-xs font-arabic text-secondary mt-1">
                           {new Date(entry.changed_at).toLocaleString('ar-SY', {
+                            timeZone: 'Asia/Damascus',
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',

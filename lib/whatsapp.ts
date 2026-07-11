@@ -78,7 +78,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
     `${EMOJI.GIFT} *طلب جديد من متجر كزورا* ${EMOJI.GIFT}`,
     ``,
     `${EMOJI.ID} *رقم الطلب:* #${order.orderNumber}`,
-    `${EMOJI.CALENDAR} *التاريخ:* ${new Date().toLocaleDateString('ar-SY')}`,
+    `${EMOJI.CALENDAR} *التاريخ:* ${new Date().toLocaleDateString('ar-SY', { timeZone: 'Asia/Damascus' })}`,
     DIVIDER,
     ``,
     `${EMOJI.USER} *معلومات الزبون*`,

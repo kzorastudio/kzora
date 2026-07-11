@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const printed = searchParams.get('printed')        // 'true' | 'false'
     const source  = searchParams.get('source')         // 'store' | 'staff' | admin_id
+    const company = searchParams.get('company')        // shipping_company slug (e.g. 'karam') or 'delivery'
     const offset = (page - 1) * limit
 
     const role = (session as any).role as 'super_admin' | 'employee' | undefined
@@ -52,6 +53,8 @@ export async function GET(request: NextRequest) {
     if (printed === 'false') query = query.eq('printed', false)
 
     if (status) query = query.eq('status', status)
+    // Filter by shipping company (slug), or 'delivery' for local delivery orders.
+    if (company) query = query.eq('shipping_company', company)
     if (search) {
       query = query.or(
         `order_number.ilike.%${search}%,customer_full_name.ilike.%${search}%,customer_phone.ilike.%${search}%`

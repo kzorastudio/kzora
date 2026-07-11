@@ -153,12 +153,14 @@ function OrderCard({ order }: { order: OrderFull }) {
       : formatPrice(order.total_syp, 'SYP')
 
   const createdDate = new Date(order.created_at).toLocaleDateString('ar-SY', {
+    timeZone: 'Asia/Damascus',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
 
   const createdTime = new Date(order.created_at).toLocaleTimeString('ar-SY', {
+    timeZone: 'Asia/Damascus',
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -357,6 +359,7 @@ function OrderCard({ order }: { order: OrderFull }) {
                         </span>
                         <p className="text-[11px] font-arabic text-[#9E9890] mt-0.5">
                           {new Date(entry.changed_at).toLocaleString('ar-SY', {
+                            timeZone: 'Asia/Damascus',
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',

@@ -1,6 +1,6 @@
 import { Package, ShoppingBag, Clock, AlertTriangle, TrendingUp, Info, DollarSign } from 'lucide-react'
 import Link from 'next/link'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import DashboardOverview from '@/components/admin/DashboardOverview'
 
@@ -31,8 +31,8 @@ async function getDashboardStats() {
     { count: confirmedOrders },
     { count: deliveredOrders },
     { count: lowStockProducts },
-    { data: allOrdersData },
-    { data: visitsData },
+    allOrders,
+    visits,
   ] = await Promise.all([
     supabaseAdmin.from('products').select('id', { count: 'exact', head: true }),
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
@@ -40,14 +40,16 @@ async function getDashboardStats() {
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'confirmed'),
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'delivered'),
     supabaseAdmin.from('products').select('id', { count: 'exact', head: true }).in('stock_status', ['low_stock', 'out_of_stock']),
-    // Fetch all active/delivered/pending orders to compute timeframes in-memory
-    supabaseAdmin.from('orders').select('total_syp, total_usd, status, created_at').limit(100000),
-    // Fetch last 30 days visits in one query (prevent the 1000 postgrest limit cap)
-    supabaseAdmin.from('site_visits').select('session_id, visited_at').gte('visited_at', last30d).limit(100000),
+    // Fetch all orders to compute timeframes in-memory (paginated to bypass the 1000-row cap)
+    fetchAllRows((from, to) =>
+      supabaseAdmin.from('orders').select('total_syp, total_usd, status, created_at').order('created_at', { ascending: false }).range(from, to)
+    ),
+    // Fetch last 30 days visits (paginated — PostgREST caps responses at 1000 rows, so
+    // `.limit(100000)` alone silently truncated the real visit count)
+    fetchAllRows((from, to) =>
+      supabaseAdmin.from('site_visits').select('session_id, visited_at').gte('visited_at', last30d).order('visited_at', { ascending: true }).range(from, to)
+    ),
   ])
-
-  const allOrders = allOrdersData || []
-  const visits = visitsData || []
 
   // Filter function for visits
   const filterVisits = (since: Date) => visits.filter(v => new Date(v.visited_at) >= since)

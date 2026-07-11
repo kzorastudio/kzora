@@ -16,6 +16,7 @@ interface OrdersResponse {
 }
 
 interface EmployeeRef { id: string; name: string; role: string }
+interface ShippingMethodRef { slug: string; name: string }
 
 export default function OrdersPage() {
   const { data: session } = useSession()
@@ -28,13 +29,15 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [printedFilter, setPrintedFilter] = useState('')   // '', 'true', 'false'
   const [sourceFilter, setSourceFilter]   = useState('')    // '', 'store', 'staff', or employee id
+  const [companyFilter, setCompanyFilter] = useState('')    // '', 'delivery', or shipping company slug
   const [search, setSearch]       = useState('')
   const [searchInput, setSearchInput] = useState('')
 
   const [employees, setEmployees] = useState<EmployeeRef[]>([])
+  const [companies, setCompanies] = useState<ShippingMethodRef[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const fetchOrders = useCallback(async (p: number, status: string, q: string, printed: string, source: string) => {
+  const fetchOrders = useCallback(async (p: number, status: string, q: string, printed: string, source: string, company: string) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ page: String(p), limit: String(ADMIN_ITEMS_PER_PAGE) })
@@ -42,6 +45,7 @@ export default function OrdersPage() {
       if (q)       params.set('search', q)
       if (printed) params.set('printed', printed)
       if (source)  params.set('source', source)
+      if (company) params.set('company', company)
 
       const res = await fetch(`/api/orders?${params.toString()}`)
       if (!res.ok) throw new Error('فشل تحميل الطلبات')
@@ -56,8 +60,8 @@ export default function OrdersPage() {
   }, [])
 
   useEffect(() => {
-    fetchOrders(page, statusFilter, search, printedFilter, sourceFilter)
-  }, [fetchOrders, page, statusFilter, search, printedFilter, sourceFilter])
+    fetchOrders(page, statusFilter, search, printedFilter, sourceFilter, companyFilter)
+  }, [fetchOrders, page, statusFilter, search, printedFilter, sourceFilter, companyFilter])
 
   // Load employees for the source filter (super_admin only)
   useEffect(() => {
@@ -67,6 +71,14 @@ export default function OrdersPage() {
       .then((d) => setEmployees(d.employees ?? []))
       .catch(() => {})
   }, [isSuperAdmin])
+
+  // Load shipping companies for the company filter
+  useEffect(() => {
+    fetch('/api/shipping')
+      .then((r) => (r.ok ? r.json() : { methods: [] }))
+      .then((d) => setCompanies((d.methods ?? []).map((m: any) => ({ slug: m.slug, name: m.name }))))
+      .catch(() => {})
+  }, [])
 
   async function handleStatusChange(id: string, newStatus: OrderStatus) {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)))
@@ -80,7 +92,7 @@ export default function OrdersPage() {
       toast.success('تم تحديث حالة الطلب')
     } catch {
       toast.error('حدث خطأ أثناء تحديث الحالة')
-      fetchOrders(page, statusFilter, search, printedFilter, sourceFilter)
+      fetchOrders(page, statusFilter, search, printedFilter, sourceFilter, companyFilter)
     }
   }
 
@@ -150,6 +162,12 @@ export default function OrdersPage() {
             {ORDER_STATUS_OPTIONS.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
           </select>
 
+          <select value={companyFilter} onChange={(e) => { setCompanyFilter(e.target.value); setPage(1) }} className={`${FIELD_CLASS} w-full sm:w-auto sm:min-w-[160px]`}>
+            <option value="">الشركة: الكل</option>
+            <option value="delivery">توصيل عادي (حلب)</option>
+            {companies.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+          </select>
+
           {isSuperAdmin && (
             <>
               <select value={printedFilter} onChange={(e) => { setPrintedFilter(e.target.value); setPage(1) }} className={`${FIELD_CLASS} w-full sm:w-auto sm:min-w-[140px]`}>
@@ -167,9 +185,9 @@ export default function OrdersPage() {
             </>
           )}
 
-          {(search || statusFilter || printedFilter || sourceFilter) && (
+          {(search || statusFilter || printedFilter || sourceFilter || companyFilter) && (
             <button
-              onClick={() => { setSearch(''); setSearchInput(''); setStatusFilter(''); setPrintedFilter(''); setSourceFilter(''); setPage(1) }}
+              onClick={() => { setSearch(''); setSearchInput(''); setStatusFilter(''); setPrintedFilter(''); setSourceFilter(''); setCompanyFilter(''); setPage(1) }}
               className="px-4 py-2 rounded-xl text-sm font-arabic text-secondary hover:text-error hover:bg-error-container/20 transition-colors"
             >
               مسح الفلاتر

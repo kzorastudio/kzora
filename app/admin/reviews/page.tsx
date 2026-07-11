@@ -96,7 +96,7 @@ export default function ReviewsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-arabic font-bold text-on-surface leading-none">{review.user_name}</p>
-                      <p className="text-[10px] font-arabic text-secondary mt-1">{new Date(review.created_at).toLocaleDateString('ar-SY')}</p>
+                      <p className="text-[10px] font-arabic text-secondary mt-1">{new Date(review.created_at).toLocaleDateString('ar-SY', { timeZone: 'Asia/Damascus' })}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-0.5 bg-amber-50 px-2 py-1 rounded-lg">

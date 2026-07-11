@@ -653,7 +653,7 @@ export default function NewStaffOrderPage() {
                         <span className="text-secondary mx-1.5">•</span>
                         <span className="text-on-surface-variant font-medium">{o.customer_full_name}</span>
                         <span className="text-secondary mx-1.5">•</span>
-                        <span className="text-secondary/70 text-[10px]">{new Date(o.created_at).toLocaleDateString('ar-SY')}</span>
+                        <span className="text-secondary/70 text-[10px]">{new Date(o.created_at).toLocaleDateString('ar-SY', { timeZone: 'Asia/Damascus' })}</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 self-end">
                         <button

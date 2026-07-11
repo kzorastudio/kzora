@@ -37,7 +37,7 @@ export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
 
       const textToCopy = `
 🛍️ تفاصيل الطلب: ${order.order_number}
-📅 التاريخ: ${new Date(order.created_at).toLocaleDateString('ar-SY')}
+📅 التاريخ: ${new Date(order.created_at).toLocaleDateString('ar-SY', { timeZone: 'Asia/Damascus' })}
 
 👤 العميل: ${order.customer_full_name}
 📞 الهاتف: ${order.customer_phone}
