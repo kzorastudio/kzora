@@ -179,7 +179,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    // ── Replace order items (insert new first, then delete old to avoid a gap) ────
+    // ── Replace order items (delete old first, then insert new to prevent duplication) ────
+    const oldIds = (oldItems || []).map((i) => i.id)
+    if (oldIds.length > 0) {
+      const { error: delErr } = await supabaseAdmin.from('order_items').delete().in('id', oldIds)
+      if (delErr) {
+        console.error('Items edit delete error:', delErr)
+        return NextResponse.json({ error: 'تعذر حذف المنتجات القديمة' }, { status: 500 })
+      }
+    }
+
     const { error: insErr } = await supabaseAdmin.from('order_items').insert(
       sanitizedNew.map((it) => ({
         order_id:       id,
@@ -196,11 +205,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (insErr) {
       console.error('Items edit insert error:', insErr)
       return NextResponse.json({ error: 'تعذر حفظ المنتجات الجديدة' }, { status: 500 })
-    }
-
-    const oldIds = (oldItems || []).map((i) => i.id)
-    if (oldIds.length > 0) {
-      await supabaseAdmin.from('order_items').delete().in('id', oldIds)
     }
 
     // ── Recompute totals ─────────────────────────────────────────────────────────
