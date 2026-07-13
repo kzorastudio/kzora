@@ -1,12 +1,23 @@
 import { z } from 'zod'
 
+// Arabic letters only (with spaces between name parts). Deliberately excludes
+// Latin letters, digits, punctuation, and Arabic-Indic numerals.
+const arabicNamePattern = /^[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06FA-\u06FC\s]+$/
+
+export function isArabicTripleName(value: string): boolean {
+  const normalized = value.trim().replace(/\s+/g, ' ')
+  return arabicNamePattern.test(normalized) && normalized.split(' ').length >= 3
+}
+
 // Checkout form
 export const checkoutSchema = z.object({
   full_name: z
     .string()
+    .trim()
     .min(3, 'الاسم يجب أن يكون 3 أحرف على الأقل')
     .max(100, 'الاسم طويل جداً')
-    .regex(/^[\u0600-\u06FFa-zA-Z\s]+$/, 'يرجى كتابة الاسم باللغة العربية أو الإنجليزية'),
+    .regex(arabicNamePattern, 'يرجى كتابة الاسم بالأحرف العربية فقط')
+    .refine(isArabicTripleName, 'يرجى كتابة الاسم الثلاثي بالأحرف العربية فقط'),
   phone: z
     .string()
     .regex(/^(\+963|0)?[9٩][0-9٠-٩]{8}$/, 'رقم الهاتف غير صحيح. مثال: 0987654321'),

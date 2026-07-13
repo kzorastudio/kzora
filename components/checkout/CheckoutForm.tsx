@@ -300,12 +300,15 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                 onInput={(e) => {
                   const val = e.currentTarget.value;
                   // Allow Arabic characters, English letters, and spaces
-                  const filtered = val.replace(/[^\u0600-\u06FFa-zA-Z\s]/g, '');
+                  const filtered = val.replace(/[^\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06FA-\u06FC\s]/g, '');
                   if (val !== filtered) {
                     e.currentTarget.value = filtered;
                   }
                 }}
               />
+              <p className="mt-1.5 text-xs font-arabic text-[#6B6560]">
+                {'\u064a\u0631\u062c\u0649 \u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062b\u0644\u0627\u062b\u064a \u0628\u0627\u0644\u0623\u062d\u0631\u0641 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0641\u0642\u0637.'}
+              </p>
               {errors.full_name && <p className={errorBase}>{errors.full_name.message}</p>}
             </div>
 

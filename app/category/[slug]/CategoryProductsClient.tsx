@@ -229,7 +229,7 @@ export default function CategoryProductsClient({ products }: Props) {
   }, [products, sort, search, selectedTags, selectedSizes, onSale, minPrice, maxPrice, currency])
 
   // Expand each filtered product into one card per matching color when size filter is active.
-  // We only expand cards that aren't already flagged as "unavailable" — those stay as one card.
+  // We only expand cards that aren't already flagged as unavailable — those stay as one card.
   const displayItems = useMemo(() => {
     const sizeNums = selectedSizes.map(s => parseInt(s, 10)).filter(n => !isNaN(n))
     if (sizeNums.length === 0) {
@@ -243,6 +243,7 @@ export default function CategoryProductsClient({ products }: Props) {
     ]
   }, [filtered, filterUnavailableMap, selectedSizes])
 
+  // We only expand cards that aren't already flagged as "unavailable" — those stay as one card.
   // ─── Filter Sidebar Content ────────────────────────────────────────────
   const FilterSidebar = (
     <div dir="rtl" className="space-y-5">

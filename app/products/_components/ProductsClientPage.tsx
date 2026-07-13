@@ -219,7 +219,7 @@ export default function ProductsClientPage({ initialCategories, initialParams, i
     selectedCategories.length > 0 || selectedTags.length > 0 || search || selectedSizes.length > 0 ||
     minPrice || maxPrice || onSale || sort !== 'newest'
 
-  // Expand products by matching color when a size filter is active
+  // Expand products by matching color when a size filter is active.
   const displayItems = useMemo(() => {
     const sizeNums = selectedSizes.map(s => parseInt(s, 10)).filter(n => !isNaN(n))
     return expandProductsBySize(products, sizeNums)

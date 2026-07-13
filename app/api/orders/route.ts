@@ -6,6 +6,7 @@ import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
 import { sendPurchaseEvent } from '@/lib/metaCapi'
+import { isArabicTripleName } from '@/lib/validators'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -104,6 +105,9 @@ export async function POST(request: NextRequest) {
     }
     if (!customer?.full_name || !customer?.phone) {
       return NextResponse.json({ error: 'الاسم ورقم الهاتف مطلوبان' }, { status: 400 })
+    }
+    if (!isArabicTripleName(customer.full_name)) {
+      return NextResponse.json({ error: '\u064a\u0631\u062c\u0649 \u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062b\u0644\u0627\u062b\u064a \u0628\u0627\u0644\u0623\u062d\u0631\u0641 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0641\u0642\u0637' }, { status: 400 })
     }
     if (!customer?.governorate) {
       return NextResponse.json({ error: 'المحافظة مطلوبة' }, { status: 400 })
