@@ -205,11 +205,14 @@ export async function POST(request: NextRequest) {
       // Default price from DB (discount price if set, otherwise base price)
       const dbPriceSyp = dbProduct.discount_price_syp ?? dbProduct.price_syp
       const dbPriceUsd = dbProduct.discount_price_usd ?? dbProduct.price_usd
-      // Allow an admin-supplied manual price (>= 0). Falls back to the DB price.
-      const manualSyp = Number(item.unit_price_syp)
-      const manualUsd = Number(item.unit_price_usd)
-      const unitSyp = Number.isFinite(manualSyp) && manualSyp >= 0 ? manualSyp : dbPriceSyp
-      const unitUsd = Number.isFinite(manualUsd) && manualUsd >= 0 ? manualUsd : dbPriceUsd
+      // Allow an admin-supplied manual price (> 0). Falls back to the DB price.
+      // Must be a real number: an emptied price input serialises to null, and
+      // Number(null) is 0 — which used to pass a `>= 0` check and save the item
+      // at zero price. Only an explicit positive number overrides the DB price.
+      const manualPrice = (v: unknown, fallback: number): number =>
+        typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback
+      const unitSyp = manualPrice(item.unit_price_syp, dbPriceSyp)
+      const unitUsd = manualPrice(item.unit_price_usd, dbPriceUsd)
 
       sanitizedItems.push({
         product_id:     item.product_id,
@@ -260,6 +263,19 @@ export async function POST(request: NextRequest) {
     const subtotalUsd = sanitizedItems.reduce((s, i) => s + i.unit_price_usd * i.quantity, 0)
     const totalSyp = Math.max(0, subtotalSyp - multiItemDiscountSyp + shippingFeeSyp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
+
+    // ── Guard: never save an order priced at zero in its own currency ────────────
+    // Catch-all for any path that fails to resolve a unit price. Without this a
+    // bad price silently becomes a free order that only surfaces days later.
+    const orderCurrency = currency_used === 'USD' ? 'USD' : 'SYP'
+    const subtotalInCurrency = orderCurrency === 'USD' ? subtotalUsd : subtotalSyp
+    if (subtotalInCurrency <= 0) {
+      console.error('Staff order rejected: zero subtotal', { orderCurrency, subtotalSyp, subtotalUsd })
+      return NextResponse.json(
+        { error: `مجموع المنتجات صفر بعملة الطلب (${orderCurrency}). تحقق من أسعار القطع قبل الحفظ.` },
+        { status: 400 }
+      )
+    }
 
     // ── Insert order ─────────────────────────────────────────────────────────────
     const { data: orderNumber, error: numberError } = await supabaseAdmin.rpc('next_order_number')

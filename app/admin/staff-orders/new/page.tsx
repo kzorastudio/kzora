@@ -342,10 +342,17 @@ export default function NewStaffOrderPage() {
   function updateSize(id: string, size: number) {
     setCart((prev) => prev.map((l) => (l.id === id ? { ...l, size, max_stock: stockFor(l.variants, l.color, size) } : l)))
   }
-  // Manual price override (in the currently selected currency)
-  function updatePrice(id: string, value: number) {
-    const v = Math.max(0, value || 0)
-    setCart((prev) => prev.map((l) => (l.id === id ? { ...l, ...(currency === 'USD' ? { unit_price_usd: v } : { unit_price_syp: v }) } : l)))
+  // Manual price override (in the currently selected currency).
+  // An emptied input arrives as NaN; treating it as 0 used to save the item at
+  // zero price. Blank means "unchanged", so restore the original DB price.
+  function updatePrice(id: string, raw: string) {
+    setCart((prev) => prev.map((l) => {
+      if (l.id !== id) return l
+      const parsed = parseFloat(raw)
+      const orig = currency === 'USD' ? l.orig_price_usd : l.orig_price_syp
+      const v = raw.trim() === '' || !Number.isFinite(parsed) || parsed < 0 ? orig : parsed
+      return { ...l, ...(currency === 'USD' ? { unit_price_usd: v } : { unit_price_syp: v }) }
+    }))
   }
   // Restore the original DB price for the selected currency
   function resetPrice(id: string) {
@@ -791,7 +798,7 @@ export default function NewStaffOrderPage() {
                           <input
                             type="number" min={0}
                             value={price}
-                            onChange={(e) => updatePrice(l.id, parseFloat(e.target.value))}
+                            onChange={(e) => updatePrice(l.id, e.target.value)}
                             className={cn('w-24 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
                               changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
                           />

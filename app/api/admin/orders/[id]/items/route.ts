@@ -6,11 +6,11 @@ import { revalidatePath } from 'next/cache'
 
 const norm = (s: string | null) => (s || '').trim()
 
-// Use the client-provided manual price when it's a valid non-negative number, else the product's DB price.
-const priceOf = (v: unknown, fallback: number): number => {
-  const n = Number(v)
-  return Number.isFinite(n) && n >= 0 ? n : fallback
-}
+// Use the client-provided manual price only when it's an explicit positive number,
+// else the product's DB price. An emptied price input serialises to null, and
+// Number(null) is 0 — which used to pass a `>= 0` check and save a zero-price item.
+const priceOf = (v: unknown, fallback: number): number =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback
 
 // ─── PUT /api/admin/orders/[id]/items ─────────────────────────────────────────────
 // Edits the products of a STAFF order with full inventory reconciliation:
