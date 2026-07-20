@@ -221,7 +221,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
         settings={settings}
         relatedProductsNode={
           product.category ? (
-            <RelatedProducts categorySlug={product.category.slug} excludeId={product.id} />
+            <RelatedProducts
+              categorySlug={product.category.slug}
+              excludeId={product.id}
+              basePriceSyp={
+                product.discount_price_syp && product.discount_price_syp > 0
+                  ? product.discount_price_syp
+                  : product.price_syp
+              }
+              baseMoldType={product.mold_type ?? null}
+            />
           ) : null
         }
       />

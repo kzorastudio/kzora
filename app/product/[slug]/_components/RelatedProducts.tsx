@@ -5,9 +5,61 @@ import RelatedProductsClient from './RelatedProductsClient'
 interface Props {
   categorySlug: string
   excludeId:    string
+  /** The product being viewed — suggestions are ranked by similarity to it. */
+  basePriceSyp: number
+  baseMoldType: 'chinese' | 'normal' | null
 }
 
-async function fetchRelated(categorySlug: string, excludeId: string): Promise<ProductFull[]> {
+// How many candidates to score. Larger than the 8 we display so ranking has
+// something to choose from, small enough to stay a cheap single query.
+const CANDIDATE_LIMIT = 40
+const DISPLAY_LIMIT = 8
+
+/** Effective price: discount price when set, otherwise the base price. */
+const effectivePrice = (p: { price_syp: number; discount_price_syp: number | null }): number =>
+  p.discount_price_syp && p.discount_price_syp > 0 ? p.discount_price_syp : p.price_syp
+
+/**
+ * Similarity score against the viewed product. Higher ranks first.
+ *
+ *   price proximity   0..50   — the strongest intent signal we have
+ *   same mold type       20   — someone who needs a normal fit still does
+ *   popularity        0..10   — tiebreaker only, never outweighs the above
+ *   low stock           -10
+ *   out of stock       -100   — sinks below everything, but stays reachable
+ */
+function scoreOf(p: ProductFull, basePriceSyp: number, baseMoldType: string | null): number {
+  let score = 0
+
+  // Price proximity. Both prices must be real for the comparison to mean
+  // anything — a missing price scores neutral rather than dead last, so a
+  // product with incomplete data isn't silently buried.
+  const price = effectivePrice(p)
+  if (basePriceSyp > 0 && price > 0) {
+    const ratio = Math.abs(price - basePriceSyp) / basePriceSyp
+    // Identical price = 50, double (or half) the price = 0.
+    score += Math.max(0, 50 * (1 - ratio))
+  } else {
+    score += 25
+  }
+
+  if (baseMoldType && p.mold_type === baseMoldType) score += 20
+
+  // log10 keeps a viral product from dominating on views alone.
+  score += Math.min(10, Math.log10((p.view_count || 0) + 1) * 4)
+
+  if (p.stock_status === 'out_of_stock') score -= 100
+  else if (p.stock_status === 'low_stock') score -= 10
+
+  return score
+}
+
+async function fetchRelated(
+  categorySlug: string,
+  excludeId: string,
+  basePriceSyp: number,
+  baseMoldType: 'chinese' | 'normal' | null
+): Promise<ProductFull[]> {
   const { data: cat } = await supabase
     .from('categories')
     .select('id')
@@ -22,13 +74,12 @@ async function fetchRelated(categorySlug: string, excludeId: string): Promise<Pr
     .eq('is_published', true)
     .eq('category_id', cat.id)
     .neq('id', excludeId)
-    .order('stock_status', { ascending: true })
     .order('created_at', { ascending: false })
-    .limit(8)
+    .limit(CANDIDATE_LIMIT)
 
   if (error || !data) return []
 
-  return (data || []).map((p: any) => ({
+  const mapped = (data || []).map((p: any) => ({
     ...p,
     images:   [...((p.product_images as { display_order: number }[]) ?? [])].sort((a, b) => a.display_order - b.display_order),
     colors:   p.product_colors ?? [],
@@ -37,12 +88,17 @@ async function fetchRelated(categorySlug: string, excludeId: string): Promise<Pr
     category: Array.isArray(p.categories) ? (p.categories[0] ?? null) : (p.categories ?? null),
     variants: p.product_variants ?? [],
   })) as ProductFull[]
+
+  // Rank by similarity, then take the top slice. Sorting a copy keeps this
+  // independent of the order the query happened to return.
+  return [...mapped]
+    .sort((a, b) => scoreOf(b, basePriceSyp, baseMoldType) - scoreOf(a, basePriceSyp, baseMoldType))
+    .slice(0, DISPLAY_LIMIT)
 }
 
-export default async function RelatedProducts({ categorySlug, excludeId }: Props) {
-  const products = await fetchRelated(categorySlug, excludeId)
+export default async function RelatedProducts({ categorySlug, excludeId, basePriceSyp, baseMoldType }: Props) {
+  const products = await fetchRelated(categorySlug, excludeId, basePriceSyp, baseMoldType)
   if (products.length === 0) return null
 
   return <RelatedProductsClient products={products} />
 }
-
