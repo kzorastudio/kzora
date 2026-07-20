@@ -182,22 +182,49 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
   }))
   const updateSize = (uid: string, size: number) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, size, max_stock: stockFor(l.variants, l.color, size) } : l)))
   // Manual price override (in the currently selected currency)
-  const updatePrice = (uid: string, v: number) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, ...(isUSD ? { unit_price_usd: v } : { unit_price_syp: v }) } : l)))
+  // An emptied input used to land here as 0 and get saved as a 0-price item.
+  // Blank means "unchanged", so fall back to the original price instead.
+  const updatePrice = (uid: string, raw: string) => setLines((p) => p.map((l) => {
+    if (l.uid !== uid) return l
+    const parsed = parseFloat(raw)
+    const orig = isUSD ? l.orig_price_usd : l.orig_price_syp
+    const v = raw.trim() === '' || !Number.isFinite(parsed) || parsed < 0 ? orig : parsed
+    return { ...l, ...(isUSD ? { unit_price_usd: v } : { unit_price_syp: v }) }
+  }))
   const resetPrice = (uid: string) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, ...(isUSD ? { unit_price_usd: l.orig_price_usd } : { unit_price_syp: l.orig_price_syp }) } : l)))
 
   const subtotal = lines.reduce((s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0)
 
   async function handleSave() {
     if (lines.length === 0) { toast.error('يجب إبقاء منتج واحد على الأقل'); return }
-    // Client-side stock check (merge identical variants)
-    const merged = new Map<string, { quantity: number; max_stock: number | null; name: string }>()
+    // Collapse identical variants into one line. Sending them separately is what
+    // filled the order with repeated quantity-1 rows of the same product.
+    const merged = new Map<string, {
+      product_id: string; color: string | null; size: number | null
+      quantity: number; unit_price_syp: number; unit_price_usd: number
+      max_stock: number | null; name: string
+    }>()
     for (const l of lines) {
-      const k = `${l.product_id}|${norm(l.color)}|${l.size || 0}`
+      const k = `${l.product_id}|${norm(l.color)}|${l.size || 0}|${l.unit_price_syp}|${l.unit_price_usd}`
       const e = merged.get(k)
       if (e) e.quantity += l.quantity
-      else merged.set(k, { quantity: l.quantity, max_stock: l.max_stock, name: l.name })
+      else merged.set(k, {
+        product_id: l.product_id, color: l.color, size: l.size,
+        quantity: l.quantity, unit_price_syp: l.unit_price_syp, unit_price_usd: l.unit_price_usd,
+        max_stock: l.max_stock, name: l.name,
+      })
     }
-    for (const m of Array.from(merged.values())) {
+    const payloadItems = Array.from(merged.values())
+
+    // Stock check per variant (sum across lines that share it, ignoring price)
+    const stockByVariant = new Map<string, { quantity: number; max_stock: number | null; name: string }>()
+    for (const l of lines) {
+      const k = `${l.product_id}|${norm(l.color)}|${l.size || 0}`
+      const e = stockByVariant.get(k)
+      if (e) e.quantity += l.quantity
+      else stockByVariant.set(k, { quantity: l.quantity, max_stock: l.max_stock, name: l.name })
+    }
+    for (const m of Array.from(stockByVariant.values())) {
       if (m.max_stock !== null && m.quantity > m.max_stock) {
         toast.error(`الكمية المطلوبة من "${m.name}" (${m.quantity}) تتجاوز المتاح (${m.max_stock})`)
         return
@@ -211,13 +238,20 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currency,
-          items: lines.map((l) => ({
+          items: payloadItems.map((l) => ({
             product_id: l.product_id, color: l.color, size: l.size, quantity: l.quantity,
             unit_price_syp: l.unit_price_syp, unit_price_usd: l.unit_price_usd,
           })),
         }),
       })
       const data = await res.json()
+      if (res.status === 409) {
+        // Someone else edited this order — reload so we don't overwrite their change.
+        toast.error(data.error || 'تم تعديل الطلب من مكان آخر')
+        setOpen(false)
+        router.refresh()
+        return
+      }
       if (!res.ok) throw new Error(data.error || 'فشل الحفظ')
       toast.success('تم تحديث منتجات الطلب وتصحيح المخزون')
       setOpen(false)
@@ -323,7 +357,7 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
                           <input
                             type="number" min={0}
                             value={price}
-                            onChange={(e) => updatePrice(l.uid, parseFloat(e.target.value) || 0)}
+                            onChange={(e) => updatePrice(l.uid, e.target.value)}
                             className={cn('w-24 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
                               changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
                           />

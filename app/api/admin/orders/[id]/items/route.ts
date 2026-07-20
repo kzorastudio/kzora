@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // ── Fetch order ──────────────────────────────────────────────────────────────
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
-      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation, discount_amount_syp, discount_amount_usd')
+      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation, discount_amount_syp, discount_amount_usd, updated_at')
       .eq('id', id)
       .single()
 
@@ -55,6 +55,31 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // blocks employees from editing customer orders.
     if (role === 'employee' && order.created_by_admin_id !== (session as any).id) {
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
+    }
+
+    // ── Claim the order (compare-and-swap on updated_at) ─────────────────────────
+    // Two edits racing on the same order (double-click, two tabs, a retried request)
+    // used to each read the same item list, each delete only those stale ids, then
+    // each insert its own rows — leaving both sets behind and duplicating the order.
+    // Bumping updated_at conditionally lets exactly one request through; the loser
+    // bails out here, before any stock or item writes happen.
+    const claimStamp = new Date().toISOString()
+    const { data: claimed, error: claimErr } = await supabaseAdmin
+      .from('orders')
+      .update({ updated_at: claimStamp })
+      .eq('id', id)
+      .eq('updated_at', order.updated_at)
+      .select('id')
+
+    if (claimErr) {
+      console.error('Order claim error:', claimErr)
+      return NextResponse.json({ error: 'تعذر تعديل الطلب' }, { status: 500 })
+    }
+    if (!claimed || claimed.length === 0) {
+      return NextResponse.json(
+        { error: 'تم تعديل هذا الطلب للتو من مكان آخر. حدّث الصفحة وحاول مرة أخرى.' },
+        { status: 409 }
+      )
     }
 
     // ── Fetch current items ──────────────────────────────────────────────────────
@@ -179,14 +204,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    // ── Replace order items (delete old first, then insert new to prevent duplication) ────
-    const oldIds = (oldItems || []).map((i) => i.id)
-    if (oldIds.length > 0) {
-      const { error: delErr } = await supabaseAdmin.from('order_items').delete().in('id', oldIds)
-      if (delErr) {
-        console.error('Items edit delete error:', delErr)
-        return NextResponse.json({ error: 'تعذر حذف المنتجات القديمة' }, { status: 500 })
-      }
+    // ── Replace order items ──────────────────────────────────────────────────────
+    // Delete by order_id, not by the ids read earlier: a stale id list leaves behind
+    // any row added in between, which is how the same product piled up on the order.
+    const { error: delErr } = await supabaseAdmin.from('order_items').delete().eq('order_id', id)
+    if (delErr) {
+      console.error('Items edit delete error:', delErr)
+      return NextResponse.json({ error: 'تعذر حذف المنتجات القديمة' }, { status: 500 })
     }
 
     const { error: insErr } = await supabaseAdmin.from('order_items').insert(

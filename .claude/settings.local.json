@@ -79,7 +79,8 @@
       "Bash(node -e \"const fs=require\\('fs'\\);const env=fs.readFileSync\\('.env.local','utf8'\\);const l=env.split\\(/\\\\r?\\\\n/\\).filter\\(x=>x.startsWith\\('NEXT_PUBLIC_SUPABASE_URL'\\)\\);console.log\\(JSON.stringify\\(l\\)\\);\")",
       "Bash(cd \"C:/Users/moham/Desktop/CODING/Kzora\" && echo \"=== orders/[id]/page.tsx 230-245 ===\" && sed -n '230,245p' app/admin/orders/[id]/page.tsx && echo \"=== track-order 150-170 ===\" && sed -n '150,170p' app/track-order/TrackOrderClient.tsx && echo \"=== track-order 355-370 ===\" && sed -n '355,370p' app/track-order/TrackOrderClient.tsx)",
       "Bash(cd \"C:/Users/moham/Desktop/CODING/Kzora\" && echo \"=== CopyOrderButton 38-42 ===\" && sed -n '38,42p' app/admin/orders/[id]/CopyOrderButton.tsx && echo \"=== reviews 99 ===\" && sed -n '99p' app/admin/reviews/page.tsx && echo \"=== staff-orders/new 656 ===\" && sed -n '654,658p' app/admin/staff-orders/new/page.tsx && echo \"=== whatsapp 78-83 ===\" && sed -n '78,83p' lib/whatsapp.ts)",
-      "Bash(test -e \"app/admin/orders/[id]/.git\")"
+      "Bash(test -e \"app/admin/orders/[id]/.git\")",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)"
     ]
   }
 }

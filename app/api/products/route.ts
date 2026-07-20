@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthSession } from '@/lib/getSession'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import type { CreateProductPayload, ProductTag } from '@/types'
 
 import { revalidatePath } from 'next/cache'
@@ -127,27 +127,49 @@ export async function GET(request: NextRequest) {
       const sizes = size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
 
       // Step 1: products where this size is marked is_available = true
-      const { data: availSizes } = await supabaseAdmin
-        .from('product_sizes')
-        .select('product_id')
-        .in('size', sizes)
-        .eq('is_available', true)
+      const availSizes = await fetchAllRows<{ product_id: string }>((from, to) =>
+        supabaseAdmin
+          .from('product_sizes')
+          .select('product_id')
+          .in('size', sizes)
+          .eq('is_available', true)
+          .order('product_id', { ascending: true })
+          .range(from, to)
+      )
 
-      const candidateIds = Array.from(new Set((availSizes || []).map((r: { product_id: string }) => r.product_id)))
+      // A size can also exist only as an in-stock variant row.
+      const variantOnly = await fetchAllRows<{ product_id: string }>((from, to) =>
+        supabaseAdmin
+          .from('product_variants')
+          .select('product_id')
+          .in('size', sizes)
+          .gt('quantity', 0)
+          .order('product_id', { ascending: true })
+          .range(from, to)
+      )
+
+      const candidateIds = Array.from(new Set(
+        [...availSizes, ...variantOnly].map(r => r.product_id)
+      ))
 
       if (candidateIds.length === 0) {
         query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
       } else {
         // Step 2: among candidates, check variant stock for these sizes
-        const { data: allVariants } = await supabaseAdmin
-          .from('product_variants')
-          .select('product_id, quantity')
-          .in('size', sizes)
-          .in('product_id', candidateIds)
+        const allVariants = await fetchAllRows<{ product_id: string; quantity: number }>((from, to) =>
+          supabaseAdmin
+            .from('product_variants')
+            .select('product_id, quantity')
+            .in('size', sizes)
+            .in('product_id', candidateIds)
+            .order('product_id', { ascending: true })
+            .order('id', { ascending: true })
+            .range(from, to)
+        )
 
         // Map: product_id → max quantity across matching variants
         const variantStock = new Map<string, number>()
-        for (const v of (allVariants || [])) {
+        for (const v of allVariants) {
           variantStock.set(v.product_id, Math.max(variantStock.get(v.product_id) ?? 0, v.quantity ?? 0))
         }
 
