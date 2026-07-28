@@ -176,6 +176,10 @@ export interface CreateStaffOrderPayload {
   shipping_fee_usd?: number
   // When true the shipping fee is negotiated with the seller (4+ pieces shipping).
   shipping_fee_determined?: boolean
+  // Multi-piece discount amount. Omitted = computed server-side from each product's
+  // own settings; provided = manual override (lets the discount span different products).
+  discount_syp?: number
+  discount_usd?: number
   payment_method?: string
   currency_used: Currency
   notes?: string

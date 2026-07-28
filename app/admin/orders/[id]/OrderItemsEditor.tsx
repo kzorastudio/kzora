@@ -74,6 +74,14 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
   const [lines, setLines] = useState<EditLine[]>([])
   const [currency, setCurrency] = useState<Currency>(order.currency_used === 'USD' ? 'USD' : 'SYP')
 
+  // Editable order discount (multi-piece / coupon / manual), per currency.
+  // Loyalty points are stored separately and stay untouched, so only the base part
+  // is shown here. Kept as strings so the field can be cleared while typing.
+  const loyaltySyp = order.loyalty_discount_syp || 0
+  const loyaltyUsd = order.loyalty_discount_usd || 0
+  const [discountSyp, setDiscountSyp] = useState(String(Math.max(0, (order.discount_amount_syp || 0) - loyaltySyp)))
+  const [discountUsd, setDiscountUsd] = useState(String(Math.max(0, (order.discount_amount_usd || 0) - loyaltyUsd)))
+
   const [searchInput, setSearchInput] = useState('')
   const [results, setResults] = useState<SearchProduct[]>([])
   const [searching, setSearching] = useState(false)
@@ -84,6 +92,10 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
   async function openEditor() {
     setOpen(true)
     setLoading(true)
+    // Re-sync from the (possibly refreshed) order — the component stays mounted
+    // between opens, so the initial useState values can be stale.
+    setDiscountSyp(String(Math.max(0, (order.discount_amount_syp || 0) - loyaltySyp)))
+    setDiscountUsd(String(Math.max(0, (order.discount_amount_usd || 0) - loyaltyUsd)))
     try {
       const pids = Array.from(new Set(order.items.map((i) => i.product_id).filter(Boolean) as string[]))
       const products = await Promise.all(
@@ -195,6 +207,15 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
 
   const subtotal = lines.reduce((s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0)
 
+  // Discount in the currently selected currency, never above the subtotal.
+  const rawDiscount = parseFloat(isUSD ? discountUsd : discountSyp)
+  const discountInput = Number.isFinite(rawDiscount) && rawDiscount > 0 ? rawDiscount : 0
+  const discount = Math.min(discountInput, subtotal)
+  const discountOverflow = discountInput > subtotal
+  const loyalty = isUSD ? loyaltyUsd : loyaltySyp
+  const shippingFee = (isUSD ? order.shipping_fee_usd : order.shipping_fee_syp) || 0
+  const newTotal = Math.max(0, subtotal - discount - loyalty + shippingFee)
+
   async function handleSave() {
     if (lines.length === 0) { toast.error('يجب إبقاء منتج واحد على الأقل'); return }
     // Collapse identical variants into one line. Sending them separately is what
@@ -238,6 +259,9 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currency,
+          // Only the edited currency's discount is sent; the other one keeps its
+          // stored value server-side (no exchange rate is applied anywhere).
+          ...(isUSD ? { discount_usd: discount } : { discount_syp: discount }),
           items: payloadItems.map((l) => ({
             product_id: l.product_id, color: l.color, size: l.size, quantity: l.quantity,
             unit_price_syp: l.unit_price_syp, unit_price_usd: l.unit_price_usd,
@@ -390,6 +414,36 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
           <div className="flex justify-between text-sm font-arabic">
             <span className="text-secondary">المجموع الفرعي الجديد</span>
             <span className="font-label font-bold text-on-surface">{subtotal.toLocaleString()} {isUSD ? '$' : 'ل.س'}</span>
+          </div>
+
+          {/* Editable order discount (multi-piece / manual) */}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-arabic text-secondary">الخصم (تعدد القطع / يدوي)</span>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} step={isUSD ? 0.01 : 1}
+                  value={isUSD ? discountUsd : discountSyp}
+                  onChange={(e) => (isUSD ? setDiscountUsd(e.target.value) : setDiscountSyp(e.target.value))}
+                  className={cn('w-28 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
+                    discountOverflow ? 'border-error bg-error-container/20 text-error' : discount > 0 ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
+                />
+                <span className="text-xs font-arabic text-secondary">{isUSD ? '$' : 'ل.س'}</span>
+              </div>
+            </div>
+            {discountOverflow && (
+              <span className="text-[11px] font-arabic text-error">الخصم أكبر من المجموع الفرعي — سيُحفظ بقيمة {subtotal.toLocaleString()}</span>
+            )}
+            {loyalty > 0 && (
+              <span className="text-[11px] font-arabic text-secondary/70">
+                + خصم نقاط الولاء {loyalty.toLocaleString()} {isUSD ? '$' : 'ل.س'} (محفوظ، لا يُعدّل من هنا)
+              </span>
+            )}
+          </div>
+
+          <div className="flex justify-between text-sm font-arabic border-t border-outline-variant/30 pt-2">
+            <span className="text-secondary">الإجمالي الجديد {shippingFee > 0 ? '(مع الشحن)' : ''}</span>
+            <span className="font-label font-black text-primary">{newTotal.toLocaleString()} {isUSD ? '$' : 'ل.س'}</span>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={handleSave} disabled={saving || loading} className="flex-1 h-11 rounded-xl bg-primary text-white font-arabic font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition disabled:opacity-60">

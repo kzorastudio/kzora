@@ -12,6 +12,11 @@ const norm = (s: string | null) => (s || '').trim()
 const priceOf = (v: unknown, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback
 
+// Manual discount override. Unlike prices, 0 is a meaningful value here ("remove
+// the discount"), so only a missing/invalid field falls back to the stored one.
+const discountOf = (v: unknown, fallback: number): number =>
+  typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback
+
 // ─── PUT /api/admin/orders/[id]/items ─────────────────────────────────────────────
 // Edits the products of a STAFF order with full inventory reconciliation:
 //  • returns the old items' quantities back to stock
@@ -41,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // ── Fetch order ──────────────────────────────────────────────────────────────
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
-      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation, discount_amount_syp, discount_amount_usd, updated_at')
+      .select('id, created_by_admin_id, shipping_fee_syp, shipping_fee_usd, is_reservation, discount_amount_syp, discount_amount_usd, loyalty_discount_syp, loyalty_discount_usd, updated_at')
       .eq('id', id)
       .single()
 
@@ -232,13 +237,25 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // ── Recompute totals ─────────────────────────────────────────────────────────
-    // total = new subtotal − stored discount + shipping. The stored discount amount
-    // (coupon + loyalty + multi-piece for store orders, multi-piece for staff orders)
-    // is preserved as-is so manual item edits don't silently wipe an applied discount.
+    // total = new subtotal − discount + shipping.
+    // discount_amount = base discount (coupon / multi-piece / manual) + loyalty discount.
+    // The admin edits only the BASE part; the loyalty part is stored separately and is
+    // never touched here. When the client sends no discount field, the stored amount is
+    // preserved exactly as before, so manual item edits don't wipe an applied discount.
     const subtotalSyp = sanitizedNew.reduce((s, i) => s + i.unit_price_syp * i.quantity, 0)
     const subtotalUsd = sanitizedNew.reduce((s, i) => s + i.unit_price_usd * i.quantity, 0)
-    const discountSyp = order.discount_amount_syp || 0
-    const discountUsd = order.discount_amount_usd || 0
+
+    const loyaltySyp = order.loyalty_discount_syp || 0
+    const loyaltyUsd = order.loyalty_discount_usd || 0
+    const storedBaseSyp = Math.max(0, (order.discount_amount_syp || 0) - loyaltySyp)
+    const storedBaseUsd = Math.max(0, (order.discount_amount_usd || 0) - loyaltyUsd)
+    // Cap the base discount at the subtotal so a stale/oversized value can't create a
+    // negative line in the order summary.
+    const baseSyp = Math.min(discountOf(body?.discount_syp, storedBaseSyp), subtotalSyp)
+    const baseUsd = Math.min(discountOf(body?.discount_usd, storedBaseUsd), subtotalUsd)
+
+    const discountSyp = baseSyp + loyaltySyp
+    const discountUsd = parseFloat((baseUsd + loyaltyUsd).toFixed(2))
     const totalSyp = Math.max(0, subtotalSyp - discountSyp + (order.shipping_fee_syp || 0))
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - discountUsd + (order.shipping_fee_usd || 0)).toFixed(2)))
 
@@ -247,6 +264,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .update({
         subtotal_syp: subtotalSyp,
         subtotal_usd: subtotalUsd,
+        discount_amount_syp: discountSyp,
+        discount_amount_usd: discountUsd,
         total_syp:    totalSyp,
         total_usd:    totalUsd,
         ...(currencyUsed ? { currency_used: currencyUsed } : {}),

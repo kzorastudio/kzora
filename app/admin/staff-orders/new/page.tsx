@@ -106,6 +106,11 @@ export default function NewStaffOrderPage() {
 
   // Cart
   const [cart, setCart] = useState<CartLine[]>([])
+  // Multi-piece discount: auto-filled from the per-product rule, editable by the admin
+  // (e.g. to grant the discount across two different products). Kept as a string so
+  // the field can be cleared while typing.
+  const [discountInput, setDiscountInput] = useState('')
+  const [discountTouched, setDiscountTouched] = useState(false)
 
   // Customer + order
   const [currency, setCurrency] = useState<Currency>('SYP')
@@ -170,6 +175,7 @@ export default function NewStaffOrderPage() {
     setNotes(o.notes || '')
     // Reset pricing/currency to DB originals in the order's currency
     setShippingFeeTouched(false)
+    setDiscountTouched(false)
     setCurrency(o.currency_used || 'SYP')
     toast.success(`تم استيراد بيانات العميل للطلب ${o.order_number}`)
   }
@@ -414,7 +420,16 @@ export default function NewStaffOrderPage() {
     })
   }
 
-  const multiItemDiscount = isUSD ? multiItemDiscountUsd : multiItemDiscountSyp
+  const autoMultiItemDiscount = isUSD ? multiItemDiscountUsd : multiItemDiscountSyp
+
+  // Manual override of the multi-piece discount. The automatic rule only fires when
+  // the SAME product is repeated; this lets the admin grant the discount across
+  // different products too. Untouched = follows the automatic value.
+  const parsedDiscount = parseFloat(discountInput)
+  const manualDiscount = Number.isFinite(parsedDiscount) && parsedDiscount > 0 ? parsedDiscount : 0
+  const discountRaw = discountTouched ? manualDiscount : autoMultiItemDiscount
+  const multiItemDiscount = Math.min(discountRaw, subtotal)
+  const discountOverflow = discountRaw > subtotal
 
   // Auto shipping fee — mirrors the public checkout pricing rules exactly:
   //  • Aleppo (delivery): flat delivery fee
@@ -436,6 +451,12 @@ export default function NewStaffOrderPage() {
     }
     return { fee: 0, determined: false }
   })()
+
+  // Keep the discount field showing the auto value until the admin edits it.
+  useEffect(() => {
+    if (discountTouched) return
+    setDiscountInput(autoMultiItemDiscount ? String(autoMultiItemDiscount) : '')
+  }, [autoMultiItemDiscount, discountTouched])
 
   // Keep the fee field synced with the auto value until the admin edits it.
   useEffect(() => {
@@ -503,6 +524,10 @@ export default function NewStaffOrderPage() {
         shipping_fee_syp: isUSD ? 0 : feeNum,
         shipping_fee_usd: isUSD ? feeNum : 0,
         shipping_fee_determined: feeDetermined,
+        // Multi-piece discount in the order's currency (auto value unless the admin
+        // overrode it). The other currency is zeroed, same as the shipping fee.
+        discount_syp: isUSD ? 0 : multiItemDiscount,
+        discount_usd: isUSD ? multiItemDiscount : 0,
         payment_method: paymentMethod,
         currency_used: currency,
         notes: notes.trim() || undefined,
@@ -867,6 +892,8 @@ export default function NewStaffOrderPage() {
                   })))
                   // Reset shipping fee touched flag so it recalculates automatically in new currency
                   setShippingFeeTouched(false)
+                  // Same for the discount — a manual figure in SYP is meaningless in USD
+                  setDiscountTouched(false)
                   setCurrency(newCurrency)
                 }}
                 className={FIELD}
@@ -970,11 +997,44 @@ export default function NewStaffOrderPage() {
             <div className="flex justify-between text-sm font-arabic text-secondary">
               <span>المجموع الفرعي</span><span className="font-label text-on-surface">{money(subtotal)}</span>
             </div>
-            {multiItemDiscount > 0 && (
-              <div className="flex justify-between text-sm font-arabic text-primary font-bold">
-                <span>خصم تعدد القطع</span><span className="font-label text-primary">-{money(multiItemDiscount)}</span>
+            {/* Multi-piece discount — auto by default, editable to cover different products */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-arabic text-secondary">خصم تعدد القطع</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-label text-primary font-bold">-</span>
+                  <input
+                    type="number" min={0} step={isUSD ? 0.01 : 1}
+                    value={discountInput}
+                    onChange={(e) => { setDiscountInput(e.target.value); setDiscountTouched(true) }}
+                    placeholder="0"
+                    className={cn('w-28 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
+                      discountOverflow ? 'border-error bg-error-container/20 text-error'
+                        : multiItemDiscount > 0 ? 'border-primary/60 bg-primary/5 text-primary font-bold'
+                        : 'border-outline-variant/50')}
+                  />
+                  <span className="text-xs font-arabic text-secondary">{isUSD ? '$' : 'ل.س'}</span>
+                </div>
               </div>
-            )}
+              <div className="flex items-center gap-2 px-1">
+                {discountOverflow ? (
+                  <span className="text-[11px] font-arabic text-error">الخصم أكبر من المجموع الفرعي — سيُطبَّق {money(subtotal)}</span>
+                ) : (
+                  <span className="text-[11px] font-arabic text-secondary/70">
+                    {discountTouched ? 'خصم مُعدّل يدوياً (يشمل قطعاً من منتجات مختلفة)' : 'محسوب تلقائياً من إعدادات المنتج (نفس المنتج مكرراً)'}
+                  </span>
+                )}
+                {discountTouched && (
+                  <button
+                    type="button"
+                    onClick={() => setDiscountTouched(false)}
+                    className="text-[11px] font-arabic text-primary hover:underline"
+                  >
+                    ↺ تلقائي
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex justify-between text-sm font-arabic text-secondary">
               <span>رسوم الشحن</span><span className="font-label text-on-surface">{money(feeNum)}</span>
             </div>

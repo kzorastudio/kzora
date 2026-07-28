@@ -261,8 +261,19 @@ export async function POST(request: NextRequest) {
 
     const subtotalSyp = sanitizedItems.reduce((s, i) => s + i.unit_price_syp * i.quantity, 0)
     const subtotalUsd = sanitizedItems.reduce((s, i) => s + i.unit_price_usd * i.quantity, 0)
-    const totalSyp = Math.max(0, subtotalSyp - multiItemDiscountSyp + shippingFeeSyp)
-    const totalUsd = Math.max(0, parseFloat((subtotalUsd - multiItemDiscountUsd + shippingFeeUsd).toFixed(2)))
+
+    // ── Manual discount override ─────────────────────────────────────────────
+    // The auto rule above only fires when the SAME product is repeated. The admin
+    // can override the amount to grant a multi-piece discount across different
+    // products. 0 is meaningful ("no discount"), so only a missing/invalid field
+    // falls back to the computed value. Capped at the subtotal.
+    const overrideOf = (v: unknown, fallback: number, cap: number): number =>
+      typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.min(v, cap) : Math.min(fallback, cap)
+    const discountSyp = overrideOf(body.discount_syp, multiItemDiscountSyp, subtotalSyp)
+    const discountUsd = overrideOf(body.discount_usd, multiItemDiscountUsd, subtotalUsd)
+
+    const totalSyp = Math.max(0, subtotalSyp - discountSyp + shippingFeeSyp)
+    const totalUsd = Math.max(0, parseFloat((subtotalUsd - discountUsd + shippingFeeUsd).toFixed(2)))
 
     // ── Guard: never save an order priced at zero in its own currency ────────────
     // Catch-all for any path that fails to resolve a unit price. Without this a
@@ -303,8 +314,8 @@ export async function POST(request: NextRequest) {
         loyalty_discount_syp:    0,
         loyalty_discount_usd:    0,
         coupon_code:             null,
-        discount_amount_syp:     multiItemDiscountSyp,
-        discount_amount_usd:     multiItemDiscountUsd,
+        discount_amount_syp:     discountSyp,
+        discount_amount_usd:     discountUsd,
         subtotal_syp:            subtotalSyp,
         subtotal_usd:            subtotalUsd,
         total_syp:               totalSyp,
