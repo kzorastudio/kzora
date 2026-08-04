@@ -19,7 +19,7 @@ interface ShippingMethod {
   badge: string | null
   is_active: boolean
   sort_order: number
-  shipping_governorates: { governorate_name: string; is_active: boolean; branch_addresses?: string | null }[]
+  shipping_governorates: { governorate_name: string; is_active: boolean; branch_addresses?: string | null; fee_syp?: number; fee_usd?: number }[]
 }
 
 export default function AdminShippingPage() {
@@ -92,10 +92,12 @@ export default function AdminShippingPage() {
     setSaving(method.id)
     try {
       const govs = method.shipping_governorates
-        .filter(g => g.is_active)
         .map(g => ({
           name: g.governorate_name,
-          branch_addresses: g.branch_addresses
+          branch_addresses: g.branch_addresses,
+          fee_syp: g.fee_syp,
+          fee_usd: g.fee_usd,
+          is_active: g.is_active ?? true,
         }))
 
       const res = await fetch('/api/admin/shipping', {

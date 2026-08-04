@@ -49,7 +49,8 @@ async function getProducts(
       stock_status, is_published, is_featured, sort_order, created_at,
       category:categories(id, name_ar),
       images:product_images(url, public_id, display_order),
-      tags:product_tags(tag)
+      tags:product_tags(tag),
+      variants:product_variants(quantity)
       `,
       { count: 'exact' }
     )
@@ -168,20 +169,31 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               const sortedImages = [...((product.images as any[]) ?? [])].sort((a: any, b: any) => a.display_order - b.display_order)
               const thumbnail = sortedImages[0]
               const tags: string[] = (product.tags as any[])?.map((t: any) => t.tag) ?? []
+              const totalStock = product.variants && product.variants.length > 0
+                ? product.variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
+                : 0
               return (
                 <div key={product.id} className="bg-surface-container-lowest rounded-2xl p-4 shadow-ambient border border-outline-variant/10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-14 w-14 rounded-xl overflow-hidden bg-surface-container shrink-0">
-                      {thumbnail?.url ? (
-                        <Image src={thumbnail.url} alt={product.name} width={56} height={56} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center"><span className="text-secondary/40 text-lg">—</span></div>
-                      )}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="h-14 w-14 rounded-xl overflow-hidden bg-surface-container shrink-0">
+                        {thumbnail?.url ? (
+                          <Image src={thumbnail.url} alt={product.name} width={56} height={56} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center"><span className="text-secondary/40 text-lg">—</span></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-arabic font-semibold text-on-surface truncate">{product.name}</p>
+                        <p className="text-xs font-arabic text-secondary mt-0.5">{(product.category as any)?.name_ar ?? '—'}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-arabic font-semibold text-on-surface truncate">{product.name}</p>
-                      <p className="text-xs font-arabic text-secondary mt-0.5">{(product.category as any)?.name_ar ?? '—'}</p>
-                    </div>
+                    {/* Available Stock Badge */}
+                    {totalStock > 0 && (
+                      <span className="text-xs font-arabic font-bold px-2 py-1 rounded-md bg-[#785600]/10 text-[#785600] border border-[#785600]/20 shrink-0 whitespace-nowrap">
+                        متوفر {totalStock} {totalStock === 1 ? 'قطعة' : totalStock === 2 ? 'قطعتين' : 'قطع'}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                     <div>
@@ -237,6 +249,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     const sortedImages = [...((product.images as any[]) ?? [])].sort((a: any, b: any) => a.display_order - b.display_order)
                     const thumbnail = sortedImages[0]
                     const tags: string[] = (product.tags as any[])?.map((t: any) => t.tag) ?? []
+                    const totalStock = product.variants && product.variants.length > 0
+                      ? product.variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
+                      : 0
                     return (
                       <tr key={product.id} className="border-b border-outline-variant/20 last:border-0 hover:bg-surface-container-low/20 transition-colors">
                         <td className="px-4 py-3">
@@ -258,7 +273,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-arabic font-medium', STOCK_BADGE[product.stock_status] ?? 'bg-surface-container text-secondary')}>{STOCK_LABEL[product.stock_status] ?? product.stock_status}</span>
+                          <div className="flex flex-col gap-1">
+                            <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-arabic font-medium w-fit', STOCK_BADGE[product.stock_status] ?? 'bg-surface-container text-secondary')}>{STOCK_LABEL[product.stock_status] ?? product.stock_status}</span>
+                            {totalStock > 0 && (
+                              <span className="text-[11px] font-arabic text-secondary font-medium">
+                                (متوفر {totalStock} قطعة)
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">

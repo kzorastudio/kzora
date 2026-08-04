@@ -298,11 +298,6 @@ export default function ProductActions({ product, settings, activeColorName, ini
               <span className="text-2xl sm:text-3xl font-bold text-[#785600] tabular-nums whitespace-nowrap">
                 {formatPrice(displayPrice, currency)}
               </span>
-              {hasDiscount && discountPct > 0 && (
-                <span className="bg-[#FFDAD6] text-[#BA1A1A] px-2 py-0.5 text-xs font-bold rounded-md">
-                  خصم {discountPct}%
-                </span>
-              )}
             </div>
             {hasDiscount && (
               <span className="text-[#9E9890] line-through text-base tabular-nums">

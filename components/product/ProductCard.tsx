@@ -433,22 +433,6 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
             )}>
               {product.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
             </span>
-
-            {/* Total Available Pieces Badge */}
-            {(() => {
-              const totalStock = product.variants && product.variants.length > 0
-                ? product.variants.reduce((sum, v) => sum + (v.quantity ?? 0), 0)
-                : null
-
-              if (totalStock == null || totalStock <= 0 || isActuallyOutOfStock) return null
-
-              return (
-                <span className="text-[9px] font-arabic font-bold px-1.5 py-0.5 rounded-md bg-[#785600]/10 text-[#785600] border border-[#785600]/20 flex items-center gap-1 shrink-0 whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                  متوفر {totalStock} {totalStock === 1 ? 'قطعة' : totalStock === 2 ? 'قطعتين' : 'قطع'}
-                </span>
-              )
-            })()}
           </div>
         </div>
 

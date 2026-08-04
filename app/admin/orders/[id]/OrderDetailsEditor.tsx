@@ -59,7 +59,11 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
   // this governorate, which blocks saving with a clear reason.
   const availableBranches = useMemo(() => {
     if (!formData.customer_governorate || !formData.shipping_company) return []
-    const company = shippingMethods.find(m => m.slug === formData.shipping_company)
+    const company = shippingMethods.find(m => 
+      m.slug === formData.shipping_company || 
+      m.name === formData.shipping_company || 
+      m.id === formData.shipping_company
+    )
     const gov = company?.governorates?.find((g: any) => g.name === formData.customer_governorate)
     if (gov?.branch_addresses) {
       return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)

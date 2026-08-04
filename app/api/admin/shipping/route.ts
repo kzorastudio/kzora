@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
       method_id: method.id,
       governorate_name: typeof g === 'string' ? g : g.name,
       branch_addresses: typeof g === 'string' ? null : (g.branch_addresses || null),
+      fee_syp: typeof g === 'object' && g.fee_syp !== undefined ? (g.fee_syp ?? 0) : 0,
+      fee_usd: typeof g === 'object' && g.fee_usd !== undefined ? (g.fee_usd ?? 0) : 0,
+      is_active: typeof g === 'object' && g.is_active !== undefined ? (g.is_active ?? true) : true,
     }))
     await supabase.from('shipping_governorates').insert(rows)
   }
@@ -71,6 +74,9 @@ export async function PUT(req: NextRequest) {
         method_id: id,
         governorate_name: typeof g === 'string' ? g : g.name,
         branch_addresses: typeof g === 'string' ? null : (g.branch_addresses || null),
+        fee_syp: typeof g === 'object' && g.fee_syp !== undefined ? (g.fee_syp ?? 0) : 0,
+        fee_usd: typeof g === 'object' && g.fee_usd !== undefined ? (g.fee_usd ?? 0) : 0,
+        is_active: typeof g === 'object' && g.is_active !== undefined ? (g.is_active ?? true) : true,
       }))
       await supabase.from('shipping_governorates').insert(rows)
     }
