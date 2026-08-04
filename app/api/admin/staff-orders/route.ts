@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateStaffOrderPayload } from '@/types'
 import { normalizePhone } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
+import { generateRandomOrderNumber } from '@/lib/orderNumber'
 
 // ─── GET /api/admin/staff-orders ────────────────────────────────────────────────
 // Returns staff-created orders. Employees see only their own; super_admin sees all
@@ -205,12 +206,11 @@ export async function POST(request: NextRequest) {
       // Default price from DB (discount price if set, otherwise base price)
       const dbPriceSyp = dbProduct.discount_price_syp ?? dbProduct.price_syp
       const dbPriceUsd = dbProduct.discount_price_usd ?? dbProduct.price_usd
-      // Allow an admin-supplied manual price (> 0). Falls back to the DB price.
-      // Must be a real number: an emptied price input serialises to null, and
-      // Number(null) is 0 — which used to pass a `>= 0` check and save the item
-      // at zero price. Only an explicit positive number overrides the DB price.
+      // Allow an admin-supplied manual price (>= 0). Falls back to the DB price only when null/undefined.
+      // Must be a real finite number >= 0. Emptied inputs arrive as undefined/null or empty strings
+      // which evaluate typeof !== 'number', safely restoring the DB fallback.
       const manualPrice = (v: unknown, fallback: number): number =>
-        typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback
+        typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback
       const unitSyp = manualPrice(item.unit_price_syp, dbPriceSyp)
       const unitUsd = manualPrice(item.unit_price_usd, dbPriceUsd)
 
@@ -275,25 +275,19 @@ export async function POST(request: NextRequest) {
     const totalSyp = Math.max(0, subtotalSyp - discountSyp + shippingFeeSyp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - discountUsd + shippingFeeUsd).toFixed(2)))
 
-    // ── Guard: never save an order priced at zero in its own currency ────────────
-    // Catch-all for any path that fails to resolve a unit price. Without this a
-    // bad price silently becomes a free order that only surfaces days later.
+    // ── Guard: check for negative subtotal ────────────────────────────────────
     const orderCurrency = currency_used === 'USD' ? 'USD' : 'SYP'
     const subtotalInCurrency = orderCurrency === 'USD' ? subtotalUsd : subtotalSyp
-    if (subtotalInCurrency <= 0) {
-      console.error('Staff order rejected: zero subtotal', { orderCurrency, subtotalSyp, subtotalUsd })
+    if (subtotalInCurrency < 0) {
+      console.error('Staff order rejected: negative subtotal', { orderCurrency, subtotalSyp, subtotalUsd })
       return NextResponse.json(
-        { error: `مجموع المنتجات صفر بعملة الطلب (${orderCurrency}). تحقق من أسعار القطع قبل الحفظ.` },
+        { error: `مجموع المنتجات بالسالب بعملة الطلب (${orderCurrency}). تحقق من الأسعار.` },
         { status: 400 }
       )
     }
 
     // ── Insert order ─────────────────────────────────────────────────────────────
-    const { data: orderNumber, error: numberError } = await supabaseAdmin.rpc('next_order_number')
-    if (numberError || !orderNumber) {
-      console.error('Staff order number generation error:', numberError)
-      return NextResponse.json({ error: 'تعذر إنشاء رقم الطلب' }, { status: 500 })
-    }
+    const orderNumber = await generateRandomOrderNumber()
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({

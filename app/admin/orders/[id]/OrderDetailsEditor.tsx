@@ -31,17 +31,28 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     notes: order.notes || '',
   })
 
-  // Fetch shipping methods dynamically from DB
+  // Fetch shipping methods dynamically from DB & sync form data with latest order props
   useEffect(() => {
     if (isEditing) {
+      setFormData({
+        customer_full_name: order.customer_full_name,
+        customer_phone: order.customer_phone,
+        customer_governorate: order.customer_governorate,
+        customer_address: order.customer_address,
+        center_name: (order as any).center_name || null,
+        shipping_company: order.shipping_company,
+        delivery_type: (order as any).delivery_type || 'shipping',
+        notes: order.notes || '',
+      })
+
       setMethodsLoading(true)
-      fetch('/api/shipping')
+      fetch(`/api/shipping?t=${Date.now()}`, { cache: 'no-store' })
         .then(r => r.json())
         .then(d => setShippingMethods(d.methods || []))
         .catch(() => {})
         .finally(() => setMethodsLoading(false))
     }
-  }, [isEditing])
+  }, [isEditing, order])
 
   // Branch addresses for the selected company + governorate ONLY (strict — no
   // falling back to other companies). Empty when that company has no branch in

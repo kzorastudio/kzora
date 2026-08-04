@@ -284,17 +284,17 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="full_name" className={cn(labelBase, 'mb-0')}>
-                  الاسم الكامل <span className="text-[#BA1A1A]">*</span>
+                  الاسم الثلاثي الكامل <span className="text-[#BA1A1A]">*</span>
                 </label>
-                <span className="text-[10px] font-arabic px-2 py-0.5 bg-[#785600]/10 text-[#785600] rounded-full font-bold">
-                  بالعربي أو الإنكليزي
+                <span className="text-[10px] font-arabic px-2.5 py-0.5 bg-[#785600]/10 text-[#785600] rounded-full font-bold">
+                  الاسم الثلاثي مطلوب
                 </span>
               </div>
               <input
                 id="full_name"
                 type="text"
                 autoComplete="name"
-                placeholder="أدخل اسمك الكامل..."
+                placeholder="مثال: محمد أحمد العلي"
                 className={cn(fieldBase, errors.full_name && 'border-[#BA1A1A] focus:border-[#BA1A1A]')}
                 {...register('full_name')}
                 onInput={(e) => {
@@ -306,9 +306,12 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
                   }
                 }}
               />
-              <p className="mt-1.5 text-xs font-arabic text-[#6B6560]">
-                {'\u064a\u0631\u062c\u0649 \u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062b\u0644\u0627\u062b\u064a \u0628\u0627\u0644\u0623\u062d\u0631\u0641 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0641\u0642\u0637.'}
-              </p>
+              <div className="mt-2 flex items-start gap-2 px-3.5 py-2.5 bg-[#FFFBEA] border border-[#FBE39A] rounded-xl text-[#785600]">
+                <span className="text-xs shrink-0 mt-0.5">⚠️</span>
+                <p className="text-[11px] font-arabic leading-relaxed font-bold">
+                  ملاحظة هامة: يرجى كتابة اسمك الثلاثي بشكل واضح وصريح (الاسم الأول + اسم الأب + الكنية) بالأحرف العربية لضمان وصول الطلب وتجنب أي تأخير لدى شركات الشحن والمندوبين.
+                </p>
+              </div>
               {errors.full_name && <p className={errorBase}>{errors.full_name.message}</p>}
             </div>
 

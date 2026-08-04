@@ -752,9 +752,14 @@ export default function NewStaffOrderPage() {
 
           {/* Cart */}
           <div className="bg-white rounded-2xl p-4 shadow-ambient border border-outline-variant/20">
-            <div className="flex items-center gap-2 mb-3">
-              <ShoppingCart size={16} className="text-primary" />
-              <span className="text-sm font-arabic font-bold text-on-surface">الأصناف ({cart.length})</span>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={16} className="text-primary" />
+                <span className="text-sm font-arabic font-bold text-on-surface">الأصناف ({cart.length})</span>
+              </div>
+              <span className="text-[11px] font-arabic text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                💡 لطلبيات التبديل والتعويض أدخل الرقم 0 في السعر
+              </span>
             </div>
             {cart.length === 0 ? (
               <p className="text-center text-sm font-arabic text-secondary py-6">لم تتم إضافة أصناف بعد</p>
@@ -817,6 +822,7 @@ export default function NewStaffOrderPage() {
                       const price = isUSD ? l.unit_price_usd : l.unit_price_syp
                       const orig = isUSD ? l.orig_price_usd : l.orig_price_syp
                       const changed = price !== orig
+                      const isExchange = price === 0
                       return (
                         <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-outline-variant/20">
                           <span className="text-xs font-arabic text-secondary">سعر القطعة ({cur}):</span>
@@ -825,15 +831,21 @@ export default function NewStaffOrderPage() {
                             value={price}
                             onChange={(e) => updatePrice(l.id, e.target.value)}
                             className={cn('w-24 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
-                              changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
+                              isExchange ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold' : changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}
                           />
-                          {changed && (
+                          {isExchange ? (
+                            <span className="text-[11px] font-arabic font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md flex items-center gap-1">
+                              🔄 قطعة تبديل / تعويض (0)
+                            </span>
+                          ) : changed && (
                             <>
                               <span className="text-[11px] font-label text-secondary/60 line-through">{orig.toLocaleString()}</span>
                               <button onClick={() => resetPrice(l.id)} className="text-[11px] font-arabic text-primary hover:underline">↺ الأصلي</button>
                             </>
                           )}
-                          <span className="mr-auto text-xs font-label font-bold text-on-surface">= {(price * l.quantity).toLocaleString()} {cur}</span>
+                          <span className="mr-auto text-xs font-label font-bold text-on-surface">
+                            = {isExchange ? `0 ${cur} (تبديل)` : `${(price * l.quantity).toLocaleString()} ${cur}`}
+                          </span>
                         </div>
                       )
                     })()}

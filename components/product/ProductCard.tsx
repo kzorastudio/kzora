@@ -373,77 +373,107 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
       </div>
 
       {/* Card body */}
-      <div className="pt-3 pb-3 px-3 space-y-1.5 flex-1 flex flex-col">
-        {/* Color swatches */}
-        {displayedColors && displayedColors.length > 0 && (
-          <div className="flex items-center gap-1.5" data-no-navigate>
-            {displayedColors.slice(0, 5).map((color) => (
-              <button
-                key={color.id}
-                type="button"
-                title={color.name_ar}
-                onMouseEnter={() => setHoveredColor(color.name_ar)}
-                onMouseLeave={() => setHoveredColor(null)}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  router.push(buildProductUrl())
-                }}
-                className={cn(
-                  'w-4 h-4 rounded-full shrink-0 transition-all duration-150',
-                  forcedColor
-                    ? 'ring-2 ring-[#785600] ring-offset-1'
-                    : hoveredColor === color.name_ar
-                    ? 'ring-2 ring-[#785600] ring-offset-1 scale-110'
-                    : 'ring-1 ring-black/25 hover:ring-[#785600]/50'
+      <div className="pt-3 pb-3 px-3 flex-1 flex flex-col justify-between">
+        <div className="space-y-1.5">
+          {/* Color swatches */}
+          <div className="h-5 flex items-center gap-1.5" data-no-navigate>
+            {displayedColors && displayedColors.length > 0 ? (
+              <>
+                {displayedColors.slice(0, 5).map((color) => (
+                  <button
+                    key={color.id}
+                    type="button"
+                    title={color.name_ar}
+                    onMouseEnter={() => setHoveredColor(color.name_ar)}
+                    onMouseLeave={() => setHoveredColor(null)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(buildProductUrl())
+                    }}
+                    className={cn(
+                      'w-4 h-4 rounded-full shrink-0 transition-all duration-150',
+                      forcedColor
+                        ? 'ring-2 ring-[#785600] ring-offset-1'
+                        : hoveredColor === color.name_ar
+                        ? 'ring-2 ring-[#785600] ring-offset-1 scale-110'
+                        : 'ring-1 ring-black/25 hover:ring-[#785600]/50'
+                    )}
+                    style={{ backgroundColor: color.hex_code }}
+                  />
+                ))}
+                {!forcedColor && displayedColors.length > 5 && (
+                  <span className="text-[10px] font-arabic text-[#9E9890]">
+                    +{displayedColors.length - 5}
+                  </span>
                 )}
-                style={{ backgroundColor: color.hex_code }}
-              />
-            ))}
-            {!forcedColor && displayedColors.length > 5 && (
-              <span className="text-[10px] font-arabic text-[#9E9890]">
-                +{displayedColors.length - 5}
-              </span>
-            )}
-            {forcedColor && (
-              <span className="text-[10px] font-arabic text-[#6B6560] mr-1">
-                {forcedColor.name_ar}
-              </span>
-            )}
+                {forcedColor && (
+                  <span className="text-[10px] font-arabic text-[#6B6560] mr-1">
+                    {forcedColor.name_ar}
+                  </span>
+                )}
+              </>
+            ) : null}
           </div>
-        )}
 
-        {/* Name */}
-        <h3 className="text-sm font-arabic font-medium text-[#1A1A1A] leading-snug line-clamp-2 flex items-start gap-1 h-10">
-          {product.is_featured && (
-            <Star size={14} className="fill-[#C59B27] text-[#C59B27] shrink-0 mt-0.5" />
-          )}
-          <span>{product.name}</span>
-        </h3>
+          {/* Name */}
+          <h3 className="text-sm font-arabic font-medium text-[#1A1A1A] leading-snug line-clamp-2 flex items-start gap-1 h-10">
+            {product.is_featured && (
+              <Star size={14} className="fill-[#C59B27] text-[#C59B27] shrink-0 mt-0.5" />
+            )}
+            <span>{product.name}</span>
+          </h3>
 
-        {/* Mold Type Badge */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={cn(
-            "text-[9px] font-arabic font-bold px-1.5 py-0.5 rounded-md border",
-            product.mold_type === 'chinese' 
-              ? "bg-[#E65C00]/5 text-[#E65C00] border-[#E65C00]/20" 
-              : "bg-[#F5F1EB] text-[#6B6560] border-[#E8E3DB]"
-          )}>
-            {product.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
-          </span>
-          {/* We can add more subtle badges here if needed */}
+          {/* Mold Type Badge & Available Stock Count */}
+          <div className="h-6 flex items-center gap-1.5 overflow-hidden flex-nowrap">
+            <span className={cn(
+              "text-[9px] font-arabic font-bold px-1.5 py-0.5 rounded-md border shrink-0",
+              product.mold_type === 'chinese' 
+                ? "bg-[#E65C00]/5 text-[#E65C00] border-[#E65C00]/20" 
+                : "bg-[#F5F1EB] text-[#6B6560] border-[#E8E3DB]"
+            )}>
+              {product.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
+            </span>
+
+            {/* Total Available Pieces Badge */}
+            {(() => {
+              const totalStock = product.variants && product.variants.length > 0
+                ? product.variants.reduce((sum, v) => sum + (v.quantity ?? 0), 0)
+                : null
+
+              if (totalStock == null || totalStock <= 0 || isActuallyOutOfStock) return null
+
+              return (
+                <span className="text-[9px] font-arabic font-bold px-1.5 py-0.5 rounded-md bg-[#785600]/10 text-[#785600] border border-[#785600]/20 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                  متوفر {totalStock} {totalStock === 1 ? 'قطعة' : totalStock === 2 ? 'قطعتين' : 'قطع'}
+                </span>
+              )
+            })()}
+          </div>
         </div>
 
         {/* Price */}
-        <div className="mt-auto flex items-center gap-2 pt-1" dir="rtl">
-          <span className={cn(
-            "font-arabic font-semibold text-sm tabular-nums",
-            isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#1A1A1A]'
-          )}>
-            {formatPrice(displayPrice, currency)}
-          </span>
-          {hasDiscount && (
-            <span className="font-arabic text-xs text-[#9E9890] line-through tabular-nums">
-              {formatPrice(originalDisplayPrice, currency)}
+        <div className="h-7 flex items-center gap-2 pt-1" dir="rtl">
+          {hasDiscount ? (
+            <>
+              {/* Discounted / New Price */}
+              <span className={cn(
+                "font-arabic font-bold text-sm sm:text-base tabular-nums",
+                isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#BA1A1A]'
+              )}>
+                {formatPrice(displayPrice, currency)}
+              </span>
+              {/* Old Original Price (Strikethrough) */}
+              <span className="font-arabic text-xs text-[#9E9890] line-through tabular-nums font-normal">
+                {formatPrice(originalDisplayPrice, currency)}
+              </span>
+            </>
+          ) : (
+            <span className={cn(
+              "font-arabic font-bold text-sm sm:text-base tabular-nums",
+              isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#1A1A1A]'
+            )}>
+              {formatPrice(displayPrice, currency)}
             </span>
           )}
         </div>

@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
 import { sendPurchaseEvent } from '@/lib/metaCapi'
 import { isArabicTripleName } from '@/lib/validators'
+import { generateRandomOrderNumber } from '@/lib/orderNumber'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -434,15 +435,8 @@ export async function POST(request: NextRequest) {
     const totalSyp = Math.max(0, subtotalSyp - finalDiscountSyp + shipping_fee_syp)
     const totalUsd = Math.max(0, parseFloat((subtotalUsd - finalDiscountUsd + shipping_fee_usd).toFixed(2)))
 
-    // ── Step 10: Generate order number (atomic, race-free via DB sequence) ────
-    const { data: orderNumber, error: numberError } = await supabaseAdmin.rpc('next_order_number')
-    if (numberError || !orderNumber) {
-      console.error('Order number generation error:', numberError)
-      return NextResponse.json(
-        { error: 'تعذر إنشاء رقم الطلب. يرجى المحاولة مرة أخرى.' },
-        { status: 500 }
-      )
-    }
+    // ── Step 10: Generate random order number ─────────────────────────────────
+    const orderNumber = await generateRandomOrderNumber()
 
     // ── Step 11: Insert order ─────────────────────────────────────────────────
     const { data: order, error: orderError } = await supabaseAdmin

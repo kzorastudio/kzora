@@ -16,7 +16,7 @@ export default function SendWhatsAppButton({ order }: SendWhatsAppButtonProps) {
   useEffect(() => {
     // Fetch shipping methods to resolve display name dynamically, just like in checkout
     if (order.delivery_type === 'shipping' && order.shipping_company) {
-      fetch('/api/shipping')
+      fetch(`/api/shipping?t=${Date.now()}`, { cache: 'no-store' })
         .then((r) => r.json())
         .then((d) => {
           const methods = d.methods || []
