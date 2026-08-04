@@ -350,12 +350,39 @@ export default function ProductForm({
             </select>
           </div>
           <div>
-            <label className={LABEL_CLASS}>السعر (ليرة)</label>
+            <label className={LABEL_CLASS}>السعر الأصلي (ليرة) *</label>
             <input type="number" {...register('price_syp', { valueAsNumber: true })} className={cn(FIELD_CLASS, 'font-bold tabular-nums')} />
           </div>
           <div>
-            <label className={LABEL_CLASS}>السعر ($)</label>
+            <label className={LABEL_CLASS}>السعر الأصلي ($) *</label>
             <input type="number" step="0.01" {...register('price_usd', { valueAsNumber: true })} className={cn(FIELD_CLASS, 'font-bold tabular-nums')} />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>
+              سعر التخفيض (ليرة) <span className="text-[10px] text-emerald-600 font-normal">(اختياري - للشطب)</span>
+            </label>
+            <input
+              type="number"
+              placeholder="اتركه فارغاً إن لم يوجد خصم"
+              {...register('discount_price_syp', {
+                setValueAs: v => (v === '' || v === null || isNaN(v) ? null : Number(v))
+              })}
+              className={cn(FIELD_CLASS, 'font-bold tabular-nums text-emerald-600 focus:border-emerald-500')}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>
+              سعر التخفيض ($) <span className="text-[10px] text-emerald-600 font-normal">(اختياري - للشطب)</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="اتركه فارغاً إن لم يوجد خصم"
+              {...register('discount_price_usd', {
+                setValueAs: v => (v === '' || v === null || isNaN(v) ? null : Number(v))
+              })}
+              className={cn(FIELD_CLASS, 'font-bold tabular-nums text-emerald-600 focus:border-emerald-500')}
+            />
           </div>
         </div>
       </section>
