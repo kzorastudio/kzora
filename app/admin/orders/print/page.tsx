@@ -163,6 +163,7 @@ export default function PrintPreparationPage() {
           const cur = o.currency_used === 'USD' ? '$' : 'ل.س'
           const sub = o.currency_used === 'USD' ? o.subtotal_usd : o.subtotal_syp
           const ship = o.currency_used === 'USD' ? o.shipping_fee_usd : o.shipping_fee_syp
+          const isAleppo = o.customer_governorate === 'حلب' || o.delivery_type === 'delivery'
           const tot = o.currency_used === 'USD' ? o.total_usd : o.total_syp
           const discount = o.currency_used === 'USD' ? (o.discount_amount_usd || 0) : (o.discount_amount_syp || 0)
 
@@ -279,10 +280,12 @@ export default function PrintPreparationPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-[10px] font-bold text-black">
-                  <span>أجور الشحن:</span>
-                  <span>{ship.toLocaleString()} {cur}</span>
-                </div>
+                {isAleppo && ship > 0 && (
+                  <div className="flex justify-between text-[10px] font-bold text-black">
+                    <span>أجور التوصيل (حلب):</span>
+                    <span>{ship.toLocaleString()} {cur}</span>
+                  </div>
+                )}
 
                 {/* Main Total Box - Prominent for Driver/Delivery */}
                 <div className="mt-2 border-2 border-black bg-black text-white p-2 text-center rounded-none">
@@ -307,11 +310,18 @@ export default function PrintPreparationPage() {
               <div className="mt-3 pt-2 border-t-2 border-black flex items-center justify-between gap-2 text-black">
                 <div className="flex-1">
                   <p className="font-black text-[10px] text-black">متجر كزورا — Kzora Store</p>
-                  <p className="text-[9px] font-bold text-black leading-tight mt-0.5">
+                  <p className="text-[9.5px] font-bold text-black leading-tight mt-1">
+                    بإمكانك تسوق المزيد عبر الرابط:{' '}
+                    <span dir="ltr" className="font-mono font-black text-[10px] underline">https://www.kzora.co/</span>
+                  </p>
+                  <p className="text-[9px] font-bold text-black leading-tight mt-1">
                     شكراً لتسوقكم معنا! لأي استفسار يرجى التواصل على رقمنا: <span dir="ltr" className="font-mono font-black text-[10px]">0964514765</span>
                   </p>
                 </div>
-                <QRCodeSVG value={`https://kzora.com/order/${o.order_number}`} size={54} />
+                <div className="flex flex-col items-center shrink-0">
+                  <QRCodeSVG value="https://www.kzora.co/" size={56} />
+                  <span dir="ltr" className="text-[8px] font-mono font-bold mt-0.5 text-black">kzora.co</span>
+                </div>
               </div>
             </div>
           )
