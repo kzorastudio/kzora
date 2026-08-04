@@ -164,8 +164,15 @@ export default function PrintPreparationPage() {
           const sub = o.currency_used === 'USD' ? o.subtotal_usd : o.subtotal_syp
           const ship = o.currency_used === 'USD' ? o.shipping_fee_usd : o.shipping_fee_syp
           const isAleppo = o.customer_governorate === 'حلب' || o.delivery_type === 'delivery'
-          const tot = o.currency_used === 'USD' ? o.total_usd : o.total_syp
           const discount = o.currency_used === 'USD' ? (o.discount_amount_usd || 0) : (o.discount_amount_syp || 0)
+          
+          // For Aleppo orders, total includes delivery fee. For all other governorates, total is ONLY product prices minus discount.
+          const orderTotalOnInvoice = isAleppo
+            ? Math.max(0, sub - discount + ship)
+            : Math.max(0, sub - discount)
+
+          const isPaidShamCash = o.payment_method === 'sham_cash' || (o as any).payment_status === 'paid'
+          const amountToCollect = isPaidShamCash ? 0 : orderTotalOnInvoice
 
           return (
             <div
@@ -216,6 +223,13 @@ export default function PrintPreparationPage() {
                   <span className="font-bold text-gray-700 text-[10px]">طريقة الشحن:</span>
                   <span className="font-black text-xs text-black bg-gray-200 px-1.5 py-0.5 rounded">
                     {SHIPPING_DISPLAY[o.shipping_company || ''] || o.shipping_company || 'توصيل'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
+                  <span className="font-bold text-gray-700 text-[10px]">طريقة الدفع:</span>
+                  <span className="font-black text-xs text-black">
+                    {isPaidShamCash ? '📱 مدفوع مسبقاً (شام كاش)' : '💵 عند الاستلام (COD)'}
                   </span>
                 </div>
 
@@ -282,7 +296,7 @@ export default function PrintPreparationPage() {
 
                 {isAleppo && ship > 0 && (
                   <div className="flex justify-between text-[10px] font-bold text-black">
-                    <span>أجور التوصيل (حلب):</span>
+                    <span>أجور التوصيل (حلب فقط):</span>
                     <span>{ship.toLocaleString()} {cur}</span>
                   </div>
                 )}
@@ -290,11 +304,20 @@ export default function PrintPreparationPage() {
                 {/* Main Total Box - Prominent for Driver/Delivery */}
                 <div className="mt-2 border-2 border-black bg-black text-white p-2 text-center rounded-none">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-200">
-                    المبلغ المطلوب قبضة من العميل
+                    {isPaidShamCash
+                      ? 'المبلغ المطلوب قبضه من العميل (مدفوع مسبقاً 🟢)'
+                      : orderTotalOnInvoice === 0
+                      ? 'المبلغ المطلوب قبضه من العميل (طلب تبديل / مجاني)'
+                      : 'المبلغ المطلوب قبضه من العميل'}
                   </p>
                   <p className="text-lg font-black tracking-tight text-white mt-0.5">
-                    {tot.toLocaleString()} {cur}
+                    {amountToCollect.toLocaleString()} {cur}
                   </p>
+                  {isPaidShamCash && o.payment_transaction_id && (
+                    <p className="text-[9px] font-mono text-gray-300 mt-0.5">
+                      رقم العملية: {o.payment_transaction_id}
+                    </p>
+                  )}
                 </div>
               </div>
 
