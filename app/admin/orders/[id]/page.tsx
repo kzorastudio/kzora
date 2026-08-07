@@ -414,7 +414,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             )}
 
             {/* Status update (client component) */}
-            <OrderStatusUpdater orderId={order.id} currentStatus={order.status} />
+            <OrderStatusUpdater orderId={order.id} currentStatus={order.status} canDelete />
           </div>
         </div>
       </div>

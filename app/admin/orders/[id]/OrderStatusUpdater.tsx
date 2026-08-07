@@ -10,9 +10,11 @@ import type { OrderStatus } from '@/types'
 interface OrderStatusUpdaterProps {
   orderId: string
   currentStatus: OrderStatus
+  /** Only super_admin may delete orders — the API rejects everyone else with 403. */
+  canDelete?: boolean
 }
 
-export default function OrderStatusUpdater({ orderId, currentStatus }: OrderStatusUpdaterProps) {
+export default function OrderStatusUpdater({ orderId, currentStatus, canDelete = false }: OrderStatusUpdaterProps) {
   const router = useRouter()
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(currentStatus)
   const [updating, setUpdating] = useState(false)
@@ -54,13 +56,23 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: OrderStat
       const res = await fetch(`/api/orders/${orderId}`, {
         method: 'DELETE',
       })
-      if (!res.ok) throw new Error()
-      
+
+      if (!res.ok) {
+        // Surface the server's own reason (403 لموظف، 401 لجلسة منتهية، ...) بدل رسالة عامة
+        const err = await res.json().catch(() => ({}))
+        throw new Error(
+          err.error ??
+            (res.status === 401
+              ? 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً'
+              : 'فشل حذف الطلب، يرجى المحاولة مرة أخرى')
+        )
+      }
+
       toast.success('تم حذف الطلب بنجاح')
       router.push('/admin/orders')
       router.refresh()
-    } catch {
-      toast.error('فشل حذف الطلب، يرجى المحاولة مرة أخرى')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'فشل حذف الطلب، يرجى المحاولة مرة أخرى')
     } finally {
       setDeleting(false)
     }
@@ -98,7 +110,8 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: OrderStat
         </button>
       </div>
 
-      {/* Danger Zone */}
+      {/* Danger Zone — super_admin فقط */}
+      {canDelete && (
       <div className="bg-error-container/10 rounded-2xl border border-error/20 p-5 flex flex-col gap-3">
         <div className="flex items-center gap-2 text-error">
           <Trash2 size={16} />
@@ -116,6 +129,7 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: OrderStat
           {deleting ? 'جاري الحذف...' : 'حذف الطلب نهائياً'}
         </button>
       </div>
+      )}
     </div>
   )
 }

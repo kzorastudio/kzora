@@ -100,11 +100,17 @@ export default function OrdersPage() {
     try {
       const url = restoreStock ? `/api/orders/${id}?restore_stock=true` : `/api/orders/${id}`
       const res = await fetch(url, { method: 'DELETE' })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(
+          err.error ??
+            (res.status === 401 ? 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً' : 'فشل حذف الطلب')
+        )
+      }
       toast.success(restoreStock ? 'تم حذف الطلب وإرجاع الكميات' : 'تم حذف الطلب بنجاح')
       setOrders((prev) => prev.filter((o) => o.id !== id))
-    } catch {
-      toast.error('فشل حذف الطلب')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'فشل حذف الطلب')
     }
   }
 

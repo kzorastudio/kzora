@@ -254,12 +254,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Deleting orders is restricted to super_admin only.
-    if ((session as any).role !== 'super_admin') {
-      return NextResponse.json({ error: 'غير مصرح لك بحذف الطلبات' }, { status: 403 })
+    const { id } = params
+
+    // Ownership isolation: an employee may delete only the orders they created.
+    // super_admin may delete any order.
+    const role = (session as any).role as 'super_admin' | 'employee' | undefined
+    if (role !== 'super_admin') {
+      if (role !== 'employee') {
+        return NextResponse.json({ error: 'غير مصرح لك بحذف الطلبات' }, { status: 403 })
+      }
+
+      const { data: owner, error: ownerErr } = await supabaseAdmin
+        .from('orders')
+        .select('created_by_admin_id')
+        .eq('id', id)
+        .single()
+
+      if (ownerErr || !owner) {
+        return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
+      }
+      if (owner.created_by_admin_id !== (session as any).id) {
+        return NextResponse.json({ error: 'غير مصرح لك بحذف هذا الطلب' }, { status: 403 })
+      }
     }
 
-    const { id } = params
     const url = new URL(_request.url)
     const restoreStock = url.searchParams.get('restore_stock') === 'true'
 
