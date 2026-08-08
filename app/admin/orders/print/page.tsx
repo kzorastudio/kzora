@@ -4,18 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Printer, CheckCircle2, XCircle, Loader2, Tag, FileText } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
 import type { OrderFull } from '@/types'
-import BarcodeSVG from '@/components/admin/BarcodeSVG'
-import QRCodeSVG from '@/components/admin/QRCodeSVG'
+import { LabelPage, ReceiptBody, LABEL_W_MM, LABEL_H_MM, LABEL_PAD_MM } from './ReceiptLabel'
 
-const SHIPPING_DISPLAY: Record<string, string> = {
-  karam: 'كرم للشحن',
-  qadmous: 'قدموس للشحن',
-  masarat: 'مسارات للشحن',
-  delivery: 'توصيل عادي (داخل المدينة)',
-  shipping: 'شحن شركات',
-}
+type PrintMode = 'label' | 'a4'
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
 
 export default function PrintPreparationPage() {
   const router = useRouter()
@@ -23,7 +19,7 @@ export default function PrintPreparationPage() {
   const [loading, setLoading] = useState(true)
   const [confirming, setConfirming] = useState(false)
   const [ids, setIds] = useState<string[]>([])
-  const [printMode, setPrintMode] = useState<'thermal10cm' | 'a4'>('thermal10cm')
+  const [printMode, setPrintMode] = useState<PrintMode>('label')
 
   useEffect(() => {
     let stored: string[] = []
@@ -49,6 +45,16 @@ export default function PrintPreparationPage() {
       .then((d) => setOrders(d.orders ?? []))
       .catch(() => toast.error('تعذر تحميل بيانات الطباعة'))
       .finally(() => setLoading(false))
+  }, [])
+
+  // Chrome prints the document title in the header when headers/footers are on.
+  // Keep it short and meaningful instead of "كزورا — لوحة التحكم".
+  useEffect(() => {
+    const previous = document.title
+    document.title = 'KZORA'
+    return () => {
+      document.title = previous
+    }
   }, [])
 
   async function handleConfirm() {
@@ -80,38 +86,35 @@ export default function PrintPreparationPage() {
     )
   }
 
+  const isLabel = printMode === 'label'
+
   return (
-    <div dir="rtl" className="bg-gray-200 min-h-screen text-black print:bg-white print:p-0">
-      {/* Control Bar - Screen only */}
+    <div dir="rtl" className="print-root bg-gray-200 min-h-screen text-black">
+      {/* Control Bar — screen only */}
       <div className="no-print sticky top-0 z-50 bg-white border-b border-gray-300 shadow-sm px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-base font-arabic font-black text-gray-900">
-            تجهيز طباعة {orders.length} طلب
+            تجهيز طباعة {orders.length} طلب — {orders.length} ملصق بالضبط
           </span>
 
-          {/* Mode Selector */}
           <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-300">
             <button
-              onClick={() => setPrintMode('thermal10cm')}
+              onClick={() => setPrintMode('label')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-arabic font-bold transition ${
-                printMode === 'thermal10cm'
-                  ? 'bg-black text-white shadow-sm'
-                  : 'text-gray-700 hover:bg-gray-200'
+                isLabel ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-200'
               }`}
             >
               <Tag size={14} />
-              ملصق حراري 10 سم (Xprinter)
+              ملصق حراري 10×15 (Xprinter)
             </button>
             <button
               onClick={() => setPrintMode('a4')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-arabic font-bold transition ${
-                printMode === 'a4'
-                  ? 'bg-black text-white shadow-sm'
-                  : 'text-gray-700 hover:bg-gray-200'
+                !isLabel ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-200'
               }`}
             >
               <FileText size={14} />
-              ورق A4 عالي الجودة
+              ورق A4
             </button>
           </div>
         </div>
@@ -143,252 +146,147 @@ export default function PrintPreparationPage() {
         </div>
       </div>
 
-      {/* Screen Helper Note */}
+      {/* Screen helper note */}
       <div className="no-print max-w-4xl mx-auto px-4 pt-3 pb-1">
         <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-arabic text-amber-900 leading-relaxed">
-          💡 <b>إرشادات طباعة طابعة Xprinter (لصاقة 10 سم):</b>
+          💡 <b>إعدادات نافذة الطباعة (Xprinter XP-480B — لصاقة 10×15):</b>
           <ul className="list-disc list-inside mt-1 space-y-0.5">
-            <li>في نافذة المتصفح عند الضغط على "بدء الطباعة"، اختر الطابعة: <b>Xprinter XP-480B</b>.</li>
-            <li>في حجم الورق (Paper Size)، اختر: <b>100mm x 150mm</b> أو <b>User Defined (10cm)</b>.</li>
-            <li>تأكد من إلغاء الهوامش (Margins: <b>None</b>) وإلغاء الرأس والتذييل (Headers and Footers: <b>Uncheck</b>).</li>
+            <li>
+              الوجهة: <b>Xprinter XP-480B</b>
+            </li>
+            <li>
+              حجم الورق: <b>100mm x 150mm</b>
+            </li>
+            <li>
+              الهوامش: <b>بدون هوامش</b> — تغيير الحجم: <b>افتراضي (100%)</b> وليس «التلقائي»
+            </li>
+            <li>
+              من «إعدادات إضافية» ألغِ تفعيل <b>الرؤوس والتذييلات</b> إن ظهر الخيار
+            </li>
+            <li>
+              كل طلب يُطبع على <b>ملصق واحد فقط</b> — يتم تصغير أو تكبير المحتوى تلقائياً ليملأ اللصاقة
+              (النسبة المئوية تظهر أسفل كل ملصق في المعاينة).
+            </li>
           </ul>
         </div>
       </div>
 
-      {/* Printable Area */}
-      <div className={`receipt-container mx-auto p-4 flex flex-col gap-6 ${
-        printMode === 'thermal10cm' ? 'max-w-[100mm] w-[100mm]' : 'max-w-3xl'
-      }`}>
-        {orders.map((o) => {
-          const cur = o.currency_used === 'USD' ? '$' : 'ل.س'
-          const sub = o.currency_used === 'USD' ? o.subtotal_usd : o.subtotal_syp
-          const ship = o.currency_used === 'USD' ? o.shipping_fee_usd : o.shipping_fee_syp
-          const isAleppo = o.customer_governorate === 'حلب' || o.delivery_type === 'delivery'
-          const discount = o.currency_used === 'USD' ? (o.discount_amount_usd || 0) : (o.discount_amount_syp || 0)
-          
-          // For Aleppo orders, total includes delivery fee. For all other governorates, total is ONLY product prices minus discount.
-          const orderTotalOnInvoice = isAleppo
-            ? Math.max(0, sub - discount + ship)
-            : Math.max(0, sub - discount)
-
-          const isPaidShamCash = o.payment_method === 'sham_cash' || (o as any).payment_status === 'paid'
-          const amountToCollect = isPaidShamCash ? 0 : orderTotalOnInvoice
-
-          return (
+      {/* Printable area */}
+      {isLabel ? (
+        <div className="labels-container flex flex-col items-center gap-6 py-6 print:block print:gap-0 print:py-0">
+          {orders.map((o) => (
+            <LabelPage key={o.id} o={o} />
+          ))}
+        </div>
+      ) : (
+        <div className="a4-container mx-auto max-w-3xl p-4 flex flex-col gap-6 print:max-w-none print:p-0 print:gap-0">
+          {orders.map((o) => (
             <div
               key={o.id}
-              className={`receipt bg-white text-black border-2 border-black p-4 font-arabic ${
-                printMode === 'thermal10cm'
-                  ? 'w-[100mm] text-[11px] leading-tight rounded-none shadow-none border-2 border-black'
-                  : 'rounded-xl shadow-md border border-gray-300 p-6'
-              }`}
+              className="a4-receipt bg-white text-black border border-gray-300 rounded-xl shadow-md p-6 print:rounded-none print:shadow-none print:border-0 print:p-[10mm]"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2 text-black">
-                <div>
-                  <h1 className="text-xl font-black font-arabic tracking-tight text-black">كزورا — KZORA</h1>
-                  <p className="text-[10px] font-bold text-black">إيصال طلبية ومستند تسليم</p>
-                </div>
-                <div className="text-left">
-                  <span className="inline-block bg-black text-white px-2 py-0.5 text-xs font-black rounded">
-                    {o.order_number}
-                  </span>
-                  <p className="text-[9px] font-bold mt-1 text-black">{formatDate(o.created_at)}</p>
-                </div>
-              </div>
-
-              {/* Barcode */}
-              <div className="my-2 py-1 flex justify-center border-b border-dashed border-black">
-                <BarcodeSVG value={o.order_number} height={38} showText={true} />
-              </div>
-
-              {/* Customer & Shipping Info Box */}
-              <div className="border-2 border-black p-2 my-2 bg-white space-y-1 text-black">
-                <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
-                  <span className="font-bold text-gray-700 text-[10px]">المستلم:</span>
-                  <span className="font-black text-sm text-black">{o.customer_full_name}</span>
-                </div>
-
-                <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
-                  <span className="font-bold text-gray-700 text-[10px]">الهاتف:</span>
-                  <span className="font-black text-sm text-black" dir="ltr">{o.customer_phone}</span>
-                </div>
-
-                <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
-                  <span className="font-bold text-gray-700 text-[10px]">المحافظة / المدينة:</span>
-                  <span className="font-bold text-xs text-black">{o.customer_governorate}</span>
-                </div>
-
-                <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
-                  <span className="font-bold text-gray-700 text-[10px]">طريقة الشحن:</span>
-                  <span className="font-black text-xs text-black bg-gray-200 px-1.5 py-0.5 rounded">
-                    {SHIPPING_DISPLAY[o.shipping_company || ''] || o.shipping_company || 'توصيل'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
-                  <span className="font-bold text-gray-700 text-[10px]">طريقة الدفع:</span>
-                  <span className="font-black text-xs text-black">
-                    {isPaidShamCash ? '📱 مدفوع مسبقاً (شام كاش)' : '💵 عند الاستلام (COD)'}
-                  </span>
-                </div>
-
-                {o.center_name && (
-                  <div className="flex justify-between items-baseline border-b border-gray-400 pb-1">
-                    <span className="font-bold text-gray-700 text-[10px]">المركز / الفرع:</span>
-                    <span className="font-bold text-xs text-black">{o.center_name}</span>
-                  </div>
-                )}
-
-                {o.customer_address && (
-                  <div className="pt-0.5">
-                    <span className="font-bold text-gray-700 text-[10px] block">العنوان التفصيلي:</span>
-                    <span className="font-bold text-xs text-black block leading-tight">{o.customer_address}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Products Table */}
-              <div className="my-2">
-                <p className="font-black text-[10px] border-b border-black pb-0.5 mb-1 text-black">محتويات الطلبية:</p>
-                <table className="w-full text-right border-collapse text-[10px]">
-                  <thead>
-                    <tr className="border-b border-black font-black text-black">
-                      <th className="py-1 text-right">المنتج</th>
-                      <th className="py-1 text-center">اللون/المقاس</th>
-                      <th className="py-1 text-center">الكمية</th>
-                      <th className="py-1 text-left">السعر</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(o.items || []).map((it) => {
-                      const unit = o.currency_used === 'USD' ? it.unit_price_usd : it.unit_price_syp
-                      return (
-                        <tr key={it.id} className="border-b border-gray-300 font-bold text-black">
-                          <td className="py-1 font-bold text-black">{it.product_name}</td>
-                          <td className="py-1 text-center text-gray-800">
-                            {[it.color, it.size].filter(Boolean).join(' / ') || '—'}
-                          </td>
-                          <td className="py-1 text-center font-black text-black">{it.quantity}</td>
-                          <td className="py-1 text-left font-black text-black">
-                            {(unit * it.quantity).toLocaleString()} {cur}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Financial Calculation & TOTAL TO COLLECT */}
-              <div className="mt-3 space-y-1">
-                <div className="flex justify-between text-[10px] font-bold text-black">
-                  <span>مجموع المنتجات:</span>
-                  <span>{sub.toLocaleString()} {cur}</span>
-                </div>
-
-                {discount > 0 && (
-                  <div className="flex justify-between text-[10px] font-bold text-black">
-                    <span>الخصم:</span>
-                    <span>- {discount.toLocaleString()} {cur}</span>
-                  </div>
-                )}
-
-                {isAleppo && ship > 0 && (
-                  <div className="flex justify-between text-[10px] font-bold text-black">
-                    <span>أجور التوصيل (حلب فقط):</span>
-                    <span>{ship.toLocaleString()} {cur}</span>
-                  </div>
-                )}
-
-                {/* Main Total Box - Prominent for Driver/Delivery */}
-                <div className="mt-2 border-2 border-black bg-black text-white p-2 text-center rounded-none">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-200">
-                    {isPaidShamCash
-                      ? 'المبلغ المطلوب قبضه من العميل (مدفوع مسبقاً 🟢)'
-                      : orderTotalOnInvoice === 0
-                      ? 'المبلغ المطلوب قبضه من العميل (طلب تبديل / مجاني)'
-                      : 'المبلغ المطلوب قبضه من العميل'}
-                  </p>
-                  <p className="text-lg font-black tracking-tight text-white mt-0.5">
-                    {amountToCollect.toLocaleString()} {cur}
-                  </p>
-                  {isPaidShamCash && o.payment_transaction_id && (
-                    <p className="text-[9px] font-mono text-gray-300 mt-0.5">
-                      رقم العملية: {o.payment_transaction_id}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Notes */}
-              {o.notes && (
-                <div className="mt-2 p-1.5 border border-black text-[9.5px] bg-gray-50 text-black">
-                  <span className="font-black block">ملاحظات:</span>
-                  <span className="font-bold leading-tight">{o.notes}</span>
-                </div>
-              )}
-
-              {/* Footer & QR */}
-              <div className="mt-3 pt-2 border-t-2 border-black flex items-center justify-between gap-2 text-black">
-                <div className="flex-1">
-                  <p className="font-black text-[10px] text-black">متجر كزورا — Kzora Store</p>
-                  <p className="text-[9.5px] font-bold text-black leading-tight mt-1">
-                    بإمكانك تسوق المزيد عبر الرابط:{' '}
-                    <span dir="ltr" className="font-mono font-black text-[10px] underline">https://www.kzora.co/</span>
-                  </p>
-                  <p className="text-[9px] font-bold text-black leading-tight mt-1">
-                    شكراً لتسوقكم معنا! لأي استفسار يرجى التواصل على رقمنا: <span dir="ltr" className="font-mono font-black text-[10px]">0964514765</span>
-                  </p>
-                </div>
-                <div className="flex flex-col items-center shrink-0">
-                  <QRCodeSVG value="https://www.kzora.co/" size={56} />
-                  <span dir="ltr" className="text-[8px] font-mono font-bold mt-0.5 text-black">kzora.co</span>
-                </div>
-              </div>
+              <ReceiptBody o={o} compact={false} />
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Print Specific CSS Styles */}
+      {/* Print CSS */}
       <style jsx global>{`
+        .label-page {
+          box-sizing: border-box;
+          width: ${LABEL_W_MM}mm;
+          height: ${LABEL_H_MM}mm;
+          padding: ${LABEL_PAD_MM}mm;
+          overflow: hidden;
+          background: #fff;
+        }
+
+        /* Screen-only framing so the preview looks like a real label */
+        @media screen {
+          .label-page {
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+            outline: 1px solid #cbd5e1;
+          }
+        }
+
         @media print {
-          .no-print { display: none !important; }
-          aside, header { display: none !important; }
-          main { margin: 0 !important; padding: 0 !important; }
+          .no-print,
+          [data-admin-chrome] {
+            display: none !important;
+          }
+          aside,
+          header,
+          nav[role='navigation'] {
+            display: none !important;
+          }
+
+          html,
           body {
-            background-color: white !important;
-            color: black !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: #fff !important;
+            color: #000 !important;
+            width: auto !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .receipt-container {
-            width: ${printMode === 'thermal10cm' ? '100mm' : '100%'} !important;
-            max-width: ${printMode === 'thermal10cm' ? '100mm' : '100%'} !important;
-            margin: 0 auto !important;
-            padding: ${printMode === 'thermal10cm' ? '0' : '8mm'} !important;
+
+          main {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: auto !important;
+            max-width: none !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+
+          .print-root {
+            background: #fff !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .labels-container,
+          .a4-container {
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
             gap: 0 !important;
+            width: auto !important;
+            max-width: none !important;
           }
-          .receipt {
+
+          .label-page {
+            outline: none !important;
             box-shadow: none !important;
-            page-break-after: always !important;
-            break-after: page !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            width: ${printMode === 'thermal10cm' ? '100mm' : '100%'} !important;
-            border-width: 2px !important;
-            border-color: black !important;
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
-          .receipt:last-child {
+
+          .a4-receipt {
+            box-shadow: none !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
+          /* No trailing blank label/sheet after the last order. */
+          .label-page:last-child,
+          .a4-receipt:last-child {
             page-break-after: auto !important;
             break-after: auto !important;
           }
+
           @page {
-            size: ${printMode === 'thermal10cm' ? '100mm 150mm' : 'A4'};
-            margin: 0mm;
+            size: ${isLabel ? `${LABEL_W_MM}mm ${LABEL_H_MM}mm` : 'A4'};
+            margin: 0;
           }
         }
       `}</style>

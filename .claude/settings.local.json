@@ -83,7 +83,28 @@
       "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)",
       "PowerShell(git status --short --untracked-files=all -- \"app/api/products/filters/route.ts\" \"app/api/products/route.ts\" \"app/admin/orders/[id]/OrderItemsEditor.tsx\"; echo \"--- assume-unchanged/skip-worktree ---\"; git ls-files -v -- \"app/api/products\" \"app/admin/orders\" | Where-Object { $_ -cmatch '^[a-z]' })",
       "PowerShell(git check-ignore -v \"app/api/products/filters/route.ts\" \"app/admin/orders/[id]/OrderItemsEditor.tsx\")",
-      "PowerShell($f = \"app/api/admin/orders/[id]/items/route.ts\"; Select-String -LiteralPath $f -Pattern \"claimStamp|delete\\\\\\(\\\\\\).eq\\\\\\('order_id'|typeof v === 'number'\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })"
+      "PowerShell($f = \"app/api/admin/orders/[id]/items/route.ts\"; Select-String -LiteralPath $f -Pattern \"claimStamp|delete\\\\\\(\\\\\\).eq\\\\\\('order_id'|typeof v === 'number'\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" })",
+      "Bash(ls \"/c/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 12.39.32.mp4\" && which ffmpeg ffprobe)",
+      "Bash(ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_type,width,height \"C:/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 12.39.32.mp4\")",
+      "Bash(mkdir -p vid)",
+      "Bash(ffmpeg -v error -i \"C:/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 12.39.32.mp4\" -vf \"fps=1/2,scale=464:-1\" -q:v 4 vid/f_%02d.jpg)",
+      "Bash(ffmpeg -v error -i \"C:/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 12.39.32.mp4\" -vn -ac 1 -ar 16000 \"C:/Users/moham/AppData/Local/Temp/claude/C--Users-moham-Desktop-CODING-Kzora/52092982-27a3-4ebf-b78f-e1e5cab72f5c/scratchpad/audio.wav\")",
+      "Bash(ffprobe -v error -show_entries format=duration \"C:/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 13.22.20.mp4\")",
+      "Bash(mkdir -p vid2)",
+      "Bash(ffmpeg -v error -i \"C:/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 13.22.20.mp4\" -vf \"fps=1/2\" -q:v 3 vid2/g_%02d.jpg)",
+      "Bash(ffmpeg -v error -i \"C:/Users/moham/Desktop/WhatsApp Video 2026-08-08 at 13.22.20.mp4\" -vf \"fps=4\" -q:v 2 vid2/h_%02d.jpg)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Users/moham/AppData/Local/Google/Chrome/Application/**)",
+      "Bash(node printcheck.js)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import fitz; print\\('pymupdf OK'\\)\")",
+      "Bash(python -c \"import pdf2image; print\\('pdf2image OK'\\)\")",
+      "Read(//c/Users/moham/AppData/Local/Microsoft/WinGet/Packages//**)",
+      "Bash(cat)",
+      "Bash(mkdir -p app/print-test)",
+      "Bash(cp \"C:/Users/moham/AppData/Local/Temp/claude/C--Users-moham-Desktop-CODING-Kzora/52092982-27a3-4ebf-b78f-e1e5cab72f5c/scratchpad/printtest-backup.tsx\" app/print-test/page.tsx)",
+      "Bash(node shot3.js ab_no-willchange ab_zoom-instead)",
+      "Bash(node final.js)"
     ]
   }
 }
