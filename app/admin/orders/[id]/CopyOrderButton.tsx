@@ -35,6 +35,10 @@ export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
 
       const paymentMethod = order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'
 
+      const isAleppo = governorate === 'حلب' || deliveryType === 'delivery'
+      const centerLine = (order as any).center_name ? `🏢 المركز / الفرع: ${(order as any).center_name}\n` : ''
+      const addressLine = isAleppo && order.customer_address ? `🏠 العنوان: ${order.customer_address}\n` : ''
+
       const textToCopy = `
 🛍️ تفاصيل الطلب: ${order.order_number}
 📅 التاريخ: ${new Date(order.created_at).toLocaleDateString('ar-SY', { timeZone: 'Asia/Damascus' })}
@@ -42,8 +46,7 @@ export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
 👤 العميل: ${order.customer_full_name}
 📞 الهاتف: ${order.customer_phone}
 📍 المحافظة: ${governorate}
-🏠 العنوان: ${order.customer_address}
-
+${centerLine}${addressLine}
 🛒 المنتجات:
 ${itemsText}
 

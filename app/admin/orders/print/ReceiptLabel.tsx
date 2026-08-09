@@ -75,7 +75,9 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
         gap: 'space-y-[3px]',
         pad: 'p-[4px]',
         barcodeH: 34,
-        qr: 46,
+        // Big enough that each QR module still spans several printer dots at 203 dpi
+        // once the auto-fit zoom shrinks a long receipt.
+        qr: 66,
       }
     : {
         title: 'text-2xl',
@@ -135,17 +137,17 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
           </span>
         </div>
         <Row label="المحافظة / المدينة:">{o.customer_governorate}</Row>
-        <Row label="طريقة الشحن:">
-          {SHIPPING_DISPLAY[o.shipping_company || ''] || o.shipping_company || 'توصيل'}
-        </Row>
-        <Row label="طريقة الدفع:">{isPrepaid ? 'مدفوع مسبقاً (شام كاش)' : 'عند الاستلام (COD)'}</Row>
         {o.center_name && <Row label="المركز / الفرع:">{o.center_name}</Row>}
-        {o.customer_address && (
+        {isAleppo && o.customer_address && (
           <div className="pt-[2px]">
             <span className={`font-bold text-gray-700 block ${s.rowLabel}`}>العنوان التفصيلي:</span>
             <span className={`font-black text-black block leading-snug ${s.rowValue}`}>{o.customer_address}</span>
           </div>
         )}
+        <Row label="طريقة الشحن:">
+          {SHIPPING_DISPLAY[o.shipping_company || ''] || o.shipping_company || 'توصيل'}
+        </Row>
+        <Row label="طريقة الدفع:">{isPrepaid ? 'مدفوع مسبقاً (شام كاش)' : 'عند الاستلام (COD)'}</Row>
       </div>
 
       {/* Items */}
@@ -156,9 +158,9 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
         <table className={`w-full text-right border-collapse ${s.table}`}>
           <thead>
             <tr className="border-b border-black font-black text-black">
-              <th className="py-[2px] text-right">المنتج</th>
-              <th className="py-[2px] text-center">اللون/المقاس</th>
               <th className="py-[2px] text-center">الكمية</th>
+              <th className="py-[2px] text-center">اللون/المقاس</th>
+              <th className="py-[2px] text-right">المنتج</th>
               <th className="py-[2px] text-left">السعر</th>
             </tr>
           </thead>
@@ -167,11 +169,11 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
               const unit = o.currency_used === 'USD' ? it.unit_price_usd : it.unit_price_syp
               return (
                 <tr key={it.id} className="border-b border-gray-300 font-bold text-black align-top">
-                  <td className="py-[2px] font-bold text-black leading-snug">{it.product_name}</td>
+                  <td className="py-[2px] text-center font-black text-black">{it.quantity}</td>
                   <td className="py-[2px] text-center text-gray-800 leading-snug">
                     {[it.color, it.size].filter(Boolean).join(' / ') || '—'}
                   </td>
-                  <td className="py-[2px] text-center font-black text-black">{it.quantity}</td>
+                  <td className="py-[2px] font-bold text-black leading-snug">{it.product_name}</td>
                   <td className="py-[2px] text-left font-black text-black whitespace-nowrap">
                     {(unit * it.quantity).toLocaleString()} {cur}
                   </td>
@@ -190,6 +192,12 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
             {sub.toLocaleString()} {cur}
           </span>
         </div>
+        {o.notes && (
+          <div className={`my-[3px] p-[3px] border border-black text-black ${s.foot}`}>
+            <span className="font-black block">ملاحظات:</span>
+            <span className="font-bold leading-snug">{o.notes}</span>
+          </div>
+        )}
         {discount > 0 && (
           <div className={`flex justify-between font-bold text-black ${s.rowLabel}`}>
             <span>الخصم:</span>
@@ -228,14 +236,6 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
           )}
         </div>
       </div>
-
-      {/* Notes */}
-      {o.notes && (
-        <div className={`mt-[4px] p-[4px] border border-black text-black ${s.foot}`}>
-          <span className="font-black block">ملاحظات:</span>
-          <span className="font-bold leading-snug">{o.notes}</span>
-        </div>
-      )}
 
       {/* Footer */}
       <div className="mt-[5px] pt-[3px] border-t-2 border-black flex items-center justify-between gap-2 text-black">

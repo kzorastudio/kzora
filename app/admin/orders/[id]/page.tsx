@@ -270,18 +270,23 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   <span className="text-on-surface font-label" dir="ltr">{order.customer_phone}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-secondary">المحافظة والمنطقة</span>
-                  <span className="text-on-surface text-left">
-                    {order.customer_governorate}
-                    {(order as any).center_name && <><br/><span className="text-xs text-secondary">({(order as any).center_name})</span></>}
-                  </span>
+                  <span className="text-secondary">المحافظة</span>
+                  <span className="text-on-surface font-medium">{order.customer_governorate}</span>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-secondary">العنوان بالتفصيل</span>
-                  <span className="text-on-surface text-xs leading-relaxed bg-surface-container rounded-lg px-3 py-2">
-                    {order.customer_address}
-                  </span>
-                </div>
+                {(order as any).center_name && (
+                  <div className="flex justify-between">
+                    <span className="text-secondary">المركز / الفرع</span>
+                    <span className="text-on-surface font-medium">{(order as any).center_name}</span>
+                  </div>
+                )}
+                {(order.customer_governorate === 'حلب' || (order as any).delivery_type === 'delivery') && order.customer_address && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-secondary">العنوان التفصيلي</span>
+                    <span className="text-on-surface text-xs leading-relaxed bg-surface-container rounded-lg px-3 py-2">
+                      {order.customer_address}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

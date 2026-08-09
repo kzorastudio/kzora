@@ -18,6 +18,8 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
   const [updating, setUpdating] = useState(false)
   const [shippingMethods, setShippingMethods] = useState<any[]>([])
   const [methodsLoading, setMethodsLoading] = useState(false)
+  const [dbCenters, setDbCenters] = useState<any[]>([])
+  const [loadingCenters, setLoadingCenters] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -54,22 +56,59 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
     }
   }, [isEditing, order])
 
-  // Branch addresses for the selected company + governorate ONLY (strict — no
-  // falling back to other companies). Empty when that company has no branch in
-  // this governorate, which blocks saving with a clear reason.
-  const availableBranches = useMemo(() => {
-    if (!formData.customer_governorate || !formData.shipping_company) return []
-    const company = shippingMethods.find(m => 
-      m.slug === formData.shipping_company || 
-      m.name === formData.shipping_company || 
-      m.id === formData.shipping_company
-    )
-    const gov = company?.governorates?.find((g: any) => g.name === formData.customer_governorate)
-    if (gov?.branch_addresses) {
-      return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
+  // Fetch active centers directly from the shipping_centers table (managed by Admin in Control Panel)
+  useEffect(() => {
+    if (isEditing && formData.customer_governorate) {
+      setLoadingCenters(true)
+      fetch(`/api/shipping/centers?governorate=${encodeURIComponent(formData.customer_governorate)}&t=${Date.now()}`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => setDbCenters(d.centers || []))
+        .catch(() => setDbCenters([]))
+        .finally(() => setLoadingCenters(false))
+    } else {
+      setDbCenters([])
     }
+  }, [isEditing, formData.customer_governorate])
+
+  // Branch addresses for the selected company + governorate.
+  // Prioritizes centers added by Admin in the control panel (shipping_centers table).
+  const availableBranches = useMemo(() => {
+    if (!formData.customer_governorate) return []
+
+    // 1. Primary source: shipping_centers table added by Admin in Control Panel
+    if (dbCenters.length > 0) {
+      let filtered = dbCenters
+      if (formData.shipping_company) {
+        const compObj = shippingMethods.find(
+          m => m.slug === formData.shipping_company || m.name === formData.shipping_company || m.id === formData.shipping_company
+        )
+        const compSlug = compObj?.slug || formData.shipping_company
+        filtered = dbCenters.filter(c => 
+          !c.supported_companies || 
+          c.supported_companies.length === 0 || 
+          c.supported_companies.includes(compSlug) ||
+          c.supported_companies.includes(formData.shipping_company)
+        )
+      }
+      const names = filtered.map((c: any) => c.name?.trim()).filter(Boolean)
+      if (names.length > 0) return Array.from(new Set(names))
+    }
+
+    // 2. Fallback source: branch_addresses text from shipping_governorates table
+    if (formData.shipping_company) {
+      const company = shippingMethods.find(m => 
+        m.slug === formData.shipping_company || 
+        m.name === formData.shipping_company || 
+        m.id === formData.shipping_company
+      )
+      const gov = company?.governorates?.find((g: any) => g.name === formData.customer_governorate)
+      if (gov?.branch_addresses) {
+        return gov.branch_addresses.split('\n').map((s: string) => s.trim()).filter(Boolean)
+      }
+    }
+
     return []
-  }, [formData.customer_governorate, formData.shipping_company, shippingMethods])
+  }, [formData.customer_governorate, formData.shipping_company, dbCenters, shippingMethods])
 
   // Check if the shipping settings are unchanged, allowing the original address to be considered valid
   const shippingSettingsUnchanged = 
@@ -264,18 +303,25 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
                 placeholder="أدخل العنوان بالتفصيل..."
                 className="w-full rounded-xl border border-outline-variant/60 bg-surface-container px-4 py-3 text-sm font-arabic focus:outline-none focus:border-primary/60 transition resize-none"
               />
-            ) : methodsLoading ? (
-              /* Still loading the company branches from the system. */
+            ) : (methodsLoading || loadingCenters) ? (
+              /* Still loading the company branches & centers from the system. */
               <div className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container px-4 flex items-center text-sm font-arabic text-secondary">
-                جارٍ تحميل العناوين...
+                جارٍ تحميل المراكز والعناوين...
               </div>
             ) : availableBranches.length > 0 ? (
               /* Other governorates → choose ONLY from the system's branches for this
                  company + governorate. No free typing. */
               <div className="relative">
                 <select
-                  value={availableBranches.includes(formData.customer_address) || (formData.customer_address === order.customer_address && shippingSettingsUnchanged) ? formData.customer_address : ''}
-                  onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
+                  value={
+                    availableBranches.includes(formData.customer_address) || (formData.customer_address === order.customer_address && shippingSettingsUnchanged)
+                      ? formData.customer_address
+                      : (formData.center_name && availableBranches.includes(formData.center_name) ? formData.center_name : '')
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setFormData({ ...formData, customer_address: val, center_name: val || null })
+                  }}
                   className="w-full h-11 rounded-xl border border-outline-variant/60 bg-surface-container pr-4 pl-10 text-sm font-arabic focus:outline-none focus:border-primary/60 transition appearance-none"
                 >
                   {!availableBranches.includes(order.customer_address) && shippingSettingsUnchanged && order.customer_address && (

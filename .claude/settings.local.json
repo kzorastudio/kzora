@@ -104,7 +104,17 @@
       "Bash(mkdir -p app/print-test)",
       "Bash(cp \"C:/Users/moham/AppData/Local/Temp/claude/C--Users-moham-Desktop-CODING-Kzora/52092982-27a3-4ebf-b78f-e1e5cab72f5c/scratchpad/printtest-backup.tsx\" app/print-test/page.tsx)",
       "Bash(node shot3.js ab_no-willchange ab_zoom-instead)",
-      "Bash(node final.js)"
+      "Bash(node final.js)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).join\\(' '\\)\\)\")",
+      "Bash(npm init *)",
+      "Bash(cp \"C:/Users/moham/AppData/Local/Temp/claude/C--Users-moham-Desktop-CODING-Kzora/52092982-27a3-4ebf-b78f-e1e5cab72f5c/scratchpad/printtest.tsx\" app/print-test/page.tsx)",
+      "Bash(node decode.js)",
+      "Bash(node qrtest.mjs)",
+      "Bash(node qrdiff.mjs \"KZ-100001\" M)",
+      "Bash(sed -i \"s|ts.transpileModule\\(src, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }\\).outputText|ts.transpileModule\\(src, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }\\).outputText.replace\\('mask < 8', process.env.FORCE_MASK ? 'mask < 1' : 'mask < 8'\\)|\" qrdiff.mjs)",
+      "Bash(FORCE_MASK=1 node qrdiff.mjs \"KZ-100001\" M)",
+      "Bash(node qrdata.mjs)",
+      "Bash(node thermal.js)"
     ]
   }
 }

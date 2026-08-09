@@ -2,38 +2,50 @@
 
 import React from 'react'
 
-// Code128 B pattern lookup table (0 - 106)
-const CODE128_PATTERNS: string[] = [
-  '212222', '222122', '222221', '121223', '121322', '131222', '122213', '122312', '132212', '221213',
-  '221312', '231212', '112232', '122132', '122231', '113222', '123122', '123221', '223211', '221132',
-  '221231', '213212', '223112', '312131', '311222', '321122', '321221', '312212', '322112', '322211',
-  '212123', '212321', '232121', '111323', '131123', '131321', '112313', '132113', '132311', '211313',
-  '231113', '231311', '112133', '112331', '132131', '113123', '113321', '133121', '313111', '314111',
-  '334111', '321131', '312113', '322111', '314111', '221411', '431111', '111224', '111422', '121124',
-  '121421', '141122', '141221', '112214', '112412', '122114', '122411', '142112', '142211', '241211',
-  '221114', '411112', '421112', '421211', '212141', '214121', '412121', '111143', '111341', '131141',
-  '114113', '114311', '411113', '411311', '113141', '114131', '311141', '411131', '211412', '211214',
-  '211232', '2331112', '211132', '211231', '213211', '221131', '221311', '214111', '412111', '211141',
-  '211241', '211411', '231141', '211412', '211214', '211232', '2331112'
+/** Standard ISO/IEC 15417 Code 128 pattern bitstrings (symbols 0 to 106) */
+const BARS: string[] = [
+  '11011001100', '11001101100', '11001100110', '10010011000', '10010001100',
+  '10001001100', '10011001000', '10011000100', '10001100100', '11001001000',
+  '11001000100', '11000100100', '10110011100', '10011011100', '10011001110',
+  '10111001100', '10011101100', '10011100110', '11001110010', '11001011100',
+  '11001001110', '11011100100', '11001110100', '11101101110', '11101001100',
+  '11100101100', '11100100110', '11101100100', '11100110100', '11100110010',
+  '11011011000', '11011000110', '11000110110', '10100011000', '10001011000',
+  '10001000110', '10110001000', '10001101000', '10001100010', '11010001000',
+  '11000101000', '11000100010', '10110111000', '10110001110', '10001101110',
+  '10111011000', '10111000110', '10001110110', '11101110110', '11010001110',
+  '11000101110', '11011101000', '11011100010', '11011101110', '11101011000',
+  '11101000110', '11100010110', '11101101000', '11101100010', '11100011010',
+  '11101111010', '11001000010', '11110001010', '10100110000', '10100001100',
+  '10010110000', '10010000110', '10000101100', '10000100110', '10110010000',
+  '10110000100', '10011010000', '10011000010', '10000110100', '10000110010',
+  '11000010010', '11001010000', '11110111010', '11000010100', '10001111010',
+  '10100111100', '10010111100', '10010011110', '10111100100', '10011110100',
+  '10011110010', '11110100100', '11110010100', '11110010010', '11011011110',
+  '11011110110', '11110110110', '10101111000', '10100011110', '10001011110',
+  '10111101000', '10111100010', '11110101000', '11110100010', '10111011110',
+  '10111101110', '11101011110', '11110101110', '11010000100', '11010010000',
+  '11010011100', '1100011101011'
 ]
 
-function encodeCode128B(text: string): string[] {
-  const codes: number[] = [104] // Start B
+function generateCode128Bits(text: string): string {
+  // Start Code B (index 104)
+  let bits = BARS[104]
+  let checksum = 104
+
   for (let i = 0; i < text.length; i++) {
     const charCode = text.charCodeAt(i)
     const val = charCode >= 32 && charCode <= 126 ? charCode - 32 : 0
-    codes.push(val)
+    bits += BARS[val] || BARS[0]
+    checksum += val * (i + 1)
   }
 
-  // Calculate checksum
-  let checksum = codes[0]
-  for (let i = 1; i < codes.length; i++) {
-    checksum += i * codes[i]
-  }
-  codes.push(checksum % 103)
-  codes.push(106) // Stop code
+  // Modulo 103 checksum character
+  bits += BARS[checksum % 103] || BARS[0]
+  // Stop Code (index 106)
+  bits += BARS[106]
 
-  return codes.map((c) => CODE128_PATTERNS[c] || CODE128_PATTERNS[0])
+  return bits
 }
 
 interface BarcodeSVGProps {
@@ -46,33 +58,53 @@ interface BarcodeSVGProps {
 export default function BarcodeSVG({ value, height = 45, showText = true, className = '' }: BarcodeSVGProps) {
   if (!value) return null
 
-  const patterns = encodeCode128B(value)
+  const bits = generateCode128Bits(value)
   const moduleWidth = 2
-  let currentX = 10 // Quiet zone offset
+  const quietZoneModules = 10
+  const quietZonePx = quietZoneModules * moduleWidth
 
   const rects: React.ReactNode[] = []
+  let currentX = quietZonePx
+  let barWidth = 0
 
-  patterns.forEach((pattern, pIdx) => {
-    for (let i = 0; i < pattern.length; i++) {
-      const width = parseInt(pattern[i], 10) * moduleWidth
-      const isBar = i % 2 === 0
-      if (isBar) {
+  for (let i = 0; i < bits.length; i++) {
+    if (bits[i] === '1') {
+      barWidth += moduleWidth
+    } else {
+      if (barWidth > 0) {
         rects.push(
           <rect
-            key={`${pIdx}-${i}`}
+            key={currentX}
             x={currentX}
             y={0}
-            width={width}
+            width={barWidth}
             height={height}
             fill="#000000"
           />
         )
+        currentX += barWidth
+        barWidth = 0
       }
-      currentX += width
+      currentX += moduleWidth
     }
-  })
+  }
 
-  const totalWidth = currentX + 10 // Quiet zone end
+  // Draw final bar if string ends on '1'
+  if (barWidth > 0) {
+    rects.push(
+      <rect
+        key={currentX}
+        x={currentX}
+        y={0}
+        width={barWidth}
+        height={height}
+        fill="#000000"
+      />
+    )
+    currentX += barWidth
+  }
+
+  const totalWidth = currentX + quietZonePx
 
   return (
     <div className={`flex flex-col items-center justify-center ${className}`}>
