@@ -126,8 +126,8 @@ export default function OrderSummaryPanel({
                     )}
                     {item.size && (
                       <span className="text-[10px] font-arabic text-[#6B6560] flex items-center gap-1">
-                        | مقاس {item.size} • <span className={item.mold_type === 'chinese' ? "text-[#E65C00] font-bold" : ""}>
-                          {item.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
+                        | مقاس {item.size} • <span className={item.mold_type === 'chinese' ? "text-[#E65C00] font-bold" : item.mold_type === 'wide' ? "text-[#1A73E8] font-bold" : ""}>
+                          {item.mold_type === 'chinese' ? 'قالب ضيّق' : item.mold_type === 'wide' ? 'قالب واسع' : 'قالب نظامي'}
                         </span>
                       </span>
                     )}

@@ -441,9 +441,15 @@ export default function ProductActions({ product, settings, activeColorName, ini
                 "inline-flex w-max items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-arabic font-bold",
                 product.mold_type === 'chinese' 
                   ? "bg-[#FFF0E6] text-[#E65C00] border border-[#FFD1B3]"
+                  : product.mold_type === 'wide'
+                  ? "bg-[#EBF3FE] text-[#1A73E8] border border-[#C2E7FF]"
                   : "bg-[#E6F4EA] text-[#137333] border border-[#BCE3C6]"
               )}>
-                {product.mold_type === 'chinese' ? 'القالب ضيّق (ننصح بمقاس أكبر)' : 'القالب طبيعي (نظامي)'}
+                {product.mold_type === 'chinese'
+                  ? 'القالب ضيّق (ننصح بمقاس أكبر)'
+                  : product.mold_type === 'wide'
+                  ? 'القالب واسع (ننصح بمقاس أصغر)'
+                  : 'القالب طبيعي (نظامي)'}
               </div>
             </div>
             

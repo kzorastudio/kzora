@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS products (
   price_usd             NUMERIC(10,2) NOT NULL,
   discount_price_syp    NUMERIC(12,2) DEFAULT NULL,
   discount_price_usd    NUMERIC(10,2) DEFAULT NULL,
-  mold_type             TEXT NOT NULL DEFAULT 'normal' CHECK (mold_type IN ('chinese','normal')),
+  mold_type             TEXT NOT NULL DEFAULT 'normal' CHECK (mold_type IN ('chinese','normal','wide')),
   stock_status          TEXT NOT NULL DEFAULT 'in_stock' CHECK (stock_status IN ('in_stock','low_stock','out_of_stock')),
   is_featured           BOOLEAN DEFAULT false,
   is_published          BOOLEAN DEFAULT true,

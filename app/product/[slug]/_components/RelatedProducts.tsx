@@ -7,7 +7,7 @@ interface Props {
   excludeId:    string
   /** The product being viewed — suggestions are ranked by similarity to it. */
   basePriceSyp: number
-  baseMoldType: 'chinese' | 'normal' | null
+  baseMoldType: 'chinese' | 'normal' | 'wide' | null
 }
 
 // How many candidates to score. Larger than the 8 we display so ranking has
@@ -58,7 +58,7 @@ async function fetchRelated(
   categorySlug: string,
   excludeId: string,
   basePriceSyp: number,
-  baseMoldType: 'chinese' | 'normal' | null
+  baseMoldType: 'chinese' | 'normal' | 'wide' | null
 ): Promise<ProductFull[]> {
   const { data: cat } = await supabase
     .from('categories')

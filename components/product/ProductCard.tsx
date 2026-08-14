@@ -429,9 +429,11 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
               "text-[9px] font-arabic font-bold px-1.5 py-0.5 rounded-md border shrink-0",
               product.mold_type === 'chinese' 
                 ? "bg-[#E65C00]/5 text-[#E65C00] border-[#E65C00]/20" 
+                : product.mold_type === 'wide'
+                ? "bg-[#1A73E8]/5 text-[#1A73E8] border-[#1A73E8]/20"
                 : "bg-[#F5F1EB] text-[#6B6560] border-[#E8E3DB]"
             )}>
-              {product.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
+              {product.mold_type === 'chinese' ? 'قالب ضيّق' : product.mold_type === 'wide' ? 'قالب واسع' : 'قالب نظامي'}
             </span>
           </div>
         </div>

@@ -33,7 +33,7 @@ export interface Product {
   price_usd: number
   discount_price_syp: number | null
   discount_price_usd: number | null
-  mold_type: 'chinese' | 'normal'
+  mold_type: 'chinese' | 'normal' | 'wide'
   stock_status: 'in_stock' | 'low_stock' | 'out_of_stock'
   is_featured: boolean
   is_published: boolean
@@ -361,7 +361,7 @@ export interface CartItem {
   price_usd: number
   discount_price_syp: number | null
   discount_price_usd: number | null
-  mold_type: 'chinese' | 'normal'
+  mold_type: 'chinese' | 'normal' | 'wide'
   color_name?: string | null
   multi_discount_syp?: number
   max_stock?: number     // available stock for this color+size variant
@@ -386,7 +386,7 @@ export interface CreateProductPayload {
   price_usd: number
   discount_price_syp?: number | null
   discount_price_usd?: number | null
-  mold_type: 'chinese' | 'normal'
+  mold_type: 'chinese' | 'normal' | 'wide'
   stock_status: 'in_stock' | 'low_stock' | 'out_of_stock'
   is_featured: boolean
   is_published: boolean

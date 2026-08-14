@@ -87,8 +87,14 @@ export function CartItem({ item, className }: CartItemProps) {
             <span className="text-xs font-arabic text-secondary tabular-nums flex items-center gap-1.5">
               <span>مقاس {item.size}</span>
               <span className="w-1 h-1 rounded-full bg-secondary/30" />
-              <span className={cn(item.mold_type === 'chinese' ? "text-[#E65C00] font-bold" : "text-secondary/70")}>
-                {item.mold_type === 'chinese' ? 'قالب ضيّق' : 'قالب نظامي'}
+              <span className={cn(
+                item.mold_type === 'chinese'
+                  ? "text-[#E65C00] font-bold"
+                  : item.mold_type === 'wide'
+                  ? "text-[#1A73E8] font-bold"
+                  : "text-secondary/70"
+              )}>
+                {item.mold_type === 'chinese' ? 'قالب ضيّق' : item.mold_type === 'wide' ? 'قالب واسع' : 'قالب نظامي'}
               </span>
             </span>
           )}

@@ -124,7 +124,7 @@ export const productSchema = z.object({
   price_usd: z.number().positive('السعر بالدولار مطلوب'),
   discount_price_syp: z.number().positive().nullable().optional(),
   discount_price_usd: z.number().positive().nullable().optional(),
-  mold_type: z.enum(['chinese', 'normal']).default('normal'),
+  mold_type: z.enum(['chinese', 'normal', 'wide']).default('normal'),
   stock_status: z.enum(['in_stock', 'low_stock', 'out_of_stock']),
   is_featured: z.boolean(),
   is_published: z.boolean(),

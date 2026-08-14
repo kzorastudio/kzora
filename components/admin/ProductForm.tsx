@@ -347,6 +347,7 @@ export default function ProductForm({
             <select {...register('mold_type')} className={FIELD_CLASS}>
               <option value="normal">طبيعي (نظامي)</option>
               <option value="chinese">ضيّق (أصغر)</option>
+              <option value="wide">واسع (أكبر)</option>
             </select>
           </div>
           <div>
