@@ -7,6 +7,7 @@ import type { CreateStaffOrderPayload } from '@/types'
 import { normalizePhone } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 import { generateRandomOrderNumber } from '@/lib/orderNumber'
+import { syncStockStatus } from '@/lib/stock'
 
 // ─── GET /api/admin/staff-orders ────────────────────────────────────────────────
 // Returns staff-created orders. Employees see only their own; super_admin sees all
@@ -379,15 +380,9 @@ export async function POST(request: NextRequest) {
         sanitizedItems.forEach((item) => {
           if (item.variant_id) productIdsToCheck.add(item.product_id)
         })
+        await syncStockStatus(productIdsToCheck)
+
         for (const pid of Array.from(productIdsToCheck)) {
-          const { data: variants } = await supabaseAdmin
-            .from('product_variants').select('quantity').eq('product_id', pid)
-          if (variants) {
-            const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
-            if (totalStock <= 0) {
-              await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
-            }
-          }
           // Refresh this product's own page on every sale so availability updates fast.
           const sold = productMap.get(pid) as any
           if (sold?.slug) revalidatePath(`/product/${sold.slug}`)

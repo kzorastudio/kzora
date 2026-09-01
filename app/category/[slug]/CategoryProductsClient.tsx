@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { SlidersHorizontal, ChevronDown, X, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
@@ -78,7 +78,6 @@ interface Props {
 
 export default function CategoryProductsClient({ products }: Props) {
   const { currency } = useCurrencyStore()
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -116,8 +115,10 @@ export default function CategoryProductsClient({ products }: Props) {
     if (maxPrice)             params.set('max_price', maxPrice)
     if (onSale)               params.set('on_sale', 'true')
     const qs = params.toString()
-    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
-  }, [sort, search, selectedTags, selectedSizes, minPrice, maxPrice, onSale, pathname, router])
+    // replaceState, not router.replace: it updates the history entry immediately,
+    // so opening a product and pressing Back always returns to the filtered list.
+    window.history.replaceState(window.history.state, '', `${pathname}${qs ? `?${qs}` : ''}`)
+  }, [sort, search, selectedTags, selectedSizes, minPrice, maxPrice, onSale, pathname])
 
   // Sizes that are actually in products AND marked as available in admin panel AND have stock > 0
   const availableSizes = useMemo(() => {

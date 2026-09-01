@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
+import { syncStockStatus } from '@/lib/stock'
 import { deleteImages } from '@/lib/cloudinary'
 import type { ProductTag } from '@/types'
 
@@ -335,6 +336,12 @@ export async function PUT(
       for (const r of toDelete as any[]) {
         await supabaseAdmin.from('product_variants').delete().eq('id', r.id)
       }
+    }
+
+    // Quantities may have changed — recompute in_stock / low_stock / out_of_stock
+    // from the live totals so the badge customers see always matches the inventory.
+    if (variants !== undefined) {
+      await syncStockStatus([id])
     }
 
     // ───── Clear caches ─────

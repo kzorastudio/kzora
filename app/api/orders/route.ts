@@ -9,6 +9,7 @@ import { normalizePhone } from '@/lib/utils'
 import { sendPurchaseEvent } from '@/lib/metaCapi'
 import { isArabicTripleName } from '@/lib/validators'
 import { generateRandomOrderNumber } from '@/lib/orderNumber'
+import { syncStockStatus } from '@/lib/stock'
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -538,22 +539,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Mark product out_of_stock if all variants reached 0, and refresh its pages.
-    for (const pid of Array.from(productIdsToCheck)) {
-      const { data: variants } = await supabaseAdmin
-        .from('product_variants')
-        .select('quantity')
-        .eq('product_id', pid)
+    // Re-evaluate in_stock / low_stock / out_of_stock from the live quantities.
+    await syncStockStatus(productIdsToCheck)
 
-      if (variants) {
-        const totalStock = variants.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0)
-        if (totalStock <= 0) {
-          await supabaseAdmin
-            .from('products')
-            .update({ stock_status: 'out_of_stock' })
-            .eq('id', pid)
-        }
-      }
+    for (const pid of Array.from(productIdsToCheck)) {
 
       // Refresh this product's own cached page on EVERY sale (not just sell-out),
       // so the size availability customers see updates immediately instead of

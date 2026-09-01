@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
+import { syncStockStatus } from '@/lib/stock'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { OrderStatus } from '@/types'
 import { normalizePhone } from '@/lib/utils'
@@ -310,24 +311,8 @@ export async function DELETE(
         }
       }
 
-      // 3. If product was out_of_stock, update it back to in_stock
-      for (const pid of Array.from(productIdsToCheck)) {
-        const { data: variants } = await supabaseAdmin
-          .from('product_variants')
-          .select('quantity')
-          .eq('product_id', pid)
-
-        if (variants) {
-          const totalStock = variants.reduce((sum: number, v: { quantity: number }) => sum + v.quantity, 0)
-          if (totalStock > 0) {
-            await supabaseAdmin
-              .from('products')
-              .update({ stock_status: 'in_stock' })
-              .eq('id', pid)
-              .eq('stock_status', 'out_of_stock') // only update if was out_of_stock
-          }
-        }
-      }
+      // 3. Re-evaluate stock_status now that the pieces are back in inventory
+      await syncStockStatus(productIdsToCheck)
 
       // 4. Revert loyalty points cycle_used if this order used a loyalty discount
       const { data: orderMeta } = await supabaseAdmin

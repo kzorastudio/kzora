@@ -1,7 +1,7 @@
 // ISR: homepage regenerates every 5 minutes; admin actions revalidate it on change.
 export const revalidate = 300
 
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
@@ -108,13 +108,16 @@ export default async function HomePage() {
   let offers: ProductFull[]
   let settings: any = null
 
-  const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult] = await Promise.all([
+  const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult, ordersCountResult] = await Promise.all([
     supabase.from('hero_slides').select('*').eq('is_active', true).order('sort_order'),
     supabase.from('categories').select('*').eq('show_in_home', true).eq('is_active', true).order('home_order', { ascending: true }),
     fetchProductsByTag('new', 8),
     fetchProductsByTag('best_seller', 8),
     fetchProductsByTag('on_sale', 6),
     supabase.from('homepage_settings').select('*').limit(1).single(),
+    // Live customer counter. Uses the admin client because RLS hides orders from
+    // anonymous readers — only the total count leaves the server, never any order.
+    supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
   ])
 
   slides      = slidesResult.data ?? []
@@ -123,6 +126,9 @@ export default async function HomePage() {
   bestSellers = _best
   offers      = _offers
   settings    = settingsResult.data
+  // Grows on its own with every order placed; the homepage revalidates on each new
+  // order, so the figure is current without anyone editing it by hand.
+  const ordersCount = ordersCountResult.count ?? 0
 
   return (
     <>
@@ -188,7 +194,7 @@ export default async function HomePage() {
 
         {/* 1.5 Success Stats (Social Proof) */}
         {settings?.section_stats && (
-           <StatsSection settings={settings} />
+           <StatsSection settings={settings} ordersCount={ordersCount} />
         )}
 
         {/* 2. Category Bento Grid */}

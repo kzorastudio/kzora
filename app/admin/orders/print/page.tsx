@@ -67,7 +67,12 @@ export default function PrintPreparationPage() {
         body: JSON.stringify({ ids }),
       })
       if (!res.ok) throw new Error()
-      toast.success('تم حفظ حالة الطباعة بنجاح')
+      const data = await res.json().catch(() => ({}))
+      toast.success(
+        data.shipped > 0
+          ? `تم حفظ الطباعة، وتحويل ${data.shipped} طلب إلى «تم الشحن»`
+          : 'تم حفظ حالة الطباعة بنجاح'
+      )
       sessionStorage.removeItem('print_order_ids')
       router.push('/admin/orders')
     } catch {

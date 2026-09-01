@@ -10,12 +10,24 @@ interface StatsSectionProps {
     stat_returns_count: string | null
     stat_exchanges_count: string | null
   }
+  /**
+   * Live number of orders placed. When provided it replaces the hand-typed
+   * customers figure, so the counter grows on its own with every order instead of
+   * being edited by hand. The other three figures have no data source in the
+   * system yet, so they stay exactly as typed in the admin panel.
+   */
+  ordersCount?: number
 }
 
-export default function StatsSection({ settings }: StatsSectionProps) {
+export default function StatsSection({ settings, ordersCount }: StatsSectionProps) {
+  const customersLabel =
+    typeof ordersCount === 'number' && ordersCount > 0
+      ? `+${ordersCount.toLocaleString('en-US')} زبون`
+      : settings.stat_customers_count || '+1000 زبون'
+
   const stats = [
     {
-      label: settings.stat_customers_count || '+1000 زبون',
+      label: customersLabel,
       sub: 'عملاء نعتز بهم',
       icon: Users,
       iconBg: 'bg-blue-50',

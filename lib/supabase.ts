@@ -13,6 +13,27 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 /**
+ * Admin client that never reads from a cache.
+ *
+ * Next.js patches global `fetch` and caches GET responses by default. supabase-js
+ * talks to PostgREST over `fetch`, so an ordinary query inside a route handler can
+ * keep returning the very first response it ever got — the order-tracking endpoint
+ * was serving customers a snapshot that never changed, no matter how many times the
+ * order's status was updated.
+ *
+ * Use this client for anything that must reflect the current state of the database
+ * on every single request. Everything else keeps using `supabaseAdmin`, so pages
+ * that rely on ISR caching are untouched.
+ */
+export const supabaseAdminLive = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+  global: {
+    fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, { ...init, cache: 'no-store' }),
+  },
+})
+
+/**
  * Fetch ALL rows from a Supabase query, bypassing PostgREST's server-side
  * row cap (default 1000). Passing `.limit(100000)` does NOT override that cap,
  * so large tables like `site_visits` silently return only the first 1000 rows.

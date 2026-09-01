@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
+import { syncStockStatus } from '@/lib/stock'
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
@@ -195,16 +196,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
 
       // Re-evaluate stock_status for affected products
-      for (const pid of Array.from(affectedProducts)) {
-        const { data: vs } = await supabaseAdmin.from('product_variants').select('quantity').eq('product_id', pid)
-        if (!vs) continue
-        const total = vs.reduce((s: number, v: any) => s + (v.quantity ?? 0), 0)
-        const current = productMap.get(pid)?.stock_status
-        if (total <= 0) {
-          await supabaseAdmin.from('products').update({ stock_status: 'out_of_stock' }).eq('id', pid)
-        } else if (current === 'out_of_stock') {
-          await supabaseAdmin.from('products').update({ stock_status: 'in_stock' }).eq('id', pid)
-        }
+      await syncStockStatus(affectedProducts)
+      if (affectedProducts.size > 0) {
         revalidatePath('/')
         revalidatePath('/products')
       }

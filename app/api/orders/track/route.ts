@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive } from '@/lib/supabase'
 import { normalizePhone } from '@/lib/utils'
 
 // ─── GET /api/orders/track?phone=09XXXXXXXX ───────────────────────────────────
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const phone = normalizePhone(rawPhone)
 
     // Fetch orders matching the phone number, newest first
-    const { data: orders, error } = await supabaseAdmin
+    const { data: orders, error } = await supabaseAdminLive
       .from('orders')
       .select(
         `

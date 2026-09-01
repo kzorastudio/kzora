@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo, useTransition } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { SlidersHorizontal, X, ChevronDown, Search, LayoutGrid } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -101,22 +101,29 @@ function MultiSelectDropdown({
 }
 
 export default function ProductsClientPage({ initialCategories, initialParams, initialProducts, initialTotal }: Props) {
-  const router   = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const { currency } = useCurrencyStore()
 
+  // Filters are read from the live URL first and only fall back to the values the
+  // server rendered with. Coming back from a product page can reuse a cached RSC
+  // payload whose props predate the filters, while the URL is always current — so
+  // the URL is the source of truth for what the customer had selected.
+  const paramOf = (key: keyof typeof initialParams) =>
+    searchParams.get(key) ?? initialParams[key]
+
   // Filter state
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialParams.category ? initialParams.category.split(',').filter(Boolean) : [])
-  const [selectedTags,      setSelectedTags]      = useState<string[]>(initialParams.tag ? initialParams.tag.split(',').filter(Boolean) : [])
-  const [sort,             setSort]             = useState(initialParams.sort ?? 'newest')
-  const [search,           setSearch]           = useState(initialParams.search ?? '')
-  const [searchInput,      setSearchInput]      = useState(initialParams.search ?? '')
-  const [selectedSizes,     setSelectedSizes]     = useState<string[]>(initialParams.size ? initialParams.size.split(',') : [])
-  const [minPrice,         setMinPrice]         = useState(initialParams.min_price ?? '')
-  const [maxPrice,         setMaxPrice]         = useState(initialParams.max_price ?? '')
-  const [onSale,           setOnSale]           = useState(initialParams.on_sale === 'true')
-  const [page,             setPage]             = useState(Number(initialParams.page ?? 1))
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => { const v = paramOf('category'); return v ? v.split(',').filter(Boolean) : [] })
+  const [selectedTags,      setSelectedTags]      = useState<string[]>(() => { const v = paramOf('tag'); return v ? v.split(',').filter(Boolean) : [] })
+  const [sort,             setSort]             = useState(() => paramOf('sort') ?? 'newest')
+  const [search,           setSearch]           = useState(() => paramOf('search') ?? '')
+  const [searchInput,      setSearchInput]      = useState(() => paramOf('search') ?? '')
+  const [selectedSizes,     setSelectedSizes]     = useState<string[]>(() => { const v = paramOf('size'); return v ? v.split(',') : [] })
+  const [minPrice,         setMinPrice]         = useState(() => paramOf('min_price') ?? '')
+  const [maxPrice,         setMaxPrice]         = useState(() => paramOf('max_price') ?? '')
+  const [onSale,           setOnSale]           = useState(() => paramOf('on_sale') === 'true')
+  const [page,             setPage]             = useState(() => Number(paramOf('page') ?? 1))
 
   const [sidebarOpen,  setSidebarOpen]  = useState(false)
   const [products,     setProducts]     = useState<ProductFull[]>(initialProducts ?? [])
@@ -124,8 +131,15 @@ export default function ProductsClientPage({ initialCategories, initialParams, i
   // Skip the initial loading flash when we already have SSR data
   const [loading,      setLoading]      = useState(initialProducts == null)
   const [availableSizes, setAvailableSizes] = useState<number[]>([])
-  // Track whether this is the first render — if so, we already have SSR data and can skip the initial fetch
-  const skipNextFetch = useRef(initialProducts != null)
+  // Skip the first fetch only when the server-rendered products actually match the
+  // filters in the URL. On a Back navigation the cached payload can be the
+  // unfiltered list while the URL carries filters — refetching then is required,
+  // otherwise the chips would show filters the grid does not reflect.
+  const skipNextFetch = useRef(
+    initialProducts != null &&
+    (['category', 'tag', 'sort', 'search', 'page', 'size', 'min_price', 'max_price', 'on_sale'] as const)
+      .every((k) => (searchParams.get(k) ?? undefined) === (initialParams[k] || undefined))
+  )
 
   // Build URL params and push to router
   const buildParams = useCallback(() => {
@@ -177,13 +191,18 @@ export default function ProductsClientPage({ initialCategories, initialParams, i
       return
     }
     fetchProducts()
-    // Update URL without hard navigation
-    const params = buildParams()
-    const qs = params.toString()
-    startTransition(() => {
-      router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
-    })
-  }, [selectedCategories, selectedTags, sort, search, selectedSizes, minPrice, maxPrice, onSale, page, fetchProducts, buildParams, router, pathname])
+
+    // Write the filters into the URL *synchronously*.
+    //
+    // This used to run inside startTransition, which makes the URL update
+    // low-priority and interruptible: tapping a product card (a router.push)
+    // before it committed left the history entry pointing at the unfiltered URL,
+    // so coming back lost every filter. replaceState updates the current history
+    // entry immediately, so Back always returns to the filtered list.
+    const qs = buildParams().toString()
+    const url = `${pathname}${qs ? `?${qs}` : ''}`
+    window.history.replaceState(window.history.state, '', url)
+  }, [selectedCategories, selectedTags, sort, search, selectedSizes, minPrice, maxPrice, onSale, page, fetchProducts, buildParams, pathname])
 
   // Clear price inputs when currency changes
   useEffect(() => {

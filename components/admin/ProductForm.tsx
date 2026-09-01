@@ -341,6 +341,9 @@ export default function ProductForm({
               <option value="low_stock">كمية محدودة</option>
               <option value="out_of_stock">نفذت الكمية</option>
             </select>
+            <p className="text-[10px] font-arabic text-secondary mt-1 leading-relaxed">
+              تُحسب تلقائياً من الكميات: ١٠ قطع أو أقل ← «كمية محدودة»، وصفر ← «نفذت الكمية».
+            </p>
           </div>
           <div>
             <label className={LABEL_CLASS}>القالب (المقاس)</label>

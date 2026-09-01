@@ -339,19 +339,30 @@ export default function HomepagePage() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {[
-                    { label: 'عدد الزبائن', key: 'stat_customers_count' },
+                    { label: 'عدد الزبائن', key: 'stat_customers_count', auto: 'يُحسب تلقائياً من عدد الطلبات — هذا الحقل لم يعد يظهر للزبائن' },
                     { label: 'نسبة الرضا', key: 'stat_satisfaction_rate' },
                     { label: 'عمليات الإرجاع', key: 'stat_returns_count' },
                     { label: 'عمليات التبديل', key: 'stat_exchanges_count' },
                   ].map((item) => (
                     <div key={item.key} className="space-y-1.5">
-                      <label className="text-xs font-arabic font-bold text-secondary">{item.label}</label>
+                      <label className="text-xs font-arabic font-bold text-secondary">
+                        {item.label}
+                        {item.auto && (
+                          <span className="mr-1.5 text-[10px] font-arabic font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
+                            تلقائي
+                          </span>
+                        )}
+                      </label>
                       <input
                         type="text"
                         value={(settings as any)[item.key] || ''}
                         onChange={(e) => { setSettings({ ...settings, [item.key]: e.target.value }); setDirty(true); }}
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-sm font-arabic focus:border-primary outline-none"
+                        disabled={Boolean(item.auto)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-sm font-arabic focus:border-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       />
+                      {item.auto && (
+                        <p className="text-[10px] font-arabic text-secondary leading-relaxed">{item.auto}</p>
+                      )}
                     </div>
                   ))}
                 </div>
