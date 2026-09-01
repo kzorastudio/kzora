@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeAnyAdmin } from '@/lib/adminGuard'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { StaffOrderStat } from '@/types'
 
@@ -8,21 +9,19 @@ import type { StaffOrderStat } from '@/types'
 // Per-employee performance summary. super_admin only.
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
+    const auth = await authorizeAnyAdmin(request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
     // Fetch staff orders (lightweight columns only).
-    // Employees only get their own; super_admin gets everyone's.
+    // Tiers without the view_all_orders capability only get their own.
     let statsQuery = supabaseAdmin
       .from('orders')
       .select('created_by_admin_id, status, total_syp, total_usd')
       .not('created_by_admin_id', 'is', null)
 
-    if (role === 'employee') {
-      statsQuery = statsQuery.eq('created_by_admin_id', (session as any).id)
+    if (isOwnOrdersOnly(session.role)) {
+      statsQuery = statsQuery.eq('created_by_admin_id', session.id)
     }
 
     const { data: orders, error } = await statsQuery

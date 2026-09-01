@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { cloudinary } from '@/lib/cloudinary'
 
 // ─── POST /api/images/upload ──────────────────────────────────────────────────
@@ -8,10 +8,8 @@ import { cloudinary } from '@/lib/cloudinary'
 // Optional form fields: folder (string), transformation (stringified JSON)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_products')
+    if ('response' in auth) return auth.response
 
     // Debug: Check env vars
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {

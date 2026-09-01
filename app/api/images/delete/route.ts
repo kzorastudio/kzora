@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { deleteImage } from '@/lib/cloudinary'
 
 // ─── DELETE /api/images/delete ────────────────────────────────────────────────
@@ -7,10 +7,8 @@ import { deleteImage } from '@/lib/cloudinary'
 // Body: { public_id: string }
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_products')
+    if ('response' in auth) return auth.response
 
     const body = await request.json()
     const { public_id } = body as { public_id: string }

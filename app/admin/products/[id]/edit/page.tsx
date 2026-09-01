@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import type { ProductFull, Category } from '@/types'
 import EditProductClient from './EditProductClient'
+import { requireCapability } from '@/lib/adminGuard'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -51,6 +52,8 @@ async function getCategories(): Promise<Category[]> {
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
+  await requireCapability('manage_products')
+
   const [product, categories] = await Promise.all([
     getProduct(params.id),
     getCategories(),

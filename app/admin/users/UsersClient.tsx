@@ -6,7 +6,8 @@ import toast from 'react-hot-toast'
 import { Modal } from '@/components/ui/Modal'
 import { cn } from '@/lib/utils'
 import type { Admin } from '@/types'
-import { createUser, updateUserPassword, deleteUser } from './actions'
+import { ADMIN_ROLES, ROLE_LABELS, ROLE_SHORT_LABELS, ROLE_DESCRIPTIONS, type AdminRole } from '@/lib/permissions'
+import { createUser, updateUserPassword, deleteUser, updateUserRole } from './actions'
 
 interface UsersClientProps {
   users: Admin[]
@@ -18,19 +19,26 @@ const FIELD_CLASS =
 
 const LABEL_CLASS = 'text-xs font-arabic font-bold text-secondary'
 
-function RoleBadge({ role }: { role: Admin['role'] }) {
-  if (role === 'super_admin') {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-error-container/30 text-error text-xs font-arabic font-bold whitespace-nowrap">
-        <ShieldAlert size={13} strokeWidth={2.5} />
-        مدير عام
-      </span>
-    )
-  }
+/** Colour per tier, most privileged first. */
+const ROLE_STYLES: Record<AdminRole, string> = {
+  super_admin: 'bg-error-container/30 text-error',
+  manager:     'bg-[#785600]/10 text-[#785600]',
+  employee:    'bg-[#006E1C]/10 text-[#006E1C]',
+  order_staff: 'bg-surface-container-high text-on-surface-variant',
+}
+
+function RoleBadge({ role }: { role: AdminRole }) {
+  const Icon = role === 'super_admin' ? ShieldAlert : Shield
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#006E1C]/10 text-[#006E1C] text-xs font-arabic font-bold whitespace-nowrap">
-      <Shield size={13} strokeWidth={2.5} />
-      موظف
+    <span
+      title={ROLE_DESCRIPTIONS[role]}
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-arabic font-bold whitespace-nowrap',
+        ROLE_STYLES[role]
+      )}
+    >
+      <Icon size={13} strokeWidth={2.5} />
+      {ROLE_SHORT_LABELS[role]}
     </span>
   )
 }
@@ -45,19 +53,32 @@ export default function UsersClient({ users, currentUserId }: UsersClientProps) 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<'super_admin' | 'employee'>('employee')
+  const [role, setRole] = useState<AdminRole>('order_staff')
   const [newPassword, setNewPassword] = useState('')
 
   // Loading flags
   const [creating, setCreating] = useState(false)
   const [changingPw, setChangingPw] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [roleSavingId, setRoleSavingId] = useState<string | null>(null)
+
+  async function handleRoleChange(user: Admin, nextRole: AdminRole) {
+    if (nextRole === user.role) return
+    setRoleSavingId(user.id)
+    const res = await updateUserRole(user.id, nextRole)
+    setRoleSavingId(null)
+    if (res?.error) {
+      toast.error(res.error)
+    } else {
+      toast.success(`تم تغيير صلاحية ${user.name} إلى «${ROLE_SHORT_LABELS[nextRole]}»`)
+    }
+  }
 
   function resetCreateForm() {
     setName('')
     setEmail('')
     setPassword('')
-    setRole('employee')
+    setRole('order_staff')
   }
 
   async function handleCreateUser(e: React.FormEvent) {
@@ -152,6 +173,24 @@ export default function UsersClient({ users, currentUserId }: UsersClientProps) 
                 <RoleBadge role={user.role} />
               </div>
 
+              {/* Role changer */}
+              {!isMe && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-arabic font-bold text-secondary shrink-0">الصلاحية:</span>
+                  <select
+                    value={user.role}
+                    disabled={roleSavingId === user.id}
+                    onChange={(e) => handleRoleChange(user, e.target.value as AdminRole)}
+                    className="flex-1 h-10 rounded-xl border border-outline-variant/50 bg-surface-container-lowest px-2 text-xs font-arabic font-bold text-on-surface focus:outline-none focus:border-primary disabled:opacity-50"
+                  >
+                    {ADMIN_ROLES.map((r) => (
+                      <option key={r} value={r}>{ROLE_SHORT_LABELS[r]}</option>
+                    ))}
+                  </select>
+                  {roleSavingId === user.id && <Loader2 size={15} className="animate-spin text-secondary shrink-0" />}
+                </div>
+              )}
+
               {/* Actions row */}
               <div className="flex items-center gap-2 pt-2 border-t border-outline-variant/20">
                 <button
@@ -213,7 +252,21 @@ export default function UsersClient({ users, currentUserId }: UsersClientProps) 
                       <span className="text-sm font-label text-secondary" dir="ltr">{user.email}</span>
                     </td>
                     <td className="px-5 py-4">
-                      <RoleBadge role={user.role} />
+                      <div className="flex items-center gap-2">
+                        <RoleBadge role={user.role} />
+                        <select
+                          value={user.role}
+                          disabled={isMe || roleSavingId === user.id}
+                          onChange={(e) => handleRoleChange(user, e.target.value as AdminRole)}
+                          title={isMe ? 'لا يمكنك تغيير صلاحية حسابك بنفسك' : 'تغيير الصلاحية'}
+                          className="h-9 rounded-lg border border-outline-variant/50 bg-surface-container-lowest px-2 text-xs font-arabic font-bold text-on-surface focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {ADMIN_ROLES.map((r) => (
+                            <option key={r} value={r}>{ROLE_SHORT_LABELS[r]}</option>
+                          ))}
+                        </select>
+                        {roleSavingId === user.id && <Loader2 size={14} className="animate-spin text-secondary" />}
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
@@ -305,12 +358,16 @@ export default function UsersClient({ users, currentUserId }: UsersClientProps) 
               </label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value as 'super_admin' | 'employee')}
+                onChange={(e) => setRole(e.target.value as AdminRole)}
                 className={cn(FIELD_CLASS, 'py-2.5')}
               >
-                <option value="employee">موظف (رؤية المنتجات والطلبات)</option>
-                <option value="super_admin">مدير عام (صلاحيات كاملة)</option>
+                {ADMIN_ROLES.map((r) => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
               </select>
+              <p className="text-[11px] font-arabic text-secondary leading-relaxed">
+                {ROLE_DESCRIPTIONS[role]}
+              </p>
             </div>
           </div>
 

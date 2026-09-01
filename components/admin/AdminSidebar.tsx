@@ -23,30 +23,32 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { can, type Capability } from '@/lib/permissions'
 
 type NavItem = {
   href: string
   label: string
   icon: typeof LayoutDashboard
   exact: boolean
-  /** When true, only super_admin can see/access this item */
-  superAdminOnly?: boolean
+  /** Capability required to see this link. Mirrors the middleware's page rules,
+   *  so the menu never offers a page the server would refuse to open. */
+  capability: Capability
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/admin',            label: 'الرئيسية',         icon: LayoutDashboard, exact: true  },
-  { href: '/admin/stats',      label: 'الإحصائيات',       icon: BarChart3,        exact: false },
-  { href: '/admin/products',   label: 'المنتجات',         icon: Package,          exact: false },
-  { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false },
-  { href: '/admin/staff-orders', label: 'الطلبيات اليدوية', icon: ClipboardList,  exact: false },
-  { href: '/admin/users',      label: 'الموظفين',        icon: Users,            exact: false, superAdminOnly: true },
-  { href: '/admin/categories', label: 'الأقسام',          icon: FolderOpen,       exact: false },
-  { href: '/admin/navigation', label: 'إدارة التنقل',     icon: Menu,             exact: false },
-  { href: '/admin/reviews',    label: 'التقييمات',        icon: MessageSquare,   exact: false },
-  { href: '/admin/coupons',    label: 'الكوبونات',        icon: Tag,              exact: false },
-  { href: '/admin/homepage',   label: 'محتوى المتجر',     icon: Image,            exact: false },
-  { href: '/admin/shipping',   label: 'شركات الشحن',      icon: Truck,            exact: false },
-  { href: '/admin/pages',      label: 'الصفحات',          icon: FileText,         exact: false },
+  { href: '/admin',            label: 'الرئيسية',         icon: LayoutDashboard, exact: true, capability: 'view_dashboard'  },
+  { href: '/admin/stats',      label: 'الإحصائيات',       icon: BarChart3,        exact: false, capability: 'view_stats' },
+  { href: '/admin/products',   label: 'المنتجات',         icon: Package,          exact: false, capability: 'view_products' },
+  { href: '/admin/orders',     label: 'الطلبات',          icon: ShoppingBag,      exact: false, capability: 'view_all_orders' },
+  { href: '/admin/staff-orders', label: 'الطلبيات اليدوية', icon: ClipboardList,  exact: false, capability: 'create_staff_orders' },
+  { href: '/admin/users',      label: 'الموظفين',        icon: Users,            exact: false, capability: 'manage_admins' },
+  { href: '/admin/categories', label: 'الأقسام',          icon: FolderOpen,       exact: false, capability: 'manage_catalog' },
+  { href: '/admin/navigation', label: 'إدارة التنقل',     icon: Menu,             exact: false, capability: 'manage_content' },
+  { href: '/admin/reviews',    label: 'التقييمات',        icon: MessageSquare,   exact: false, capability: 'manage_catalog' },
+  { href: '/admin/coupons',    label: 'الكوبونات',        icon: Tag,              exact: false, capability: 'manage_catalog' },
+  { href: '/admin/homepage',   label: 'محتوى المتجر',     icon: Image,            exact: false, capability: 'manage_content' },
+  { href: '/admin/shipping',   label: 'شركات الشحن',      icon: Truck,            exact: false, capability: 'manage_content' },
+  { href: '/admin/pages',      label: 'الصفحات',          icon: FileText,         exact: false, capability: 'manage_content' },
 ]
 
 interface AdminSidebarProps {
@@ -131,15 +133,7 @@ export default function AdminSidebar({ open = false, onClose }: AdminSidebarProp
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scrollbar-hide">
-          {NAV_ITEMS.filter((item) => {
-            const role = session?.user?.role
-            // Employee can only see Products and their manual orders page
-            if (role === 'employee') return item.href === '/admin/products' || item.href === '/admin/staff-orders'
-            // For any other role state (including a stale/undefined JWT), explicitly hide super_admin-only links.
-            // This avoids relying on JWT freshness for security-sensitive routes.
-            if (item.superAdminOnly && role !== 'super_admin') return false
-            return true
-          }).map((item) => {
+          {NAV_ITEMS.filter((item) => can(session?.user?.role, item.capability)).map((item) => {
             const active = isActive(item.href, item.exact)
             const Icon = item.icon
             return (

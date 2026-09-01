@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi, authorizeAnyAdmin } from '@/lib/adminGuard'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateStaffOrderPayload } from '@/types'
 import { normalizePhone } from '@/lib/utils'
@@ -12,19 +13,17 @@ import { generateRandomOrderNumber } from '@/lib/orderNumber'
 // staff orders, optionally filtered by a specific employee.
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeAnyAdmin(request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
     const { searchParams } = new URL(request.url)
     const page    = parseInt(searchParams.get('page')  || '1', 10)
     const limit   = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
     const status  = searchParams.get('status')
     const search  = searchParams.get('search')
     const printed = searchParams.get('printed')
-    const employee = searchParams.get('employee') // super_admin only
+    const employee = searchParams.get('employee') // only honoured for view_all_orders tiers
     const offset  = (page - 1) * limit
 
     let query = supabaseAdmin
@@ -33,8 +32,8 @@ export async function GET(request: NextRequest) {
       .not('created_by_admin_id', 'is', null) // staff orders only
       .order('created_at', { ascending: false })
 
-    if (role === 'employee') {
-      query = query.eq('created_by_admin_id', (session as any).id)
+    if (isOwnOrdersOnly(session.role)) {
+      query = query.eq('created_by_admin_id', session.id)
     } else if (employee) {
       query = query.eq('created_by_admin_id', employee)
     }
@@ -77,11 +76,9 @@ export async function GET(request: NextRequest) {
 // Prices are resolved server-side from the database (no manual pricing).
 export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const adminId = (session as any).id as string
+    const auth = await authorizeApi(request, 'create_staff_orders')
+    if ('response' in auth) return auth.response
+    const adminId = auth.session.id
 
     const body: CreateStaffOrderPayload = await request.json()
     const {

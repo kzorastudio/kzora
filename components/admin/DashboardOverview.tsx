@@ -34,9 +34,11 @@ interface DashboardOverviewProps {
       allTime: PeriodStats
     }
   }
+  /** Hides the sales-total tile for tiers without the view_stats capability. */
+  showRevenue?: boolean
 }
 
-export default function DashboardOverview({ stats }: DashboardOverviewProps) {
+export default function DashboardOverview({ stats, showRevenue = true }: DashboardOverviewProps) {
   const [timeframe, setTimeframe] = useState<'today' | 'last7d' | 'last30d' | 'allTime'>('today')
 
   const TIMEFRAMES = [
@@ -82,8 +84,9 @@ export default function DashboardOverview({ stats }: DashboardOverviewProps) {
 
       {/* Main KPI Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
-        
+
         {/* KPI 1: Revenue/Sales */}
+        {showRevenue && (
         <div className="bg-white rounded-3xl p-3 sm:p-5 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">
           <div className="flex flex-col gap-1 mb-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-[8px] sm:text-[10px] font-arabic font-bold text-secondary uppercase tracking-wider truncate">المبيعات الإجمالية</span>
@@ -107,6 +110,7 @@ export default function DashboardOverview({ stats }: DashboardOverviewProps) {
             مبيعات الفترة الحالية
           </div>
         </div>
+        )}
 
         {/* KPI 2: Order Count */}
         <div className="bg-white rounded-3xl p-3 sm:p-5 border border-outline-variant/10 shadow-ambient flex flex-col justify-between group hover:border-[#785600]/20 transition-all duration-300">

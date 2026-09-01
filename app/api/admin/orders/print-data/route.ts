@@ -1,20 +1,15 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // ─── POST /api/admin/orders/print-data ───────────────────────────────────────────
 // Returns full orders (with items) for a set of IDs, for the print-preparation page.
-// super_admin only. Does NOT change any data.
+// Requires the print_orders capability. Does NOT change any data.
 export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if ((session as any).role !== 'super_admin') {
-      return NextResponse.json({ error: 'غير مصرح لك بهذا الإجراء' }, { status: 403 })
-    }
+    const auth = await authorizeApi(request, 'print_orders')
+    if ('response' in auth) return auth.response
 
     const body = await request.json()
     const ids: string[] = Array.isArray(body?.ids) ? body.ids.filter((x: any) => typeof x === 'string') : []

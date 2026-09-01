@@ -7,6 +7,7 @@ import type { OrderFull } from '@/types'
 import { formatDate, formatPrice, SHIPPING_LABELS, toArabicNumerals } from '@/lib/utils'
 
 import { useSession } from 'next-auth/react'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 
 interface CopyOrderButtonProps {
   order: OrderFull
@@ -15,7 +16,7 @@ interface CopyOrderButtonProps {
 export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
   const [copied, setCopied] = useState(false)
   const { data: session } = useSession()
-  const isEmployee = session?.user?.role === 'employee'
+  const hideTotals = isOwnOrdersOnly(session?.user?.role)
 
   const handleCopy = async () => {
     try {
@@ -52,7 +53,7 @@ ${itemsText}
 
 🚚 الشحن: ${shippingInfo}
 💳 الدفع: ${paymentMethod}
-${!isEmployee ? `💰 الإجمالي: ${totalPrice}\n` : ''}
+${!hideTotals ? `💰 الإجمالي: ${totalPrice}\n` : ''}
 
 ✨ شكراً لاختياركم كزورا ✨
       `.trim()

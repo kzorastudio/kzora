@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { authorizeApi } from '@/lib/adminGuard'
 import { getAuthSession } from '@/lib/getSession'
+import { can } from '@/lib/permissions'
 import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import type { CreateProductPayload, ProductTag } from '@/types'
 
@@ -9,6 +11,11 @@ import { generateSlug } from '@/lib/utils'
 
 // ─── GET /api/products ────────────────────────────────────────────────────────
 // Public. Supports filtering, sorting, pagination.
+//
+// `include_unpublished=1` also returns draft products, but ONLY for a signed-in
+// admin who may create manual orders — staff need to sell a product that is not
+// live on the storefront yet. For every other caller the flag is ignored, so the
+// public storefront keeps seeing published products only.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -26,7 +33,13 @@ export async function GET(request: NextRequest) {
     const limit     = Math.min(parseInt(searchParams.get('limit') || '24', 10), 100)
     const offset    = (page - 1) * limit
 
-    // Base query — only published products
+    let includeUnpublished = false
+    if (searchParams.get('include_unpublished') === '1') {
+      const token = await getAuthSession(request)
+      includeUnpublished = can((token as any)?.role, 'create_staff_orders')
+    }
+
+    // Base query — published products only, unless an authorized admin asked for drafts
     let query = supabaseAdmin
       .from('products')
       .select(
@@ -41,7 +54,10 @@ export async function GET(request: NextRequest) {
         `,
         { count: 'exact' }
       )
-      .eq('is_published', true)
+
+    if (!includeUnpublished) {
+      query = query.eq('is_published', true)
+    }
 
     // Category filter via slug(s)
     if (category) {
@@ -274,10 +290,8 @@ export async function GET(request: NextRequest) {
 // Admin only. Creates product with all relations.
 export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_products')
+    if ('response' in auth) return auth.response
 
     const body: CreateProductPayload = await request.json()
 

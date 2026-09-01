@@ -12,13 +12,14 @@ import CopyOrderButton from './CopyOrderButton'
 import { ORDER_STATUS_OPTIONS, ADMIN_ITEMS_PER_PAGE } from '@/lib/constants'
 import { formatDate, formatPrice, cn } from '@/lib/utils'
 import type { Order, OrderItem, OrderStatus, StaffOrderStat } from '@/types'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 
 type OrderWithItems = Order & { items?: OrderItem[] }
 
 export default function StaffOrdersPage() {
   const router = useRouter()
   const { data: session } = useSession()
-  const isEmployee = session?.user?.role === 'employee'
+  const isEmployee = isOwnOrdersOnly(session?.user?.role)
 
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [stats, setStats] = useState<StaffOrderStat[]>([])

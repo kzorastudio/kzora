@@ -1,20 +1,15 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // ─── POST /api/admin/orders/bulk-print ───────────────────────────────────────────
-// Marks a batch of orders as printed. super_admin only.
+// Marks a batch of orders as printed. Requires the print_orders capability.
 // Atomic single-statement update; idempotent (re-marking is harmless).
 export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if ((session as any).role !== 'super_admin') {
-      return NextResponse.json({ error: 'غير مصرح لك بهذا الإجراء' }, { status: 403 })
-    }
+    const auth = await authorizeApi(request, 'print_orders')
+    if ('response' in auth) return auth.response
 
     const body = await request.json()
     const ids: string[] = Array.isArray(body?.ids) ? body.ids.filter((x: any) => typeof x === 'string') : []
@@ -28,7 +23,7 @@ export async function POST(request: NextRequest) {
       .update({
         printed:     true,
         printed_at:  new Date().toISOString(),
-        printed_by_id: (session as any).id,
+        printed_by_id: auth.session.id,
       })
       .in('id', ids)
       .select('id')

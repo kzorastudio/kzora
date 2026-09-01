@@ -9,6 +9,7 @@ import toast from 'react-hot-toast'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { ADMIN_ITEMS_PER_PAGE } from '@/lib/constants'
 import type { Order, OrderStatus } from '@/types'
+import { can } from '@/lib/permissions'
 
 interface OrdersResponse {
   orders: Order[]
@@ -20,7 +21,7 @@ interface ShippingMethodRef { slug: string; name: string }
 
 export default function OrdersPage() {
   const { data: session } = useSession()
-  const isSuperAdmin = session?.user?.role === 'super_admin'
+  const isSuperAdmin = can(session?.user?.role, 'print_orders')
 
   const [orders, setOrders]       = useState<Order[]>([])
   const [loading, setLoading]     = useState(true)

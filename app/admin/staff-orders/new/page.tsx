@@ -18,6 +18,8 @@ interface PickerProduct {
   discount_price_syp: number | null
   discount_price_usd: number | null
   stock_status: string
+  /** false = draft (not live on the storefront). Staff may still sell it. */
+  is_published: boolean
   images: { url: string; is_main: boolean }[]
   colors: { name_ar: string; is_available: boolean }[]
   sizes: { size: number; is_available: boolean }[]
@@ -259,7 +261,9 @@ export default function NewStaffOrderPage() {
     if (q.trim().length < 2) { setResults([]); return }
     setSearching(true)
     try {
-      const res = await fetch(`/api/products?search=${encodeURIComponent(q)}&limit=12`)
+      // include_unpublished: drafts are hidden from the storefront but must be
+      // sellable from here. The API only honours the flag for signed-in staff.
+      const res = await fetch(`/api/products?search=${encodeURIComponent(q)}&limit=12&include_unpublished=1`)
       const data = await res.json()
       setResults(data.products ?? [])
     } catch {
@@ -730,7 +734,17 @@ export default function NewStaffOrderPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-arabic font-semibold text-on-surface truncate">{p.name}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="text-sm font-arabic font-semibold text-on-surface truncate">{p.name}</p>
+                      {p.is_published === false && (
+                        <span
+                          title="منتج مسودة — غير ظاهر في المتجر"
+                          className="shrink-0 text-[10px] font-arabic font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200"
+                        >
+                          مسودة
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs font-label text-secondary">
                       {formatCurrency(currency === 'USD' ? (p.discount_price_usd ?? p.price_usd) : (p.discount_price_syp ?? p.price_syp), currency)}
                     </p>

@@ -11,6 +11,7 @@ import DeleteOrderModal from './DeleteOrderModal'
 import { cn } from '@/lib/utils'
 import type { Order, OrderStatus } from '@/types'
 import { useSession } from 'next-auth/react'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 
 const SHIPPING_DISPLAY: Record<string, string> = {
   karam:   'كرم',
@@ -48,7 +49,8 @@ export default function OrderTable({
 }: OrderTableProps) {
   const router = useRouter()
   const { data: session } = useSession()
-  const isEmployee = session?.user?.role === 'employee'
+  // Own-orders-only tiers never see money figures in the list.
+  const isEmployee = isOwnOrdersOnly(session?.user?.role)
   const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string; isReservation: boolean } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 

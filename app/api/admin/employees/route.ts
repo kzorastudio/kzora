@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // ─── GET /api/admin/employees ────────────────────────────────────────────────────
@@ -8,13 +8,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 // super_admin only.
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if ((session as any).role !== 'super_admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const auth = await authorizeApi(request, 'manage_admins')
+    if ('response' in auth) return auth.response
 
     const { data, error } = await supabaseAdmin
       .from('admins')

@@ -1,4 +1,5 @@
 import 'next-auth'
+import type { AdminRole } from '@/lib/permissions'
 
 declare module 'next-auth' {
   interface Session {
@@ -6,7 +7,8 @@ declare module 'next-auth' {
       id: string
       email: string
       name: string
-      role: 'super_admin' | 'employee'
+      /** null when the account was removed or the stored role is unknown. */
+      role: AdminRole | null
     }
   }
 }

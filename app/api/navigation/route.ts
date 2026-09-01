@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 
 interface NavItem {
@@ -9,10 +9,8 @@ interface NavItem {
 // PUT /api/navigation — save header / footer / home links
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_content')
+    if ('response' in auth) return auth.response
 
     const { headerLinks, footerLinks, homeLinks } = await request.json() as {
       headerLinks: NavItem[]

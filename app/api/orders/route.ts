@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeAnyAdmin } from '@/lib/adminGuard'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
@@ -13,10 +14,9 @@ import { generateRandomOrderNumber } from '@/lib/orderNumber'
 // Admin only. Returns paginated orders list.
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeAnyAdmin(request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
     const { searchParams } = new URL(request.url)
     const page   = parseInt(searchParams.get('page')   || '1',  10)
@@ -28,19 +28,17 @@ export async function GET(request: NextRequest) {
     const company = searchParams.get('company')        // shipping_company slug (e.g. 'karam') or 'delivery'
     const offset = (page - 1) * limit
 
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
-
     let query = supabaseAdmin
       .from('orders')
       .select('*, items:order_items(*), creator:created_by_admin_id(id, name, role)', { count: 'exact' })
       .order('created_at', { ascending: false })
 
     // ─── Role-based isolation (enforced server-side, never trust the client) ───
-    if (role === 'employee') {
-      // Employees can only ever see the orders they created themselves.
-      query = query.eq('created_by_admin_id', (session as any).id)
+    if (isOwnOrdersOnly(session.role)) {
+      // These tiers can only ever see the orders they created themselves.
+      query = query.eq('created_by_admin_id', session.id)
     } else {
-      // super_admin may optionally filter by source.
+      // Tiers with view_all_orders may optionally filter by source.
       if (source === 'store') {
         query = query.is('created_by_admin_id', null)
       } else if (source === 'staff') {

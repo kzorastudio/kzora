@@ -1,6 +1,4 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireCapability } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import UsersClient from './UsersClient'
@@ -18,12 +16,8 @@ async function getUsers() {
 }
 
 export default async function AdminUsersPage() {
-  const session = await getServerSession(authOptions)
-  
-  // Only super_admin can access the users page
-  if (session?.user?.role !== 'super_admin') {
-    redirect('/admin/products')
-  }
+  // Managing admins is reserved for super_admin.
+  const session = await requireCapability('manage_admins')
 
   const users = await getUsers()
 
@@ -32,7 +26,7 @@ export default async function AdminUsersPage() {
       <AdminHeader />
       
       <div className="flex-1 p-4 sm:p-6 max-w-6xl w-full mx-auto">
-        <UsersClient users={users as any} currentUserId={session.user.id} />
+        <UsersClient users={users as any} currentUserId={session.id} />
       </div>
     </div>
   )

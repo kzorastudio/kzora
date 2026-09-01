@@ -8,6 +8,7 @@ import { formatPrice, cn } from '@/lib/utils'
 import type { Category } from '@/types'
 import ProductsClient from './ProductsClient'
 import DeleteProductButton from './DeleteProductButton'
+import { requireCapability } from '@/lib/adminGuard'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -107,6 +108,8 @@ const TAG_LABEL: Record<string, string> = {
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
+  await requireCapability('view_products')
+
   const search   = searchParams.search   ?? ''
   const category = searchParams.category ?? ''
   const status   = searchParams.status   ?? ''

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
@@ -11,10 +11,8 @@ export const dynamic = 'force-dynamic'
 // ... existing GET ...
 export async function GET(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_catalog')
+    if ('response' in auth) return auth.response
 
     const { searchParams } = new URL(request.url)
     const page  = parseInt(searchParams.get('page') || '1', 10)
@@ -50,10 +48,8 @@ export async function GET(request: NextRequest) {
 // DELETE /api/admin/reviews?id=[id]
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_catalog')
+    if ('response' in auth) return auth.response
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

@@ -14,8 +14,8 @@ import OrderItemsEditor from './OrderItemsEditor'
 import CopyOrderButton from './CopyOrderButton'
 import SendWhatsAppButton from './SendWhatsAppButton'
 import ConfirmReservationButton from './ConfirmReservationButton'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAdmin } from '@/lib/adminGuard'
+import { homePathFor, isOwnOrdersOnly, normalizeRole, ROLE_SHORT_LABELS } from '@/lib/permissions'
 
 interface OrderDetailPageProps {
   params: { id: string }
@@ -74,16 +74,24 @@ async function getShippingMethodName(slug: string): Promise<string> {
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const session = await getServerSession(authOptions)
-  const isEmployee = session?.user?.role === 'employee'
+  const session = await requireAdmin()
+
+  // Tiers without view_all_orders see only what they created themselves, and the
+  // money figures on this page stay hidden from them.
+  const ownOrdersOnly = isOwnOrdersOnly(session.role)
+  const backHref = homePathFor(session.role)
 
   const order = await getOrder(params.id)
   if (!order) notFound()
 
-  // Isolation: an employee may only view their own orders (defends against manual URL access)
-  if (isEmployee && (order as any).created_by_admin_id !== session?.user?.id) {
+  // Isolation: defends against reaching another employee's order by typing the URL
+  if (ownOrdersOnly && (order as any).created_by_admin_id !== session.id) {
     notFound()
   }
+
+  // Mirrors DELETE /api/orders/[id]: own-orders-only tiers may delete just their
+  // own orders, which — given the check above — is exactly what they can see here.
+  const canDelete = !ownOrdersOnly || (order as any).created_by_admin_id === session.id
 
   const deliveryType = (order as any).delivery_type || 'shipping'
   const shippingName = deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : (await getShippingMethodName(order.shipping_company || ''))
@@ -108,7 +116,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         {/* Page header */}
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/orders"
+            href={backHref}
             className="h-9 w-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors"
             title="رجوع"
           >
@@ -188,7 +196,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
                     {/* Price */}
                     <div className="text-right shrink-0" dir="rtl">
-                      {!isEmployee && (
+                      {!ownOrdersOnly && (
                         <p className="text-sm font-label font-semibold text-on-surface">
                           {order.currency_used === 'USD'
                             ? formatPrice(item.unit_price_usd * item.quantity, 'USD')
@@ -291,7 +299,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </div>
 
             {/* Loyalty info (hide for employees) */}
-            {!isEmployee && (
+            {!ownOrdersOnly && (
               <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <Clock size={16} className="text-secondary" />
@@ -349,7 +357,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </div>
 
             {/* Order totals (hide for employees) */}
-            {!isEmployee && (
+            {!ownOrdersOnly && (
               <div className="bg-surface-container-lowest rounded-2xl shadow-ambient p-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <CreditCard size={16} className="text-secondary" />
@@ -404,11 +412,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
                     <span className="text-secondary text-xs">مصدر الطلب</span>
                     <span className="text-[11px] font-arabic font-bold text-on-surface">
-                      {!(order as any).creator 
-                        ? '🌐 المتجر' 
+                      {!(order as any).creator
+                        ? '🌐 المتجر'
                         : (order as any).creator.role === 'super_admin'
                           ? `👑 الأدمن (${(order as any).creator.name})`
-                          : `👤 الموظف (${(order as any).creator.name})`}
+                          : `👤 ${ROLE_SHORT_LABELS[normalizeRole((order as any).creator.role) ?? 'order_staff']} (${(order as any).creator.name})`}
                     </span>
                   </div>
                   <div className="text-xs text-secondary text-center mt-1">
@@ -419,7 +427,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             )}
 
             {/* Status update (client component) */}
-            <OrderStatusUpdater orderId={order.id} currentStatus={order.status} canDelete />
+            <OrderStatusUpdater
+              orderId={order.id}
+              currentStatus={order.status}
+              canDelete={canDelete}
+            />
           </div>
         </div>
       </div>

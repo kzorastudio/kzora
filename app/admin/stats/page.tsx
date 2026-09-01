@@ -1,6 +1,4 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireCapability } from '@/lib/adminGuard'
 import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import StatsDashboard from '@/components/admin/StatsDashboard'
 
@@ -8,12 +6,8 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default async function AdminStatsPage() {
-  const session = await getServerSession(authOptions)
-
-  // Redirect employees since stats are sensitive
-  if (session?.user?.role === 'employee') {
-    redirect('/admin/products')
-  }
+  // Revenue figures are sensitive — only tiers with view_stats may open this page.
+  await requireCapability('view_stats')
 
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
 

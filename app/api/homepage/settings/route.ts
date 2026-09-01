@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 import { deleteImage } from '@/lib/cloudinary'
 
@@ -77,10 +77,8 @@ export async function GET(_request: NextRequest) {
 // Admin only. Upserts the homepage settings row.
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeApi(request, 'manage_content')
+    if ('response' in auth) return auth.response
 
     const body = await request.json()
 

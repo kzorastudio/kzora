@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeAnyAdmin } from '@/lib/adminGuard'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
@@ -15,10 +16,10 @@ const norm = (s: string | null) => (s || '').trim()
 // a clear error is returned so the admin can restock first.
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await authorizeAnyAdmin(request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
     const { id } = params
 
     // ── Fetch order ──────────────────────────────────────────────────────────────
@@ -32,8 +33,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!order.is_reservation) {
       return NextResponse.json({ error: 'هذا الطلب ليس حجزاً مبدئياً' }, { status: 400 })
     }
-    // Ownership: employees can only confirm their own reservations.
-    if (role === 'employee' && order.created_by_admin_id !== (session as any).id) {
+    // Ownership: own-orders-only tiers can confirm only their own reservations.
+    if (isOwnOrdersOnly(session.role) && order.created_by_admin_id !== session.id) {
       return NextResponse.json({ error: 'غير مصرح لك بتثبيت هذا الطلب' }, { status: 403 })
     }
 

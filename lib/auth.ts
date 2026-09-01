@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { supabaseAdmin } from './supabase'
+import { normalizeRole } from './permissions'
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -51,7 +52,9 @@ export const authOptions: NextAuthOptions = {
             id:    admin.id,
             email: admin.email,
             name:  admin.name,
-            role:  admin.role || 'super_admin',
+            // Fall back to the column default rather than to a privileged role:
+            // a NULL/unknown role must never grant more access than it should.
+            role:  normalizeRole(admin.role || 'employee'),
           }
         } catch (err: any) {
           console.error('[AUTH] Catch-all error:', err.message)
@@ -81,7 +84,7 @@ export const authOptions: NextAuthOptions = {
             .maybeSingle()
 
           if (admin) {
-            token.role = admin.role || 'employee'
+            token.role = normalizeRole(admin.role || 'employee')
             token.name = admin.name
           } else {
             // Admin was deleted — invalidate the token so the user is forced to re-login.
@@ -99,7 +102,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id    = token.id as string
         session.user.email = token.email as string
         session.user.name  = token.name as string
-        session.user.role  = token.role as 'super_admin' | 'employee'
+        session.user.role  = normalizeRole(token.role)
       }
       return session
     },

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 import StatsCard from '@/components/admin/StatsCard'
 import StatusBadge from '@/components/admin/StatusBadge'
-import { formatDate, formatPrice, getSyriaDateParts, formatDateTime } from '@/lib/utils'
+import { formatDate, formatPrice, getSyriaDateParts, formatDateTime, cn } from '@/lib/utils'
 import type { Order } from '@/types'
 
 async function getDashboardStats() {
@@ -124,16 +124,15 @@ async function getRecentOrders(): Promise<Order[]> {
   return (data as Order[]) ?? []
 }
 
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { requireCapability } from '@/lib/adminGuard'
+import { can } from '@/lib/permissions'
 
 export default async function AdminDashboardPage() {
-  const session = await getServerSession(authOptions)
-  
-  if (session?.user?.role === 'employee') {
-    redirect('/admin/products')
-  }
+  const { role } = await requireCapability('view_dashboard')
+
+  // Revenue and sales totals are gated separately: a tier may run the dashboard
+  // without being allowed to see how much money the store makes.
+  const showRevenue = can(role, 'view_stats')
 
   const [stats, recentOrders] = await Promise.all([
     getDashboardStats(),
@@ -157,12 +156,14 @@ export default async function AdminDashboardPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                    {showRevenue && (
                     <Link
                         href="/admin/stats"
                         className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl bg-white text-[#785600] font-arabic font-black text-sm shadow-sm hover:bg-opacity-90 transition-all active:scale-95"
                     >
                         الإحصائيات والتحليلات 📊
                     </Link>
+                    )}
                     <Link
                         href="/admin/products/new"
                         className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl bg-white/10 text-white border border-white/20 font-arabic font-black text-sm hover:bg-white/25 transition-all active:scale-95"
@@ -185,10 +186,11 @@ export default async function AdminDashboardPage() {
 
         {/* Real-time Dashboard Overview (Interactive Client Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-w-0">
-          <div className="lg:col-span-2 flex flex-col w-full min-w-0">
-            <DashboardOverview stats={stats} />
+          <div className={cn('flex flex-col w-full min-w-0', showRevenue ? 'lg:col-span-2' : 'lg:col-span-3')}>
+            <DashboardOverview stats={stats} showRevenue={showRevenue} />
           </div>
 
+          {showRevenue && (
           <div className="bg-gradient-to-br from-[#1A1A1A] to-[#333333] rounded-3xl p-5 md:p-8 shadow-xl relative overflow-hidden group flex flex-col justify-between min-h-[200px] h-full">
              <div className="relative z-10 flex flex-col gap-1.5">
                 <h3 className="text-white/60 font-arabic text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">إجمالي الأرباح المستلمة</h3>
@@ -204,6 +206,7 @@ export default async function AdminDashboardPage() {
              </div>
              <DollarSign className="absolute -bottom-6 -right-6 text-white/5 w-32 h-32 sm:w-40 sm:h-40 transform -rotate-12 group-hover:scale-110 transition-transform" />
           </div>
+          )}
         </div>
 
         {/* Stats grid */}

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
@@ -16,8 +16,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getAuthSession(req)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await authorizeApi(req, 'manage_content')
+  if ('response' in auth) return auth.response
 
   const { governorate, name, supported_companies } = await req.json()
   const { data, error } = await supabaseAdmin
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await getAuthSession(req)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await authorizeApi(req, 'manage_content')
+  if ('response' in auth) return auth.response
 
   const { id, governorate, name, supported_companies } = await req.json()
   const { error } = await supabaseAdmin
@@ -45,8 +45,8 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await getAuthSession(req)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await authorizeApi(req, 'manage_content')
+  if ('response' in auth) return auth.response
 
   const { id } = await req.json()
   const { error } = await supabaseAdmin.from('shipping_centers').delete().eq('id', id)

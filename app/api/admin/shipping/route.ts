@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin as supabase } from '@/lib/supabase'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeApi } from '@/lib/adminGuard'
 
 // GET all methods with governorates (admin)
 export async function GET() {
@@ -21,8 +21,8 @@ export async function GET() {
 
 // POST — create a new method
 export async function POST(req: NextRequest) {
-  const session = await getAuthSession(req)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await authorizeApi(req, 'manage_content')
+  if ('response' in auth) return auth.response
 
   const body = await req.json()
   const { slug, name, description, badge, governorates } = body
@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
 
 // PUT — update a method
 export async function PUT(req: NextRequest) {
-  const session = await getAuthSession(req)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await authorizeApi(req, 'manage_content')
+  if ('response' in auth) return auth.response
 
   const body = await req.json()
   const { id, slug, name, description, badge, is_active, governorates } = body
@@ -88,8 +88,8 @@ export async function PUT(req: NextRequest) {
 
 // DELETE — remove a method
 export async function DELETE(req: NextRequest) {
-  const session = await getAuthSession(req)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await authorizeApi(req, 'manage_content')
+  if ('response' in auth) return auth.response
 
   const { id } = await req.json()
   const { error } = await supabase.from('shipping_methods').delete().eq('id', id)

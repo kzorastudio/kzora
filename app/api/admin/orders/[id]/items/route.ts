@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeAnyAdmin } from '@/lib/adminGuard'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
@@ -25,10 +26,10 @@ const discountOf = (v: unknown, fallback: number): number =>
 //  • recomputes order totals (staff orders = subtotal + shipping, no discounts)
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await authorizeAnyAdmin(request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
     const { id } = params
     const body = await request.json()
     const newItemsRaw: {
@@ -58,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Ownership: employees can only edit their own staff orders. Store orders
     // (created_by_admin_id == null) are never owned by an employee, so this also
     // blocks employees from editing customer orders.
-    if (role === 'employee' && order.created_by_admin_id !== (session as any).id) {
+    if (isOwnOrdersOnly(session.role) && order.created_by_admin_id !== session.id) {
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/getSession'
+import { authorizeAnyAdmin } from '@/lib/adminGuard'
+import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { OrderStatus } from '@/types'
 import { normalizePhone } from '@/lib/utils'
@@ -12,10 +13,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getAuthSession(_request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeAnyAdmin(_request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
     const { id } = params
 
@@ -35,8 +35,8 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Ownership isolation: employees may only view their own orders.
-    if ((session as any).role === 'employee' && order.created_by_admin_id !== (session as any).id) {
+    // Ownership isolation: own-orders-only tiers may view only what they created.
+    if (isOwnOrdersOnly(session.role) && order.created_by_admin_id !== session.id) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
@@ -62,10 +62,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getAuthSession(request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeAnyAdmin(request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
     const body = await request.json()
     const { id } = params
@@ -93,9 +92,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // ─── Ownership isolation: employees may only modify their own orders ───
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
-    if (role === 'employee' && currentOrder.created_by_admin_id !== (session as any).id) {
+    // ─── Ownership isolation: own-orders-only tiers may modify only their own ───
+    if (isOwnOrdersOnly(session.role) && currentOrder.created_by_admin_id !== session.id) {
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
 
@@ -249,21 +247,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getAuthSession(_request)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await authorizeAnyAdmin(_request)
+    if ('response' in auth) return auth.response
+    const { session } = auth
 
     const { id } = params
 
-    // Ownership isolation: an employee may delete only the orders they created.
-    // super_admin may delete any order.
-    const role = (session as any).role as 'super_admin' | 'employee' | undefined
-    if (role !== 'super_admin') {
-      if (role !== 'employee') {
-        return NextResponse.json({ error: 'غير مصرح لك بحذف الطلبات' }, { status: 403 })
-      }
-
+    // Ownership isolation: own-orders-only tiers may delete only the orders they
+    // created themselves. Tiers with view_all_orders may delete any order.
+    if (isOwnOrdersOnly(session.role)) {
       const { data: owner, error: ownerErr } = await supabaseAdmin
         .from('orders')
         .select('created_by_admin_id')
@@ -273,7 +265,7 @@ export async function DELETE(
       if (ownerErr || !owner) {
         return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
       }
-      if (owner.created_by_admin_id !== (session as any).id) {
+      if (owner.created_by_admin_id !== session.id) {
         return NextResponse.json({ error: 'غير مصرح لك بحذف هذا الطلب' }, { status: 403 })
       }
     }

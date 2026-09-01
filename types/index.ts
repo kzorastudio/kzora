@@ -2,6 +2,8 @@
 // KZORA — TypeScript Types & Interfaces
 // ============================================================
 
+import type { AdminRole } from '@/lib/permissions'
+
 // --- Database Row Types ---
 
 export interface Category {
@@ -331,7 +333,7 @@ export interface Admin {
   id: string
   email: string
   name: string
-  role: 'super_admin' | 'employee'
+  role: AdminRole
   created_at: string
 }
 

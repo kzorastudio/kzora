@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import type { Category } from '@/types'
 import CategoriesClient from './CategoriesClient'
+import { requireCapability } from '@/lib/adminGuard'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -36,6 +37,8 @@ async function getCategoriesWithCounts() {
 }
 
 export default async function CategoriesPage() {
+  await requireCapability('manage_catalog')
+
   const categories = await getCategoriesWithCounts()
 
   return (

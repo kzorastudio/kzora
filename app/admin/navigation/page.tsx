@@ -3,6 +3,7 @@ import AdminHeader from '@/components/admin/AdminHeader'
 import type { Category } from '@/types'
 import NavigationClient from './NavigationClient'
 import { Metadata } from 'next'
+import { requireCapability } from '@/lib/adminGuard'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -21,6 +22,8 @@ async function getCategories() {
 }
 
 export default async function NavigationPage() {
+  await requireCapability('manage_content')
+
   const categories = await getCategories()
 
   return (
