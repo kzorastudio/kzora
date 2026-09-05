@@ -163,6 +163,14 @@ export default function OrderTable({
     setPendingDelete(null)
   }
 
+  async function handleDeleteAndRestore() {
+    if (!pendingDelete) return
+    setDeleteLoading(true)
+    await onDeleteOrder(pendingDelete.id, true)
+    setDeleteLoading(false)
+    setPendingDelete(null)
+  }
+
   async function handleDeleteOnly() {
     if (!pendingDelete) return
     setDeleteLoading(true)
@@ -217,6 +225,7 @@ export default function OrderTable({
           loading={deleteLoading}
           onClose={() => { if (!deleteLoading) setPendingDelete(null) }}
           onMarkReturned={handleMarkReturned}
+          onDeleteAndRestore={handleDeleteAndRestore}
           onDeleteOnly={handleDeleteOnly}
         />
       )}
