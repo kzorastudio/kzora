@@ -155,18 +155,18 @@ export default function OrderTable({
     }
   }
 
-  async function handleDeleteOnly() {
+  async function handleMarkReturned() {
     if (!pendingDelete) return
     setDeleteLoading(true)
-    await onDeleteOrder(pendingDelete.id, false)
+    await onStatusChange(pendingDelete.id, 'cancelled')
     setDeleteLoading(false)
     setPendingDelete(null)
   }
 
-  async function handleDeleteAndRestore() {
+  async function handleDeleteOnly() {
     if (!pendingDelete) return
     setDeleteLoading(true)
-    await onDeleteOrder(pendingDelete.id, true)
+    await onDeleteOrder(pendingDelete.id, false)
     setDeleteLoading(false)
     setPendingDelete(null)
   }
@@ -216,8 +216,8 @@ export default function OrderTable({
           isReservation={pendingDelete.isReservation}
           loading={deleteLoading}
           onClose={() => { if (!deleteLoading) setPendingDelete(null) }}
+          onMarkReturned={handleMarkReturned}
           onDeleteOnly={handleDeleteOnly}
-          onDeleteAndRestore={handleDeleteAndRestore}
         />
       )}
 
