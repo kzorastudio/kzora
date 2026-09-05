@@ -67,7 +67,7 @@ export const ORDER_STATUS_OPTIONS = [
   { id: 'confirmed', label: 'مؤكد',         color: 'text-blue-600 bg-blue-50'     },
   { id: 'shipped',   label: 'تم الشحن',    color: 'text-purple-600 bg-purple-50' },
   { id: 'delivered', label: 'تم التوصيل', color: 'text-green-600 bg-green-50'   },
-  { id: 'cancelled', label: 'ملغي',         color: 'text-red-600 bg-red-50'       },
+  { id: 'cancelled', label: 'ملغي مرتجع',   color: 'text-red-600 bg-red-50'       },
 ] as const
 
 export const ITEMS_PER_PAGE = 20

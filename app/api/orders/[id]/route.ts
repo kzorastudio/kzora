@@ -85,7 +85,7 @@ export async function PUT(
     // ─── Fetch current order to check status change ───────────────────────
     const { data: currentOrder, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id')
+      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id, is_reservation')
       .eq('id', id)
       .single()
 
@@ -153,6 +153,69 @@ export async function PUT(
           })
       } catch (e) {
         console.error('[ORDER_UPDATE_API] History insertion soft fail:', e)
+      }
+
+      // Automatic stock restore / deduction on status transitions (ملغي مرتجع)
+      if (!currentOrder.is_reservation) {
+        try {
+          if (status === 'cancelled' && currentOrder.status !== 'cancelled') {
+            // Restore inventory to stock
+            const { data: items } = await supabaseAdmin
+              .from('order_items')
+              .select('product_id, color, size, quantity')
+              .eq('order_id', id)
+
+            const productIdsToCheck = new Set<string>()
+            for (const item of items ?? []) {
+              if (!item.product_id) continue
+              const { data: variant } = await supabaseAdmin
+                .from('product_variants')
+                .select('id, quantity')
+                .eq('product_id', item.product_id)
+                .eq('color', item.color ?? '')
+                .eq('size', item.size ?? 0)
+                .single()
+
+              if (variant) {
+                await supabaseAdmin
+                  .from('product_variants')
+                  .update({ quantity: variant.quantity + item.quantity })
+                  .eq('id', variant.id)
+                productIdsToCheck.add(item.product_id)
+              }
+            }
+            await syncStockStatus(productIdsToCheck)
+          } else if (currentOrder.status === 'cancelled' && status !== 'cancelled') {
+            // Re-deduct inventory if un-cancelled
+            const { data: items } = await supabaseAdmin
+              .from('order_items')
+              .select('product_id, color, size, quantity')
+              .eq('order_id', id)
+
+            const productIdsToCheck = new Set<string>()
+            for (const item of items ?? []) {
+              if (!item.product_id) continue
+              const { data: variant } = await supabaseAdmin
+                .from('product_variants')
+                .select('id, quantity')
+                .eq('product_id', item.product_id)
+                .eq('color', item.color ?? '')
+                .eq('size', item.size ?? 0)
+                .single()
+
+              if (variant) {
+                await supabaseAdmin
+                  .from('product_variants')
+                  .update({ quantity: Math.max(0, variant.quantity - item.quantity) })
+                  .eq('id', variant.id)
+                productIdsToCheck.add(item.product_id)
+              }
+            }
+            await syncStockStatus(productIdsToCheck)
+          }
+        } catch (stockErr) {
+          console.error('[ORDER_UPDATE_API] Stock transition soft fail:', stockErr)
+        }
       }
 
       // Loyalty Points Logic

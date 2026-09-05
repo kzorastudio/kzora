@@ -339,8 +339,8 @@ export async function PUT(
     }
 
     // Quantities may have changed — recompute in_stock / low_stock / out_of_stock
-    // from the live totals so the badge customers see always matches the inventory.
-    if (variants !== undefined) {
+    // from the live totals unless the admin explicitly forced out_of_stock.
+    if (variants !== undefined && stock_status !== 'out_of_stock') {
       await syncStockStatus([id])
     }
 

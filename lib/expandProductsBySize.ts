@@ -25,10 +25,11 @@ export function expandProductsBySize(
     const colors = p.colors ?? []
     const variants = p.variants ?? []
 
-    // For a size-only product (no variants OR no colors), just pick the first selected size that's listed on the product.
+    // For a size-only product (no variants OR no colors), just pick the first selected size that's listed on the product and available.
     const firstListedSize = (p.sizes ?? [])
+      .filter(s => s.is_available)
       .map(s => s.size)
-      .find(sz => sizes.includes(sz)) ?? sizes[0] ?? null
+      .find(sz => sizes.includes(sz)) ?? null
 
     if (colors.length === 0) {
       return [{ key: p.id, product: p, forcedColor: null, forcedSize: firstListedSize }]
@@ -36,13 +37,17 @@ export function expandProductsBySize(
 
     type ColorMatch = { color: ProductColor; matchSize: number | null }
     const matchingColors: ColorMatch[] = colors
+      .filter(c => c.is_available)
       .map((c): ColorMatch | null => {
         const colorVariants = variants.filter(v => v.color === c.name_ar)
         if (colorVariants.length === 0) {
-          return { color: c, matchSize: firstListedSize }
+          return firstListedSize ? { color: c, matchSize: firstListedSize } : null
         }
         const match = colorVariants.find(v => sizes.includes(v.size) && (v.quantity ?? 0) > 0)
-        return match ? { color: c, matchSize: match.size } : null
+        if (!match) return null
+        const sizeObj = (p.sizes ?? []).find(s => s.size === match.size)
+        if (sizeObj && !sizeObj.is_available) return null
+        return { color: c, matchSize: match.size }
       })
       .filter((x): x is ColorMatch => x !== null)
 

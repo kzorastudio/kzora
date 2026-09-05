@@ -29,14 +29,16 @@ export default function ProductActions({ product, settings, activeColorName, ini
   const outOfStockGlobal = product.stock_status === 'out_of_stock'
 
   const isColorInStock = useCallback((colorName: string) => {
-    if (!product.variants || product.variants.length === 0) return false
-    return product.variants.some(v => v.color === colorName && v.quantity > 0)
+    if (!product.variants || product.variants.length === 0) return true
+    return product.variants.some(v => v.color === colorName && (v.quantity ?? 0) > 0)
   }, [product.variants])
 
   const isSizeInStockForColor = useCallback((sizeVal: number, colorName: string | null) => {
-    if (!product.variants || product.variants.length === 0) return false
-    const c = colorName || ''
-    return product.variants.some(v => v.color === c && v.size === sizeVal && v.quantity > 0)
+    if (!product.variants || product.variants.length === 0) return true
+    if (!colorName) {
+      return product.variants.some(v => v.size === sizeVal && (v.quantity ?? 0) > 0)
+    }
+    return product.variants.some(v => v.color === colorName && v.size === sizeVal && (v.quantity ?? 0) > 0)
   }, [product.variants])
 
   const [selectedColorId, setSelectedColorId] = useState<string | null>(() => {
@@ -44,20 +46,30 @@ export default function ProductActions({ product, settings, activeColorName, ini
     if (activeColorName) {
       const trimmed = activeColorName.trim().toLowerCase()
       const match = product.colors.find(c => c.name_ar?.trim().toLowerCase() === trimmed)
-      if (match) return match.id
+      if (match && match.is_available && isColorInStock(match.name_ar)) return match.id
     }
     const available = product.colors.filter(c => c.is_available && isColorInStock(c.name_ar))
     return available.length === 1 ? available[0].id : null
   })
 
   const [selectedSize, setSelectedSize] = useState<number | null>(() => {
-    // If a size was passed in (?size=42), use it when valid
-    if (initialSize != null && product.sizes.some(s => s.size === initialSize)) {
-      return initialSize
+    // If a size was passed in (?size=42), only use it if it's available and in stock!
+    if (initialSize != null) {
+      const match = product.sizes.find(s => s.size === initialSize)
+      if (match && match.is_available && !outOfStockGlobal) {
+        const inStock = (!product.variants || product.variants.length === 0) ||
+          product.variants.some(v => v.size === initialSize && (v.quantity ?? 0) > 0)
+        if (inStock) return initialSize
+      }
     }
     const available = product.sizes.filter(s => {
        const sz = typeof s === 'number' ? s : s.size
-       return (typeof s === 'number' ? true : s.is_available)
+       const isAvail = typeof s === 'number' ? true : s.is_available
+       if (!isAvail || outOfStockGlobal) return false
+       if (product.variants && product.variants.length > 0) {
+         return product.variants.some(v => v.size === sz && (v.quantity ?? 0) > 0)
+       }
+       return true
     })
     return available.length === 1 ? (typeof available[0] === 'number' ? available[0] : available[0].size) : null
   })
@@ -83,12 +95,12 @@ export default function ProductActions({ product, settings, activeColorName, ini
 
     if (trimmedParent !== currentName) {
       const match = product.colors.find(c => c.name_ar?.trim().toLowerCase() === trimmedParent)
-      if (match) {
+      if (match && match.is_available && isColorInStock(match.name_ar)) {
         setSelectedColorId(match.id)
         setColorError(false)
       }
     }
-  }, [activeColorName, product.colors, selectedColor, selectedColorId])
+  }, [activeColorName, product.colors, selectedColor, selectedColorId, isColorInStock])
 
   const handleColorSelect = (color: ProductColor) => {
     setSelectedColorId(color.id)
@@ -103,8 +115,8 @@ export default function ProductActions({ product, settings, activeColorName, ini
       const v = product.variants.find(v => v.color === c && v.size === s)
       return v ? (v.quantity ?? 0) : 0
     }
-    return 0 
-  }, [product.variants, selectedColor, selectedSize])
+    return outOfStockGlobal ? 0 : 10 
+  }, [product.variants, selectedColor, selectedSize, outOfStockGlobal])
 
   const alreadyInCart = useMemo(() => {
     const c = selectedColor?.name_ar ?? null
@@ -116,6 +128,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
   }, [cartItems, product.id, selectedColor, selectedSize])
 
   const effectiveMax = useMemo(() => {
+    if (outOfStockGlobal) return 0
     if (product.variants && product.variants.length > 0) {
       if (selectedColorId === null || selectedSize === null) {
         const maxAcrossAll = Math.max(...product.variants.map(v => v.quantity ?? 0));
@@ -125,9 +138,14 @@ export default function ProductActions({ product, settings, activeColorName, ini
       return Math.max(0, raw - alreadyInCart)
     }
     return 10;
-  }, [currentAvailableStock, alreadyInCart, product.variants, selectedColorId, selectedSize])
+  }, [currentAvailableStock, alreadyInCart, product.variants, selectedColorId, selectedSize, outOfStockGlobal])
 
   const isComboOutOfStock = useMemo(() => {
+    if (outOfStockGlobal) return true
+    if (selectedSize !== null) {
+      const sizeObj = product.sizes.find(s => s.size === selectedSize)
+      if (sizeObj && !sizeObj.is_available) return true
+    }
     if (product.variants && product.variants.length > 0) {
       if (selectedColorId !== null || product.colors.length === 0) {
         if (selectedSize !== null || product.sizes.length === 0) {
@@ -136,7 +154,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
       }
     }
     return false
-  }, [product.variants, product.colors.length, product.sizes.length, selectedColorId, selectedSize, currentAvailableStock])
+  }, [outOfStockGlobal, product.variants, product.colors.length, product.sizes, selectedColorId, selectedSize, currentAvailableStock])
 
   const isEntirelyOutOfStock = useMemo(() => {
     if (outOfStockGlobal) return true
@@ -202,7 +220,10 @@ export default function ProductActions({ product, settings, activeColorName, ini
   const totalPrice = (displayPrice * quantity) - multiItemDiscount
 
   const handleAddToCart = useCallback(() => {
-    if (outOfStock) return
+    if (outOfStock || outOfStockGlobal) {
+      toast.error('هذا المنتج غير متوفر حالياً')
+      return
+    }
     if (product.colors.length > 0 && selectedColorId === null) {
       setColorError(true)
       toast.error('يرجى اختيار اللون أولاً')
@@ -211,6 +232,17 @@ export default function ProductActions({ product, settings, activeColorName, ini
     if (product.sizes.length > 0 && selectedSize === null) {
       setSizeError(true)
       toast.error('يرجى اختيار المقاس أولاً')
+      return
+    }
+    if (selectedSize !== null) {
+      const sizeObj = product.sizes.find(s => s.size === selectedSize)
+      if (sizeObj && !sizeObj.is_available) {
+        toast.error('المقاس المختار غير متوفر حالياً')
+        return
+      }
+    }
+    if (product.variants && product.variants.length > 0 && currentAvailableStock <= 0) {
+      toast.error('المقاس واللون المختار نفد من المخزن')
       return
     }
     const colorSpecificImage = selectedColor 

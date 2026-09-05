@@ -46,8 +46,15 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
       ? product.variants.every(v => (v.quantity ?? 0) <= 0) 
       : false)
 
+  // If a forcedSize is requested (e.g. filtering size 43), check if that size is available and in stock
+  const forcedSizeObj = forcedSize ? product.sizes?.find(s => s.size === forcedSize) : null
+  const isForcedSizeAvailable = forcedSize ? (forcedSizeObj ? forcedSizeObj.is_available : true) : true
+  const hasVariantStockForForced = forcedSize && product.variants && product.variants.length > 0
+    ? product.variants.some(v => (forcedColor ? v.color === forcedColor.name_ar : true) && v.size === forcedSize && (v.quantity ?? 0) > 0)
+    : true
+
   // If the filter says this product is unavailable for the selected criteria, treat as out of stock
-  const isActuallyOutOfStock = isEntirelyOutOfStock || !!filterUnavailableLabel
+  const isActuallyOutOfStock = isEntirelyOutOfStock || !isForcedSizeAvailable || !hasVariantStockForForced || !!filterUnavailableLabel
 
   const mainImage = product.images?.find(img => img.is_main) || product.images?.[0]
   // If forcedColor is set, default to that color's image; otherwise use the main image
@@ -161,9 +168,22 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
 
   const handleAddWithSize = useCallback(
     (size: number) => {
+      if (isActuallyOutOfStock) {
+        toast.error('هذا المنتج غير متوفر حالياً')
+        return
+      }
+      const sizeObj = product.sizes?.find(s => s.size === size)
+      if (sizeObj && !sizeObj.is_available) {
+        toast.error('هذا المقاس غير متوفر')
+        return
+      }
       const colorName = forcedColor?.name_ar ?? product.colors?.[0]?.name_ar ?? ''
       const colorHex = forcedColor?.hex_code ?? product.colors?.[0]?.hex_code ?? null
       const variantStock = product.variants?.find(v => v.color === colorName && v.size === size)?.quantity ?? 0
+      if (product.variants && product.variants.length > 0 && variantStock <= 0) {
+        toast.error('هذا المقاس نفد من المخزن')
+        return
+      }
       const item: CartItem = {
         id:                 product.id,
         slug:               product.slug,
