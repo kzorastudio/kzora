@@ -70,28 +70,41 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email
         token.name  = user.name
         token.role  = (user as any).role
+        token.roleCheckedAt = Date.now()
       }
 
-      // Re-fetch role from DB so a demotion/promotion takes effect on the next request,
-      // without forcing the user to log out and back in.
-      // The JWT itself can still be cached, but the role inside it is refreshed on every check.
+      // Re-fetch role from DB so a demotion/promotion takes effect,
+      // but throttle it (once every 5 minutes) to avoid frequent DB hits,
+      // and critically NEVER invalidate the token if there is a network/DB glitch.
       if (token?.id) {
-        try {
-          const { data: admin } = await supabaseAdmin
-            .from('admins')
-            .select('role, name')
-            .eq('id', token.id as string)
-            .maybeSingle()
+        const now = Date.now()
+        const lastChecked = (token.roleCheckedAt as number) || 0
+        const shouldCheck = now - lastChecked > 5 * 60 * 1000
 
-          if (admin) {
-            token.role = normalizeRole(admin.role || 'employee')
-            token.name = admin.name
-          } else {
-            // Admin was deleted — invalidate the token so the user is forced to re-login.
-            token.role = undefined
+        if (shouldCheck) {
+          try {
+            const { data: admin, error } = await supabaseAdmin
+              .from('admins')
+              .select('role, name')
+              .eq('id', token.id as string)
+              .maybeSingle()
+
+            if (error) {
+              // Supabase returned an error (timeout, network hiccup, rate limit, etc.)
+              // Keep the existing token values rather than locking the user out!
+              console.error('[AUTH] Supabase error while checking admin role:', error.message)
+            } else if (admin) {
+              token.role = normalizeRole(admin.role || 'employee')
+              token.name = admin.name
+              token.roleCheckedAt = now
+            } else {
+              // Admin was genuinely deleted from the database (admin is null and error is null)
+              token.role = undefined
+            }
+          } catch (err: any) {
+            // On unhandled exception, keep the existing token values rather than locking the user out
+            console.error('[AUTH] Catch-all error while checking admin role:', err?.message)
           }
-        } catch {
-          // On DB error, keep the existing token values rather than locking the user out.
         }
       }
 
