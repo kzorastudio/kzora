@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import type { StaffOrderStat } from '@/types'
 
 // ─── GET /api/admin/staff-orders/stats ───────────────────────────────────────────
@@ -13,23 +13,21 @@ export async function GET(request: NextRequest) {
     if ('response' in auth) return auth.response
     const { session } = auth
 
-    // Fetch staff orders (lightweight columns only).
-    // Tiers without the view_all_orders capability only get their own.
-    let statsQuery = supabaseAdmin
-      .from('orders')
-      .select('created_by_admin_id, status, total_syp, total_usd')
-      .not('created_by_admin_id', 'is', null)
+    // Fetch ALL staff orders (lightweight columns only) using fetchAllRows
+    // to bypass PostgREST's default 1000-row limit.
+    const orders = await fetchAllRows((from, to) => {
+      let q = supabaseAdmin
+        .from('orders')
+        .select('created_by_admin_id, status, total_syp, total_usd, created_at')
+        .not('created_by_admin_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .range(from, to)
 
-    if (isOwnOrdersOnly(session.role)) {
-      statsQuery = statsQuery.eq('created_by_admin_id', session.id)
-    }
-
-    const { data: orders, error } = await statsQuery
-
-    if (error) {
-      console.error('Staff stats fetch error:', error)
-      return NextResponse.json({ error: 'تعذر جلب الإحصائيات' }, { status: 500 })
-    }
+      if (isOwnOrdersOnly(session.role)) {
+        q = q.eq('created_by_admin_id', session.id)
+      }
+      return q
+    })
 
     // Fetch admin names
     const { data: admins } = await supabaseAdmin

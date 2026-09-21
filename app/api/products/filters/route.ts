@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         .from('products')
         .select('id')
         .eq('is_published', true)
+        .neq('stock_status', 'out_of_stock')
       if (catIds.length > 0) q = q.in('category_id', catIds)
       return q.order('id', { ascending: true }).range(from, to)
     })

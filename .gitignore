@@ -1,7 +1,8 @@
-﻿node_modules/
+node_modules/
 .next/
 .env*
 !.env.example
 dist/
 build/
 .vercel
+*.zip

@@ -342,6 +342,12 @@ export async function PUT(
     // from the live totals unless the admin explicitly forced out_of_stock.
     if (variants !== undefined && stock_status !== 'out_of_stock') {
       await syncStockStatus([id])
+    } else if (stock_status === 'out_of_stock') {
+      // Automatically mark all sizes as unavailable so the admin never has to zero them out manually
+      await supabaseAdmin
+        .from('product_sizes')
+        .update({ is_available: false })
+        .eq('product_id', id)
     }
 
     // ───── Clear caches ─────

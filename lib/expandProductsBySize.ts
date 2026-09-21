@@ -21,7 +21,10 @@ export function expandProductsBySize(
     return products.map(p => ({ key: p.id, product: p, forcedColor: null, forcedSize: null }))
   }
 
-  return products.flatMap((p): ProductDisplayItem[] => {
+  // When filtering by size, products marked out_of_stock must not be displayed
+  return products
+    .filter(p => p.stock_status !== 'out_of_stock')
+    .flatMap((p): ProductDisplayItem[] => {
     const colors = p.colors ?? []
     const variants = p.variants ?? []
 
