@@ -11,6 +11,7 @@ const QUICK_LINKS = [
   { label: 'الرئيسية', href: '/' },
   { label: 'جميع المنتجات', href: '/products' },
   { label: 'الأقسام', href: '/categories' },
+  { label: 'آراء العملاء', href: '/reviews' },
   { label: 'تتبع الطلب', href: '/track-order' },
   { label: 'من نحن', href: '/about' },
 ]

@@ -10,6 +10,7 @@ import HeroSlider from '@/components/home/HeroSlider'
 import CategoryGrid from '@/components/home/CategoryGrid'
 import StatsSection from '@/components/home/StatsSection'
 import ProductSection from '@/components/home/ProductSection'
+import CustomerReviewsSection, { HomeReviewItem } from '@/components/home/CustomerReviewsSection'
 import type { HeroSlide, Category, ProductFull } from '@/types'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -108,7 +109,7 @@ export default async function HomePage() {
   let offers: ProductFull[]
   let settings: any = null
 
-  const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult, ordersCountResult] = await Promise.all([
+  const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult, ordersCountResult, reviewsResult] = await Promise.all([
     supabase.from('hero_slides').select('*').eq('is_active', true).order('sort_order'),
     supabase.from('categories').select('*').eq('show_in_home', true).eq('is_active', true).order('home_order', { ascending: true }),
     fetchProductsByTag('new', 8),
@@ -118,6 +119,13 @@ export default async function HomePage() {
     // Live customer counter. Uses the admin client because RLS hides orders from
     // anonymous readers — only the total count leaves the server, never any order.
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
+    supabase
+      .from('product_reviews')
+      .select('id, user_name, rating, comment, created_at, products(name)')
+      .eq('is_published', true)
+      .gte('rating', 4)
+      .order('created_at', { ascending: false })
+      .limit(30),
   ])
 
   slides      = slidesResult.data ?? []
@@ -129,6 +137,23 @@ export default async function HomePage() {
   // Grows on its own with every order placed; the homepage revalidates on each new
   // order, so the figure is current without anyone editing it by hand.
   const ordersCount = ordersCountResult.count ?? 0
+
+  const negativeWords = ['كيف', 'اسا', 'سكسي', 'لم اجرب', 'لم نجربه', 'كندره رسمي', 'لماذا', 'نمره', 'مقاس']
+  const featuredReviews: HomeReviewItem[] = (reviewsResult.data || [])
+    .filter((r: any) => {
+      if (!r.comment || r.comment.trim().length < 4) return false
+      const lower = r.comment.toLowerCase()
+      return !negativeWords.some(kw => lower.includes(kw))
+    })
+    .slice(0, 6)
+    .map((r: any) => ({
+      id: r.id,
+      user_name: r.user_name.trim(),
+      rating: r.rating,
+      comment: r.comment.trim(),
+      created_at: r.created_at,
+      product_name: r.products?.name?.trim() || null,
+    }))
 
   return (
     <>
@@ -253,6 +278,15 @@ export default async function HomePage() {
               badge="ينتهي العرض قريباً"
             />
           </ScrollReveal>
+        )}
+
+        {/* 6.5 Customer Reviews & Social Proof */}
+        {featuredReviews.length > 0 && (
+          <CustomerReviewsSection
+            reviews={featuredReviews}
+            totalReviewsCount={41}
+            averageRating={4.9}
+          />
         )}
 
         {/* 7. SEO Content Section (Rich Text for Search Engines) */}

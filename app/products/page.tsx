@@ -87,17 +87,27 @@ async function getInitialProducts(params: Record<string, string | undefined>): P
     }
 
     // Size filter — mirror /api/products so shared filtered links render correctly server-side.
-    // A product qualifies if the size is marked available AND (has no variants for it OR has stock > 0).
+    // Size filter — mirror /api/products so shared filtered links render correctly server-side.
+    // A product qualifies if it is NOT out of stock AND the size is marked available AND (has no variants for it OR has stock > 0).
     if (params.size) {
       const sizes = params.size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
       if (sizes.length > 0) {
+        query = query.neq('stock_status', 'out_of_stock')
+
         const { data: availSizes } = await supabase
           .from('product_sizes')
           .select('product_id')
           .in('size', sizes)
           .eq('is_available', true)
 
+        const { data: outOfStockList } = await supabase
+          .from('products')
+          .select('id')
+          .eq('stock_status', 'out_of_stock')
+
+        const outOfStockIds = new Set((outOfStockList ?? []).map((p: { id: string }) => p.id))
         const candidateIds = Array.from(new Set((availSizes ?? []).map((r: { product_id: string }) => r.product_id)))
+          .filter(id => !outOfStockIds.has(id))
 
         if (candidateIds.length === 0) {
           query = query.in('id', ['00000000-0000-0000-0000-000000000000'])

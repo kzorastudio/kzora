@@ -173,6 +173,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 'https://www.facebook.com/kzora.studio',
                 'https://www.instagram.com/kzora.studio',
               ],
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: '4.9',
+                reviewCount: '41',
+                bestRating: '5',
+                worstRating: '1',
+              },
               contactPoint: {
                 '@type': 'ContactPoint',
                 telephone: '+963964514765',
@@ -184,7 +191,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
 
-        {/* JSON-LD: ShoeStore with full business info */}
+        {/* JSON-LD: ShoeStore with full business info & reviews */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -217,6 +224,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 '@type': 'Country',
                 name: 'سوريا',
               },
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: '4.9',
+                reviewCount: '41',
+                bestRating: '5',
+                worstRating: '1',
+              },
+              review: [
+                {
+                  '@type': 'Review',
+                  author: { '@type': 'Person', name: 'محمود غياث طلّاع' },
+                  reviewRating: { '@type': 'Rating', ratingValue: '5' },
+                  reviewBody: 'الأسعار قياساً بالجودة كتير رائعة',
+                },
+                {
+                  '@type': 'Review',
+                  author: { '@type': 'Person', name: 'عامر محمد بعكر' },
+                  reviewRating: { '@type': 'Rating', ratingValue: '5' },
+                  reviewBody: 'احترام كامل وتعامل لبق',
+                },
+                {
+                  '@type': 'Review',
+                  author: { '@type': 'Person', name: 'اشرف عبد الله درويش' },
+                  reviewRating: { '@type': 'Rating', ratingValue: '5' },
+                  reviewBody: 'الشركة محترمة والمنتج رائع اتمنى لكم المزيد من النجاح والتقدم',
+                },
+              ],
               openingHoursSpecification: {
                 '@type': 'OpeningHoursSpecification',
                 dayOfWeek: [

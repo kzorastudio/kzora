@@ -20,12 +20,18 @@ interface Metadata {
 
 interface ProductReviewsProps {
   productId: string
+  initialReviews?: Review[]
 }
 
-export default function ProductReviews({ productId }: ProductReviewsProps) {
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [metadata, setMetadata] = useState<Metadata>({ totalReviews: 0, averageRating: 0 })
-  const [isLoading, setIsLoading] = useState(true)
+export default function ProductReviews({ productId, initialReviews = [] }: ProductReviewsProps) {
+  const initialTotal = initialReviews.length
+  const initialAvg = initialTotal > 0
+    ? Number((initialReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / initialTotal).toFixed(1))
+    : 0
+
+  const [reviews, setReviews] = useState<Review[]>(initialReviews)
+  const [metadata, setMetadata] = useState<Metadata>({ totalReviews: initialTotal, averageRating: initialAvg })
+  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -54,7 +60,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   }
 
   useEffect(() => {
-    if (productId) {
+    if (productId && initialReviews.length === 0) {
       fetchReviews()
     }
   }, [productId])

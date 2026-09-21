@@ -112,8 +112,19 @@ export async function GET(request: NextRequest) {
         colorNameMap.set(c.product_id, c.name_ar)
       }
 
-      // Intersect: products that have BOTH the size and the color
-      const combinedCandidates = sizeCandidates.filter(id => colorCandidates.includes(id))
+      // Exclude out of stock products when filtering by size + color
+      query = query.neq('stock_status', 'out_of_stock')
+
+      const { data: outOfStockList } = await supabaseAdmin
+        .from('products')
+        .select('id')
+        .eq('stock_status', 'out_of_stock')
+      const outOfStockIds = new Set((outOfStockList || []).map((p: any) => p.id))
+
+      // Intersect: products that have BOTH the size and the color, and are NOT out of stock
+      const combinedCandidates = sizeCandidates
+        .filter(id => colorCandidates.includes(id))
+        .filter(id => !outOfStockIds.has(id))
 
       if (combinedCandidates.length === 0) {
         query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
@@ -139,6 +150,15 @@ export async function GET(request: NextRequest) {
         query = query.in('id', finalIds.length > 0 ? finalIds : ['00000000-0000-0000-0000-000000000000'])
       }
     } else if (size) {
+      // Exclude out of stock products when filtering by size
+      query = query.neq('stock_status', 'out_of_stock')
+
+      const { data: outOfStockList } = await supabaseAdmin
+        .from('products')
+        .select('id')
+        .eq('stock_status', 'out_of_stock')
+      const outOfStockIds = new Set((outOfStockList || []).map((p: any) => p.id))
+
       // Size filter only — size must be marked available AND have stock in variants
       const sizes = size.split(',').map(s => parseInt(s.trim(), 10)).filter(s => !isNaN(s))
 
@@ -166,7 +186,7 @@ export async function GET(request: NextRequest) {
 
       const candidateIds = Array.from(new Set(
         [...availSizes, ...variantOnly].map(r => r.product_id)
-      ))
+      )).filter(id => !outOfStockIds.has(id))
 
       if (candidateIds.length === 0) {
         query = query.in('id', ['00000000-0000-0000-0000-000000000000'])

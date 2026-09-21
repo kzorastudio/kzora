@@ -57,6 +57,7 @@ async function getSettings() {
 }
 
 interface ReviewRow {
+  id: string
   user_name: string
   rating: number
   comment: string | null
@@ -66,11 +67,11 @@ interface ReviewRow {
 async function getProductReviews(productId: string): Promise<ReviewRow[]> {
   const { data } = await supabase
     .from('product_reviews')
-    .select('user_name, rating, comment, created_at')
+    .select('id, user_name, rating, comment, created_at')
     .eq('product_id', productId)
     .eq('is_published', true)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(20)
   return (data ?? []) as ReviewRow[]
 }
 
@@ -219,6 +220,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <ProductPageClient
         product={product}
         settings={settings}
+        initialReviews={reviews}
         relatedProductsNode={
           product.category ? (
             <RelatedProducts
