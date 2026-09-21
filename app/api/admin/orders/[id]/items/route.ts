@@ -64,6 +64,23 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
 
+    // ── 5-Minute Concurrency / Lock Window ───────────────────────────────────────
+    // If another session modified this order AFTER the client loaded it, check how
+    // long ago that modification happened. If it was within the last 5 minutes (300s),
+    // block to prevent race conditions ("منشان ما يخربط"). After 5 minutes, the lock
+    // expires and the edit is allowed through.
+    const clientUpdatedAt = body?.client_updated_at ? String(body.client_updated_at) : null
+    const LOCK_WINDOW_MS = 5 * 60 * 1000
+    if (clientUpdatedAt && order.updated_at && order.updated_at !== clientUpdatedAt) {
+      const diffMs = Date.now() - new Date(order.updated_at).getTime()
+      if (diffMs < LOCK_WINDOW_MS) {
+        return NextResponse.json(
+          { error: 'تم تعديل هذا الطلب للتو من مكان آخر (قفل الأمان 5 دقائق لمنع التضارب). حدّث الصفحة وحاول مرة أخرى.' },
+          { status: 409 }
+        )
+      }
+    }
+
     // ── Claim the order (compare-and-swap on updated_at) ─────────────────────────
     // Two edits racing on the same order (double-click, two tabs, a retried request)
     // used to each read the same item list, each delete only those stale ids, then
@@ -71,12 +88,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Bumping updated_at conditionally lets exactly one request through; the loser
     // bails out here, before any stock or item writes happen.
     const claimStamp = new Date().toISOString()
-    const { data: claimed, error: claimErr } = await supabaseAdmin
+    let claimQuery = supabaseAdmin
       .from('orders')
       .update({ updated_at: claimStamp })
       .eq('id', id)
-      .eq('updated_at', order.updated_at)
-      .select('id')
+
+    if (order.updated_at) {
+      claimQuery = claimQuery.eq('updated_at', order.updated_at)
+    } else {
+      claimQuery = claimQuery.is('updated_at', null)
+    }
+
+    const { data: claimed, error: claimErr } = await claimQuery.select('id')
 
     if (claimErr) {
       console.error('Order claim error:', claimErr)
@@ -84,7 +107,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
     if (!claimed || claimed.length === 0) {
       return NextResponse.json(
-        { error: 'تم تعديل هذا الطلب للتو من مكان آخر. حدّث الصفحة وحاول مرة أخرى.' },
+        { error: 'تم تعديل هذا الطلب للتو من مكان آخر (قفل الأمان 5 دقائق لمنع التضارب). حدّث الصفحة وحاول مرة أخرى.' },
         { status: 409 }
       )
     }

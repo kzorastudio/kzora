@@ -85,7 +85,7 @@ export async function PUT(
     // ─── Fetch current order to check status change ───────────────────────
     const { data: currentOrder, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id, is_reservation')
+      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id, is_reservation, updated_at')
       .eq('id', id)
       .single()
 
@@ -96,6 +96,23 @@ export async function PUT(
     // ─── Ownership isolation: own-orders-only tiers may modify only their own ───
     if (isOwnOrdersOnly(session.role) && currentOrder.created_by_admin_id !== session.id) {
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
+    }
+
+    // ─── 5-Minute Concurrency / Lock Window ───────────────────────────────
+    // If client provided client_updated_at and the order was modified in DB
+    // since the client loaded it, check how long ago it was modified.
+    // If < 5 minutes (300s), block to prevent overwrite collisions ("منشان ما يخربط").
+    // If >= 5 minutes, the lock window has elapsed, allow the update.
+    const clientUpdatedAt = body.client_updated_at ? String(body.client_updated_at) : null
+    const LOCK_WINDOW_MS = 5 * 60 * 1000
+    if (clientUpdatedAt && (currentOrder as any).updated_at && (currentOrder as any).updated_at !== clientUpdatedAt) {
+      const diffMs = Date.now() - new Date((currentOrder as any).updated_at).getTime()
+      if (diffMs < LOCK_WINDOW_MS) {
+        return NextResponse.json(
+          { error: 'تم تعديل هذا الطلب للتو من مكان آخر (قفل الأمان 5 دقائق لمنع التضارب). حدّث الصفحة وحاول مرة أخرى.' },
+          { status: 409 }
+        )
+      }
     }
 
     // ─── Build update fields ──────────────────────────────────────────────

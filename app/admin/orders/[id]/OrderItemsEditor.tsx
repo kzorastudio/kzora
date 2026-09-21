@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import NextImage from 'next/image'
 import toast from 'react-hot-toast'
@@ -68,6 +68,7 @@ function sizeOptionsFor(line: Pick<EditLine, 'variants' | 'availSizes'>, color: 
 
 export default function OrderItemsEditor({ order }: { order: OrderFull }) {
   const router = useRouter()
+  const isSavingRef = useRef(false)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -252,6 +253,8 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
       }
     }
 
+    if (isSavingRef.current || saving) return
+    isSavingRef.current = true
     setSaving(true)
     try {
       const res = await fetch(`/api/admin/orders/${order.id}/items`, {
@@ -259,6 +262,7 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currency,
+          client_updated_at: order.updated_at,
           // Only the edited currency's discount is sent; the other one keeps its
           // stored value server-side (no exchange rate is applied anywhere).
           ...(isUSD ? { discount_usd: discount } : { discount_syp: discount }),
@@ -284,6 +288,7 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
       toast.error(e.message || 'حدث خطأ')
     } finally {
       setSaving(false)
+      isSavingRef.current = false
     }
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Edit2, X, Check, Loader2, User, Phone, MapPin, Truck, FileText, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,7 @@ interface OrderDetailsEditorProps {
 
 export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
   const router = useRouter()
+  const isUpdatingRef = useRef(false)
   const [isEditing, setIsEditing] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [shippingMethods, setShippingMethods] = useState<any[]>([])
@@ -143,12 +144,17 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
       return
     }
 
+    if (isUpdatingRef.current || updating) return
+    isUpdatingRef.current = true
     setUpdating(true)
     try {
       const res = await fetch(`/api/orders/${order.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          client_updated_at: order.updated_at,
+        }),
       })
 
       if (!res.ok) {
@@ -163,6 +169,7 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
       toast.error(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
     } finally {
       setUpdating(false)
+      isUpdatingRef.current = false
     }
   }
 
