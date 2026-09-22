@@ -218,6 +218,17 @@ export interface OrderItem {
   quantity: number
   unit_price_syp: number
   unit_price_usd: number
+  product?: {
+    id: string
+    name: string
+    category_id: string | null
+    is_published: boolean
+    category?: {
+      id: string
+      name_ar: string
+      slug: string
+    } | null
+  } | null
 }
 
 export interface OrderStatusHistory {

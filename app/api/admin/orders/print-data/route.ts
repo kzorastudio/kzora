@@ -19,7 +19,19 @@ export async function POST(request: NextRequest) {
 
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
-      .select('*, items:order_items(*)')
+      .select(`
+        *,
+        items:order_items(
+          *,
+          product:products(
+            id,
+            name,
+            category_id,
+            is_published,
+            category:categories(id, name_ar, slug)
+          )
+        )
+      `)
       .in('id', ids)
       .order('created_at', { ascending: false })
 

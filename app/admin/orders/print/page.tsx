@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Printer, CheckCircle2, XCircle, Loader2, Tag, FileText } from 'lucide-react'
 import type { OrderFull } from '@/types'
-import { LabelPage, ReceiptBody, LABEL_W_MM, LABEL_H_MM, LABEL_PAD_MM } from './ReceiptLabel'
+import { LabelPage, ReceiptBody, isElectroOrder, LABEL_W_MM, LABEL_H_MM, LABEL_PAD_MM } from './ReceiptLabel'
 
 type PrintMode = 'label' | 'a4'
 
@@ -51,11 +51,12 @@ export default function PrintPreparationPage() {
   // Keep it short and meaningful instead of "كزورا — لوحة التحكم".
   useEffect(() => {
     const previous = document.title
-    document.title = 'KZORA'
+    const hasElectro = orders.some(isElectroOrder)
+    document.title = hasElectro && orders.length === 1 ? 'ELECTRO STORE' : 'KZORA'
     return () => {
       document.title = previous
     }
-  }, [])
+  }, [orders])
 
   async function handleConfirm() {
     if (ids.length === 0) return

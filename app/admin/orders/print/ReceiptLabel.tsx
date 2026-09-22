@@ -56,7 +56,37 @@ export function computeTotals(o: OrderFull) {
 /* Receipt body — shared by the label and A4 modes                     */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Detects whether an order belongs to "Electro Store" (الكترو ستور):
+ * 1. Product name matches 'حفافة' or 'الكترو'
+ * 2. Specific product ID: '8c2e50da-639d-4ccc-8720-acea641c9592'
+ * 3. Any item has category matching 'منزل' / 'household' / 'home' / 'electro'
+ * 4. Any item is draft and has no category (category_id === null)
+ */
+export function isElectroOrder(o: OrderFull): boolean {
+  return (o.items || []).some((it: any) => {
+    if (it.product_name && it.product_name.includes('حفافة')) return true
+    if (it.product_id === '8c2e50da-639d-4ccc-8720-acea641c9592') return true
+    const catName = it.product?.category?.name_ar || ''
+    const catSlug = it.product?.category?.slug || ''
+    if (
+      catName.includes('منزل') ||
+      catName.includes('الكترو') ||
+      catSlug.includes('home') ||
+      catSlug.includes('household') ||
+      catSlug.includes('electro')
+    ) {
+      return true
+    }
+    if (it.product && it.product.is_published === false && it.product.category_id === null) {
+      return true
+    }
+    return false
+  })
+}
+
 export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) {
+  const isElectro = isElectroOrder(o)
   const { cur, sub, ship, discount, isAleppo, orderTotal, isPrepaid, amountToCollect } = computeTotals(o)
 
   // Base sizes for the thermal label. The auto-fit scaler adjusts from here.
@@ -108,7 +138,9 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-black pb-[3px] mb-[3px]">
         <div className="min-w-0">
-          <h1 className={`font-black tracking-tight text-black leading-none ${s.title}`}>كزورا — KZORA</h1>
+          <h1 className={`font-black tracking-tight text-black leading-none ${s.title}`}>
+            {isElectro ? 'الكترو ستور — ELECTRO STORE' : 'كزورا — KZORA'}
+          </h1>
           <p className={`font-bold text-black leading-none mt-[2px] ${s.sub}`}>إيصال طلبية ومستند تسليم</p>
         </div>
         <div className="text-left shrink-0">
@@ -159,7 +191,7 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
           <thead>
             <tr className="border-b border-black font-black text-black">
               <th className="py-[2px] text-center">الكمية</th>
-              <th className="py-[2px] text-center">اللون/المقاس</th>
+              <th className="py-[2px] text-center">{isElectro ? 'اللون' : 'اللون/المقاس'}</th>
               <th className="py-[2px] text-right">المنتج</th>
               <th className="py-[2px] text-left">السعر</th>
             </tr>
@@ -171,7 +203,9 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
                 <tr key={it.id} className="border-b border-gray-300 font-bold text-black align-top">
                   <td className="py-[2px] text-center font-black text-black">{it.quantity}</td>
                   <td className="py-[2px] text-center text-gray-800 leading-snug">
-                    {[it.color, it.size].filter(Boolean).join(' / ') || '—'}
+                    {isElectro
+                      ? (it.color || '—')
+                      : ([it.color, it.size].filter(Boolean).join(' / ') || '—')}
                   </td>
                   <td className="py-[2px] font-bold text-black leading-snug">{it.product_name}</td>
                   <td className="py-[2px] text-left font-black text-black whitespace-nowrap">
@@ -238,29 +272,40 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
       </div>
 
       {/* Footer */}
-      <div className="mt-[5px] pt-[3px] border-t-2 border-black flex items-center justify-between gap-2 text-black">
-        <div className="flex-1 min-w-0">
-          <p className={`font-black text-black ${s.rowLabel}`}>متجر كزورا — Kzora Store</p>
-          <p className={`font-bold text-black leading-snug mt-[2px] ${s.foot}`}>
-            بإمكانك تسوق المزيد عبر الرابط:{' '}
-            <span dir="ltr" className="font-mono font-black underline">
-              https://www.kzora.co/
-            </span>
-          </p>
-          <p className={`font-bold text-black leading-snug mt-[1px] ${s.foot}`}>
-            شكراً لتسوقكم معنا! لأي استفسار:{' '}
-            <span dir="ltr" className="font-mono font-black">
-              0964514765
-            </span>
-          </p>
+      {isElectro ? (
+        <div className="mt-[5px] pt-[3px] border-t-2 border-black flex items-center justify-between gap-2 text-black">
+          <div className="flex-1 min-w-0">
+            <p className={`font-black text-black ${s.rowLabel}`}>متجر الكترو ستور — Electro Store</p>
+            <p className={`font-bold text-black leading-snug mt-[2px] ${s.foot}`}>
+              شكراً لتعاملكم واختياركم متجرنا! لأي استفسار يرجى التواصل مع صفحتنا.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col items-center shrink-0">
-          <QRCodeSVG value="https://www.kzora.co/" size={s.qr} />
-          <span dir="ltr" className={`font-mono font-bold mt-[1px] text-black ${s.foot}`}>
-            kzora.co
-          </span>
+      ) : (
+        <div className="mt-[5px] pt-[3px] border-t-2 border-black flex items-center justify-between gap-2 text-black">
+          <div className="flex-1 min-w-0">
+            <p className={`font-black text-black ${s.rowLabel}`}>متجر كزورا — Kzora Store</p>
+            <p className={`font-bold text-black leading-snug mt-[2px] ${s.foot}`}>
+              بإمكانك تسوق المزيد عبر الرابط:{' '}
+              <span dir="ltr" className="font-mono font-black underline">
+                https://www.kzora.co/
+              </span>
+            </p>
+            <p className={`font-bold text-black leading-snug mt-[1px] ${s.foot}`}>
+              شكراً لتسوقكم معنا! لأي استفسار:{' '}
+              <span dir="ltr" className="font-mono font-black">
+                0964514765
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-col items-center shrink-0">
+            <QRCodeSVG value="https://www.kzora.co/" size={s.qr} />
+            <span dir="ltr" className={`font-mono font-bold mt-[1px] text-black ${s.foot}`}>
+              kzora.co
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
