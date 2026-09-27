@@ -20,7 +20,7 @@ import {
   getFbBrowserData,
 } from '@/lib/analytics'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
-import { SHIPPING_LABELS } from '@/lib/utils'
+import { resolveShippingName } from '@/lib/utils'
 import type { CheckoutFormData } from '@/lib/validators'
 import type { CreateOrderPayload, HomepageSettings } from '@/types'
 import toast from 'react-hot-toast'
@@ -294,7 +294,7 @@ export default function CheckoutPage() {
         // Find shipping company display name dynamically
         const shippingSlug = (formData.shipping_company as string) ?? ''
         const shippingMethod = shippingMethods.find((m: any) => m.slug === shippingSlug)
-        const shippingCompanyName = shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug
+        const shippingCompanyName = shippingMethod?.name || resolveShippingName(shippingSlug)
 
         // WhatsApp URL
         const whatsappUrl = buildWhatsAppUrl({

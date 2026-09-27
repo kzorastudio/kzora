@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Order, OrderItem } from '@/types'
-import { SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate, formatCurrency, toArabicNumerals } from '@/lib/utils'
+import { resolveShippingName, ORDER_STATUS_LABELS, formatDate, formatCurrency, toArabicNumerals } from '@/lib/utils'
 
 type OrderWithItems = Order & { items?: OrderItem[] }
 
@@ -21,7 +21,7 @@ export default function CopyOrderButton({ order, shippingMethods, className }: P
     e.stopPropagation() // don't navigate into the order detail page
 
     const method = shippingMethods.find((m) => m.slug === order.shipping_company)
-    let shippingName = method?.name || SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || ''
+    let shippingName = method?.name || resolveShippingName(order.shipping_company, null, '')
     
     // Clean emojis and parenthesized English text if present
     shippingName = shippingName.replace(/[\uD800-\uDFFF\u2600-\u27BF]/g, '').trim()

@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils'
 import type { OrderFull } from '@/types'
 import BarcodeSVG from '@/components/admin/BarcodeSVG'
 import QRCodeSVG from '@/components/admin/QRCodeSVG'
+import { resolveShippingName, useShippingNames } from '@/lib/shippingNames'
 
 const SHIPPING_DISPLAY: Record<string, string> = {
   karam: 'كرم للشحن',
@@ -87,6 +88,7 @@ export function isElectroOrder(o: OrderFull): boolean {
 
 export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) {
   const isElectro = isElectroOrder(o)
+  const shippingNames = useShippingNames()
   const { cur, sub, ship, discount, isAleppo, orderTotal, isPrepaid, amountToCollect } = computeTotals(o)
 
   // Base sizes for the thermal label. The auto-fit scaler adjusts from here.
@@ -177,7 +179,7 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
           </div>
         )}
         <Row label="طريقة الشحن:">
-          {SHIPPING_DISPLAY[o.shipping_company || ''] || o.shipping_company || 'توصيل'}
+          {shippingNames?.[o.shipping_company || ''] || SHIPPING_DISPLAY[o.shipping_company || ''] || resolveShippingName(o.shipping_company, shippingNames, 'توصيل')}
         </Row>
         <Row label="طريقة الدفع:">{isPrepaid ? 'مدفوع مسبقاً (شام كاش)' : 'عند الاستلام (COD)'}</Row>
       </div>

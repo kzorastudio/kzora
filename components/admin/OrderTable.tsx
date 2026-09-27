@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import type { Order, OrderStatus } from '@/types'
 import { useSession } from 'next-auth/react'
 import { isOwnOrdersOnly } from '@/lib/permissions'
+import { loadShippingNames, resolveShippingName, useShippingNames } from '@/lib/shippingNames'
 
 const SHIPPING_DISPLAY: Record<string, string> = {
   karam:   'كرم',
@@ -53,6 +54,9 @@ export default function OrderTable({
   const isEmployee = isOwnOrdersOnly(session?.user?.role)
   const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string; isReservation: boolean } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const shippingNames = useShippingNames()
+  const shippingName = (slug: string | null | undefined, names = shippingNames) =>
+    names?.[slug || ''] || SHIPPING_DISPLAY[slug || ''] || resolveShippingName(slug, names)
 
   function handleRowClick(id: string) {
     router.push(`/admin/orders/${id}`)
@@ -75,7 +79,7 @@ export default function OrderTable({
     const pick = (syp: number, usd: number) => (cur === 'USD' ? usd : syp)
     const shippingLabel = isAleppo
       ? 'توصيل عادي (حلب)'
-      : (SHIPPING_DISPLAY[order.shipping_company!] || order.shipping_company || 'شحن للمحافظات')
+      : shippingName(order.shipping_company, shippingNames ?? await loadShippingNames())
     const pMethod = order.payment_method === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
 
     const statusLabel = ORDER_STATUS_OPTIONS.find((o) => o.id === order.status)?.label ?? order.status
@@ -417,7 +421,7 @@ export default function OrderTable({
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface-variant whitespace-nowrap">
                       {order.delivery_type === 'delivery' 
                         ? '🚀 توصيل عادي (حلب)'
-                        : (SHIPPING_DISPLAY[order.shipping_company!] || order.shipping_company || 'شحن للمحافظات')}
+                        : shippingName(order.shipping_company)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={order.status} /></td>
                     <td className="px-4 py-3 text-sm font-arabic text-secondary whitespace-nowrap">{formatDate(order.created_at)}</td>

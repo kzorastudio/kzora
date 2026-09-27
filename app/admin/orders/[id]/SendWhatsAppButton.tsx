@@ -3,7 +3,7 @@
 import { MessageCircle } from 'lucide-react'
 import type { OrderFull } from '@/types'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
-import { SHIPPING_LABELS } from '@/lib/utils'
+import { resolveShippingName } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 
 interface SendWhatsAppButtonProps {
@@ -21,10 +21,10 @@ export default function SendWhatsAppButton({ order }: SendWhatsAppButtonProps) {
         .then((d) => {
           const methods = d.methods || []
           const method = methods.find((m: any) => m.slug === order.shipping_company)
-          setShippingCompanyName(method?.name || SHIPPING_LABELS[order.shipping_company!] || order.shipping_company!)
+          setShippingCompanyName(method?.name || resolveShippingName(order.shipping_company))
         })
         .catch(() => {
-          setShippingCompanyName(SHIPPING_LABELS[order.shipping_company!] || order.shipping_company!)
+          setShippingCompanyName(resolveShippingName(order.shipping_company))
         })
     }
   }, [order.delivery_type, order.shipping_company])
@@ -59,7 +59,7 @@ export default function SendWhatsAppButton({ order }: SendWhatsAppButtonProps) {
       address: order.customer_address,
       deliveryType: order.delivery_type,
       shippingCompany: order.shipping_company || '',
-      shippingCompanyName: shippingCompanyName || SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || '',
+      shippingCompanyName: shippingCompanyName || resolveShippingName(order.shipping_company),
       items: itemsForWhatsApp as any,
       couponCode: order.coupon_code || undefined,
       discountSyp: order.discount_amount_syp || undefined,

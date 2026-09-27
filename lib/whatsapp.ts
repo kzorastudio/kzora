@@ -1,5 +1,5 @@
 import type { CartItem, Currency } from '@/types'
-import { formatPrice, SHIPPING_LABELS } from './utils'
+import { formatPrice, resolveShippingName } from './utils'
 
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || '963964514765'
 
@@ -105,7 +105,7 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   lines.push(`${EMOJI.ROCKET} *النوع:* ${isAleppoDelivery ? 'توصيل عادي (حلب)' : 'شحن للمحافظات'}`)
 
   if (!isAleppoDelivery) {
-    lines.push(`${EMOJI.OFFICE} *الشركة:* ${order.shippingCompanyName || SHIPPING_LABELS[order.shippingCompany || ''] || order.shippingCompany}`)
+    lines.push(`${EMOJI.OFFICE} *الشركة:* ${order.shippingCompanyName || resolveShippingName(order.shippingCompany)}`)
   }
 
   lines.push(``)

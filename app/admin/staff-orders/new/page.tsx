@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { Search, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
-import { formatCurrency, cn, SHIPPING_LABELS, ORDER_STATUS_LABELS, formatDate, toArabicNumerals } from '@/lib/utils'
+import { formatCurrency, cn, resolveShippingName, ORDER_STATUS_LABELS, formatDate, toArabicNumerals } from '@/lib/utils'
 import type { Currency, HomepageSettings } from '@/types'
 
 interface PickerProduct {
@@ -554,7 +554,7 @@ export default function NewStaffOrderPage() {
       let shippingCompanyName =
         deliveryType === 'delivery'
           ? 'توصيل عادي (حلب)'
-          : shippingMethod?.name || SHIPPING_LABELS[shippingSlug || ''] || shippingSlug || ''
+          : shippingMethod?.name || resolveShippingName(shippingSlug, null, '')
 
       // Strip emojis and parenthesized English text from the shipping name
       shippingCompanyName = shippingCompanyName.replace(/[\uD800-\uDFFF☀-➿]/g, '').trim()

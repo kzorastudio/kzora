@@ -6,7 +6,7 @@ import { ArrowRight, Package, MapPin, Truck, CreditCard, Clock } from 'lucide-re
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import StatusBadge from '@/components/admin/StatusBadge'
-import { formatDate, formatPrice, SHIPPING_LABELS, normalizePhone } from '@/lib/utils'
+import { formatDate, formatPrice, resolveShippingName, normalizePhone } from '@/lib/utils'
 import type { OrderFull } from '@/types'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
@@ -70,7 +70,7 @@ async function getShippingMethodName(slug: string): Promise<string> {
     .select('name')
     .eq('slug', slug)
     .maybeSingle()
-  return data?.name || SHIPPING_LABELS[slug || ''] || slug
+  return resolveShippingName(slug, data?.name ? { [slug]: data.name } : null)
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {

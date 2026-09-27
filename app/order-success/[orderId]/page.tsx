@@ -8,7 +8,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { LoyaltyStatus } from '@/components/checkout/LoyaltyStatus'
-import { formatPrice, SHIPPING_LABELS, normalizePhone } from '@/lib/utils'
+import { formatPrice, normalizePhone, resolveShippingName } from '@/lib/utils'
 import type { OrderFull, OrderItem, HomepageSettings } from '@/types'
 import { CreditCard } from 'lucide-react'
 import TrackPurchase from '@/components/analytics/TrackPurchase'
@@ -135,6 +135,16 @@ export default async function OrderSuccessPage({ params }: PageProps) {
 
   if (!order) notFound()
 
+  let shippingNames: Record<string, string> = {}
+  if (order.shipping_company) {
+    const { data: method } = await supabaseAdmin
+      .from('shipping_methods')
+      .select('name')
+      .eq('slug', order.shipping_company)
+      .maybeSingle()
+    if (method?.name) shippingNames = { [order.shipping_company]: method.name }
+  }
+
   const currency = order.currency_used
 
   const total   = currency === 'SYP' ? order.total_syp   : order.total_usd
@@ -254,7 +264,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   <p className="font-arabic text-sm font-medium text-on-surface">
                     {(order as any).delivery_type === 'delivery' 
                       ? 'توصيل عادي (حلب)'
-                      : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
+                      : resolveShippingName(order.shipping_company, shippingNames)}
                   </p>
                 </div>
                 <div className="col-span-2">

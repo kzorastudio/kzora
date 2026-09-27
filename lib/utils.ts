@@ -87,6 +87,22 @@ export const SHIPPING_LABELS: Record<string, string> = {
   'shipping': '\uD83D\uDCE6 شحن للمحافظات',
 }
 
+/**
+ * Human name for a shipping company slug: DB name → legacy static label → fallback.
+ * Auto-generated slugs from the admin panel ("shipping-xxxx") are never shown raw.
+ */
+export function resolveShippingName(
+  slug: string | null | undefined,
+  names?: Record<string, string> | null,
+  fallback = 'شحن للمحافظات',
+): string {
+  if (!slug) return fallback
+  const name = names?.[slug] || SHIPPING_LABELS[slug]
+  if (name) return name
+  if (/^shipping-[a-z0-9]+$/i.test(slug)) return fallback
+  return slug
+}
+
 // Truncate text
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text

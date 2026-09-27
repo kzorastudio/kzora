@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import type { OrderFull, OrderStatus } from '@/types'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
-import { SHIPPING_LABELS } from '@/lib/utils'
+import { resolveShippingName, useShippingNames } from '@/lib/shippingNames'
 
 // ─── Status visual config ─────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
@@ -145,6 +145,7 @@ function StatusProgress({ status }: { status: OrderStatus }) {
 // ─── Single Order Card ────────────────────────────────────────────────────────
 function OrderCard({ order }: { order: OrderFull }) {
   const [expanded, setExpanded] = useState(false)
+  const shippingNames = useShippingNames()
   const config = STATUS_CONFIG[order.status]
 
   const total =
@@ -279,7 +280,7 @@ function OrderCard({ order }: { order: OrderFull }) {
                 <p className="text-sm font-arabic font-medium text-[#1A1A1A]">
                   {(order as any).delivery_type === 'delivery' 
                     ? 'توصيل عادي (حلب)'
-                    : (SHIPPING_LABELS[order.shipping_company || ''] || order.shipping_company || 'شحن للمحافظات')}
+                    : resolveShippingName(order.shipping_company, shippingNames)}
                 </p>
               </div>
             </div>

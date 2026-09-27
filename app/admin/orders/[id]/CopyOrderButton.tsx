@@ -4,7 +4,8 @@ import { ClipboardCheck, Copy } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import type { OrderFull } from '@/types'
-import { formatDate, formatPrice, SHIPPING_LABELS, toArabicNumerals } from '@/lib/utils'
+import { formatDate, formatPrice, toArabicNumerals } from '@/lib/utils'
+import { loadShippingNames, resolveShippingName } from '@/lib/shippingNames'
 
 import { useSession } from 'next-auth/react'
 import { isOwnOrdersOnly } from '@/lib/permissions'
@@ -24,7 +25,7 @@ export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
       const deliveryType = (order as any).delivery_type || 'shipping'
       const shippingInfo = deliveryType === 'delivery' 
         ? 'توصيل شامي (مندوب)' 
-        : (SHIPPING_LABELS[order.shipping_company!] || order.shipping_company || 'شحن خارجي')
+        : resolveShippingName(order.shipping_company, await loadShippingNames(), 'شحن خارجي')
 
       const itemsText = order.items.map((item, idx) => (
         `\u200F${toArabicNumerals(idx + 1)}. ${item.product_name}\n   (اللون: ${item.color || '-'} | المقاس: ${item.size || '-'} | الكمية: ${item.quantity})`
