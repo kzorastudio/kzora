@@ -60,27 +60,54 @@ const SOCIAL_LINKS = [
   },
 ]
 
+const DEFAULT_CATEGORY_FALLBACK = [
+  { label: 'أحذية رجالية', href: '/category/men' },
+  { label: 'أحذية نسائية', href: '/category/احذيه-نسائية' },
+  { label: 'أحذية رياضية', href: '/category/sports' },
+  { label: 'جميع الأقسام', href: '/categories' },
+]
+
 export function Footer() {
   const [footerCategories, setFooterCategories] = useState<Category[]>([])
 
   useEffect(() => {
     async function fetchFooterNav() {
-      const { data } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('show_in_footer', true)
-        .eq('is_active', true)
-        .order('footer_order', { ascending: true })
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('show_in_footer', true)
+          .eq('is_active', true)
+          .order('footer_order', { ascending: true })
 
-      if (data) setFooterCategories(data)
+        if (!error && data && data.length > 0) {
+          setFooterCategories(data)
+        } else {
+          // Fallback: If no category is marked explicitly for footer, load active categories
+          const { data: fallbackData } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true })
+            .limit(6)
+
+          if (fallbackData && fallbackData.length > 0) {
+            setFooterCategories(fallbackData)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch footer categories:', err)
+      }
     }
     fetchFooterNav()
   }, [])
 
-  const categoryLinks = footerCategories.map(c => ({
-    label: c.name_ar,
-    href: `/category/${c.slug}`
-  }))
+  const categoryLinks = footerCategories.length > 0
+    ? footerCategories.map(c => ({
+        label: c.name_ar?.trim() || '',
+        href: `/category/${c.slug}`
+      }))
+    : DEFAULT_CATEGORY_FALLBACK
 
   return (
     <footer dir="rtl" className="bg-[#F5F1EB]">

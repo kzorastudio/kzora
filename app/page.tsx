@@ -122,6 +122,19 @@ export default async function HomePage() {
 
   slides      = slidesResult.data ?? []
   categories  = categoriesResult.data ?? []
+
+  if (categories.length === 0) {
+    const { data: fallbackCats } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .limit(4)
+    if (fallbackCats && fallbackCats.length > 0) {
+      categories = fallbackCats
+    }
+  }
+
   newProducts = _new
   bestSellers = _best
   offers      = _offers

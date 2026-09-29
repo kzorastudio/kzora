@@ -154,21 +154,38 @@ export function Header() {
 
   useEffect(() => {
     async function fetchNav() {
-      const { data } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('show_in_header', true)
-        .eq('is_active', true)
-        .order('header_order', { ascending: true })
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('show_in_header', true)
+          .eq('is_active', true)
+          .order('header_order', { ascending: true })
 
-      if (data) setNavCategories(data)
+        if (!error && data && data.length > 0) {
+          setNavCategories(data)
+        } else {
+          const { data: fallbackData } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true })
+            .limit(4)
+
+          if (fallbackData && fallbackData.length > 0) {
+            setNavCategories(fallbackData)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load header navigation:', err)
+      }
     }
     fetchNav()
   }, [])
 
   const NAV_LINKS = [
     ...FIXED_LINKS_START,
-    ...navCategories.map(c => ({ label: c.name_ar, href: `/category/${c.slug}` })),
+    ...navCategories.map(c => ({ label: c.name_ar?.trim() || '', href: `/category/${c.slug}` })),
     ...FIXED_LINKS_END
   ]
 
