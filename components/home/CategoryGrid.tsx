@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
+import { getMobileCategoryImage } from '@/lib/categoryImages'
+import { ArtDirectedImage } from '@/components/category/ArtDirectedImage'
 import type { Category } from '@/types'
 
 interface Props {
@@ -62,6 +64,7 @@ export default function CategoryGrid({ categories }: Props) {
                   !isFeatured && count >= 3 && i === count - 1 && (count - 1) % 2 !== 0 && "sm:col-span-2",
                 )}
                 isFeatured={isFeatured}
+                isFullWidth={isFullWidth || count === 1}
                 subtitle={isFeatured && count > 1 ? "تشكيلة فاخرة وحصرية" : undefined}
               />
             )
@@ -76,13 +79,18 @@ function CategoryCard({
   category, 
   className, 
   isFeatured = false,
-  subtitle 
-}: { 
-  category: Category; 
-  className?: string; 
+  isFullWidth = false,
+  subtitle
+}: {
+  category: Category;
+  className?: string;
   isFeatured?: boolean;
+  isFullWidth?: boolean;
   subtitle?: string;
 }) {
+  const mobileImage = getMobileCategoryImage(category.image_url)
+  const imageClassName = "object-cover transition-transform duration-700 group-hover:scale-105"
+
   return (
     <Link
       href={`/category/${category.slug}`}
@@ -91,13 +99,24 @@ function CategoryCard({
         className
       )}
     >
-      {category.image_url && (
+      {category.image_url && mobileImage ? (
+        // Half-width cards stay narrow until lg, full-width ones only on phones
+        <ArtDirectedImage
+          src={optimizeCloudinaryUrl(category.image_url)}
+          mobileSrc={optimizeCloudinaryUrl(mobileImage)}
+          media={isFullWidth ? "(max-width: 639px)" : "(max-width: 1023px)"}
+          alt={category.name_ar}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          priority={isFeatured}
+          className={imageClassName}
+        />
+      ) : category.image_url && (
         <Image
           src={optimizeCloudinaryUrl(category.image_url)}
           alt={category.name_ar}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
+          className={imageClassName}
           priority={isFeatured}
         />
       )}

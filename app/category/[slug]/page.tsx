@@ -2,9 +2,11 @@
 export const revalidate = 300
 import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import Image, { getImageProps } from 'next/image'
+import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getMobileCategoryImage } from '@/lib/categoryImages'
+import { ArtDirectedImage } from '@/components/category/ArtDirectedImage'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
@@ -19,17 +21,6 @@ interface PageProps {
 /** Old category slug → current slug, for categories whose slug was changed. */
 const RENAMED_SLUGS: Record<string, string> = {
   'احذيه-نسائية': 'women',
-}
-
-/**
- * Hero image (category.image_url) → a 5:4 version laid out for phones.
- * Keyed by the desktop URL so the override stops applying once the image is changed in admin.
- */
-const MOBILE_HERO_IMAGES: Record<string, string> = {
-  'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620347/categories/tq0t9ft4v997sxizewtu.jpg':
-    'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620560/categories/fou84wrekend7r2kcnzx.jpg',
-  'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620349/categories/thshdr6bv55bohqsb0kw.jpg':
-    'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620563/categories/ncgqoxdkmrlksnzi7yji.jpg',
 }
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
@@ -116,7 +107,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const categoryProducts = await getCategoryProducts(category.id)
 
-  const mobileHero = category.image_url ? MOBILE_HERO_IMAGES[category.image_url] : undefined
+  const mobileHero = getMobileCategoryImage(category.image_url)
 
   // Breadcrumb Schema
   const breadcrumbSchema = {
@@ -179,7 +170,15 @@ export default async function CategoryPage({ params }: PageProps) {
           }`}
         >
           {category.image_url && mobileHero ? (
-            <HeroPicture desktop={category.image_url} mobile={mobileHero} alt={category.name_ar} />
+            <ArtDirectedImage
+              src={category.image_url}
+              mobileSrc={mobileHero}
+              media="(max-width: 639px)"
+              alt={category.name_ar}
+              sizes="100vw"
+              priority
+              className="object-cover"
+            />
           ) : category.image_url ? (
             <Image
               src={category.image_url}
@@ -238,20 +237,5 @@ export default async function CategoryPage({ params }: PageProps) {
       <WhatsAppFAB />
       <CartDrawer />
     </>
-  )
-}
-
-/** Art-directed hero: the phone layout below `sm`, the wide banner above it. */
-function HeroPicture({ desktop, mobile, alt }: { desktop: string; mobile: string; alt: string }) {
-  const common = { alt, fill: true, sizes: '100vw', priority: true }
-  const { props: { srcSet: mobileSrcSet } } = getImageProps({ ...common, src: mobile })
-  const { props: desktopProps } = getImageProps({ ...common, src: desktop })
-
-  return (
-    <picture>
-      <source media="(max-width: 639px)" srcSet={mobileSrcSet} />
-      {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
-      <img {...desktopProps} className="object-cover" />
-    </picture>
   )
 }
