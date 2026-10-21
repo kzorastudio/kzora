@@ -71,3 +71,33 @@ export async function fetchAllRows<T = any>(
 
   return all
 }
+
+/**
+ * Whether products.is_sold_out exists yet (supabase/add_is_sold_out.sql). Paginated
+ * listings order by it to put sold-out models last; until the column is added they
+ * keep the old order instead of failing. A "yes" is cached for good, a "no" for a minute.
+ */
+let soldOutColumn: { ready: boolean; checkedAt: number } | null = null
+
+export async function hasSoldOutColumn(): Promise<boolean> {
+  if (soldOutColumn && (soldOutColumn.ready || Date.now() - soldOutColumn.checkedAt < 60_000)) {
+    return soldOutColumn.ready
+  }
+  const { error } = await supabaseAdminLive.from('products').select('is_sold_out').limit(1)
+  soldOutColumn = { ready: !error, checkedAt: Date.now() }
+  return soldOutColumn.ready
+}
+
+/**
+ * Store-wide discount-code switch (homepage_settings.coupons_enabled, owner-only).
+ * Selects `*` so it still works before the column exists, and treats a missing
+ * row/column or a read error as "on" — a failed lookup must never block checkout.
+ */
+export async function areCouponsEnabled(): Promise<boolean> {
+  const { data } = await supabaseAdminLive
+    .from('homepage_settings')
+    .select('*')
+    .limit(1)
+    .maybeSingle()
+  return (data as { coupons_enabled?: boolean } | null)?.coupons_enabled !== false
+}

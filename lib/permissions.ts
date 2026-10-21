@@ -69,12 +69,14 @@ export type Capability =
   | 'print_orders'
   /** Add, remove, or change the role of admins. */
   | 'manage_admins'
+  /** Turn discount codes on/off for the whole store (store owner only). */
+  | 'toggle_coupons'
 
 const CAPABILITIES: Record<AdminRole, Capability[]> = {
   super_admin: [
     'view_dashboard', 'view_stats', 'view_products', 'manage_products',
     'manage_catalog', 'manage_content', 'view_all_orders', 'create_staff_orders',
-    'print_orders', 'manage_admins',
+    'print_orders', 'manage_admins', 'toggle_coupons',
   ],
   // Deliberately without view_stats: revenue and sales totals stay with the owner.
   manager: [

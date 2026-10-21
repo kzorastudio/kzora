@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
+import { generateSlug } from '@/lib/utils'
 
 // â”€â”€â”€ GET /api/categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function GET(_request: NextRequest) {
@@ -51,13 +52,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields: name_ar' }, { status: 400 })
     }
 
-    // Auto-generate slug if missing
+    // Auto-generate slug if missing \u2014 Latin only, so the URL stays short instead of
+    // being percent-encoded (%D8%A7...) like Arabic slugs are.
     if (!slug) {
-      const baseSlug = name_ar
-        .toLowerCase()
-        .trim()
-        .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
+      const baseSlug = generateSlug(name_ar)
 
       // Check if slug exists
       const { data: existing } = await supabaseAdmin

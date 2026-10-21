@@ -458,15 +458,17 @@ export default function CheckoutPage() {
                   multiItemDiscountUsd={multiItemDiscountUsd}
                 />
 
-                {/* Coupon */}
-                <div className="bg-white rounded-2xl p-5 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
-                  <CouponInput
-                    onApply={handleCouponApply}
-                    onRemove={handleCouponRemove}
-                    currency={currency}
-                    appliedCode={couponCode}
-                  />
-                </div>
+                {/* Coupon — hidden when the store owner has switched discount codes off */}
+                {settings?.coupons_enabled !== false && (
+                  <div className="bg-white rounded-2xl p-5 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3]">
+                    <CouponInput
+                      onApply={handleCouponApply}
+                      onRemove={handleCouponRemove}
+                      currency={currency}
+                      appliedCode={couponCode}
+                    />
+                  </div>
+                )}
 
                 {/* Loyalty Status */}
                 {loyaltyInfo && (

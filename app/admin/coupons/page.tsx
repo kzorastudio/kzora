@@ -5,7 +5,9 @@ import { Plus, Trash2, Loader2, X, ToggleLeft, ToggleRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AdminHeader from '@/components/admin/AdminHeader'
 import CouponForm from './CouponForm'
+import { useSession } from 'next-auth/react'
 import { formatDate, cn } from '@/lib/utils'
+import { can } from '@/lib/permissions'
 import type { Coupon } from '@/types'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -35,6 +37,42 @@ export default function CouponsPage() {
   }, [])
 
   useEffect(() => { fetchCoupons() }, [fetchCoupons])
+
+  // Store-wide on/off switch for discount codes — store owner (super_admin) only.
+  // The settings API also drops this field for anyone else.
+  const { data: session } = useSession()
+  const canToggleCoupons = can(session?.user?.role, 'toggle_coupons')
+  const [couponsEnabled, setCouponsEnabled] = useState<boolean | null>(null)
+  const [savingSwitch, setSavingSwitch] = useState(false)
+
+  useEffect(() => {
+    if (!canToggleCoupons) return
+    fetch('/api/homepage/settings', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => setCouponsEnabled(d.settings?.coupons_enabled !== false))
+      .catch(() => setCouponsEnabled(true))
+  }, [canToggleCoupons])
+
+  async function handleToggleCouponsEnabled() {
+    if (couponsEnabled === null) return
+    const next = !couponsEnabled
+    if (!next && !confirm('إيقاف أكواد الحسم سيخفي خانة الكود من السلة وصفحة الدفع لكل الزبائن. متابعة؟')) return
+    setSavingSwitch(true)
+    try {
+      const res = await fetch('/api/homepage/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coupons_enabled: next }),
+      })
+      if (!res.ok) throw new Error()
+      setCouponsEnabled(next)
+      toast.success(next ? 'تم تفعيل أكواد الحسم في المتجر' : 'تم إيقاف أكواد الحسم في المتجر')
+    } catch {
+      toast.error('فشل حفظ الإعداد')
+    } finally {
+      setSavingSwitch(false)
+    }
+  }
 
   async function handleToggleActive(coupon: Coupon) {
     setTogglingId(coupon.id)
@@ -87,6 +125,22 @@ export default function CouponsPage() {
           <p className="text-sm font-arabic font-medium text-secondary">
             إجمالي الكوبونات: <span className="font-bold text-on-surface">{coupons.length}</span>
           </p>
+          {canToggleCoupons && (
+            <button
+              onClick={handleToggleCouponsEnabled}
+              disabled={couponsEnabled === null || savingSwitch}
+              className={cn(
+                'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-arabic font-medium border transition-colors disabled:opacity-60',
+                couponsEnabled === false
+                  ? 'bg-error-container/20 text-error border-error/20'
+                  : 'bg-primary/10 text-primary border-primary/20'
+              )}
+              title="يتحكم به المدير العام فقط"
+            >
+              {savingSwitch ? <Loader2 size={18} className="animate-spin" /> : couponsEnabled === false ? <ToggleLeft size={20} /> : <ToggleRight size={20} />}
+              {couponsEnabled === false ? 'أكواد الحسم متوقفة في المتجر' : 'أكواد الحسم مفعّلة في المتجر'}
+            </button>
+          )}
           <button
             onClick={() => setModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-arabic font-medium hover:bg-primary-container transition-colors shadow-ambient"

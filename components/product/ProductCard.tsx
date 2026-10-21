@@ -7,17 +7,30 @@ import { ShoppingBag, X, Star, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { formatPrice, getDiscountPercent } from '@/lib/utils'
+import { formatCurrency, getDiscountPercent } from '@/lib/utils'
 import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { useCartStore } from '@/store/cartStore'
-import type { ProductFull, ProductColor, CartItem } from '@/types'
+import type { ProductFull, ProductColor, CartItem, Currency } from '@/types'
 import { trackAddToCart } from '@/lib/analytics'
 
 const TAG_LABELS: Record<string, string> = {
   new:         'جديد',
   best_seller: 'الأكثر مبيعاً',
   on_sale:     'تخفيض',
+}
+
+/**
+ * Current price for narrow cards: the SYP "السعر :" label may wrap onto its own line,
+ * while the amount and currency always stay together so nothing spills past the card edge.
+ */
+function CardPrice({ amount, currency, className }: { amount: number; currency: Currency; className?: string }) {
+  return (
+    <span className={cn('flex flex-wrap items-baseline gap-x-1 font-arabic font-bold tabular-nums', className)}>
+      {currency === 'SYP' && <span className="text-xs whitespace-nowrap">السعر :</span>}
+      <span className="text-sm sm:text-base whitespace-nowrap">{formatCurrency(amount, currency)}</span>
+    </span>
+  )
 }
 
 interface ProductCardProps {
@@ -459,28 +472,26 @@ export function ProductCard({ product, className, filterUnavailableLabel, forced
         </div>
 
         {/* Price */}
-        <div className="h-7 flex items-center gap-2 pt-1" dir="rtl">
+        <div className="min-h-7 flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-1" dir="rtl">
           {hasDiscount ? (
             <>
               {/* Discounted / New Price */}
-              <span className={cn(
-                "font-arabic font-bold text-sm sm:text-base tabular-nums",
-                isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#BA1A1A]'
-              )}>
-                {formatPrice(displayPrice, currency)}
-              </span>
-              {/* Old Original Price (Strikethrough) */}
-              <span className="font-arabic text-xs text-[#9E9890] line-through tabular-nums font-normal">
-                {formatPrice(originalDisplayPrice, currency)}
+              <CardPrice
+                amount={displayPrice}
+                currency={currency}
+                className={isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#BA1A1A]'}
+              />
+              {/* Old Original Price (Strikethrough) — no label, so it fits beside the new price */}
+              <span className="font-arabic text-xs text-[#9E9890] line-through tabular-nums font-normal whitespace-nowrap">
+                {formatCurrency(originalDisplayPrice, currency)}
               </span>
             </>
           ) : (
-            <span className={cn(
-              "font-arabic font-bold text-sm sm:text-base tabular-nums",
-              isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#1A1A1A]'
-            )}>
-              {formatPrice(displayPrice, currency)}
-            </span>
+            <CardPrice
+              amount={displayPrice}
+              currency={currency}
+              className={isActuallyOutOfStock ? 'text-[#9E9890]' : 'text-[#1A1A1A]'}
+            />
           )}
         </div>
       </div>

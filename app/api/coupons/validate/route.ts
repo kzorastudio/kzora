@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, areCouponsEnabled } from '@/lib/supabase'
 
 // ─── POST /api/coupons/validate ───────────────────────────────────────────────
 // Public. Validates a coupon code without applying it.
@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
         { valid: false, message: 'يرجى إدخال كود الخصم' },
         { status: 400 }
       )
+    }
+
+    if (!(await areCouponsEnabled())) {
+      return NextResponse.json({ valid: false, message: 'أكواد الخصم متوقفة حالياً' })
     }
 
     const { data: coupon, error } = await supabaseAdmin

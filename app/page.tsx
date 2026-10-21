@@ -2,6 +2,7 @@
 export const revalidate = 300
 
 import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { sortSoldOutLast } from '@/lib/productSort'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
@@ -33,12 +34,10 @@ async function fetchProductsByTag(tag: string, limit = 8): Promise<ProductFull[]
     .eq('is_published', true)
     .in('id', productIds)
     .order('created_at', { ascending: false })
-    .order('stock_status', { ascending: true })
-    .limit(limit)
 
   if (prodError || !products) return []
 
-  return (products || []).map((p: any) => ({
+  const mapped = (products || []).map((p: any) => ({
     ...p,
     images:   (p.product_images as { display_order: number }[] ?? []).sort((a, b) => a.display_order - b.display_order),
     colors:   p.product_colors ?? [],
@@ -46,7 +45,9 @@ async function fetchProductsByTag(tag: string, limit = 8): Promise<ProductFull[]
     tags:     ((p.product_tags as { tag: string }[] ?? [])).map((t) => t.tag),
     category: Array.isArray(p.categories) ? (p.categories[0] ?? null) : (p.categories ?? null),
     variants: p.product_variants ?? [],
-  })) as ProductFull[]
+  }))
+  // Tag sets are small: fetch them all so sold-out models drop behind available ones before the cut
+  return sortSoldOutLast(mapped as ProductFull[]).slice(0, limit)
 }
 
 // ─── Promo Banner ──────────────────────────────────────────────────────────────

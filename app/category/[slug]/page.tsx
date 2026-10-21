@@ -1,6 +1,6 @@
 // ISR: regenerate every 5 minutes. Admin actions also call revalidatePath on changes.
 export const revalidate = 300
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -14,6 +14,11 @@ import type { Category, ProductFull } from '@/types'
 
 interface PageProps {
   params: Promise<{ slug: string }>
+}
+
+/** Old category slug → current slug, for categories whose slug was changed. */
+const RENAMED_SLUGS: Record<string, string> = {
+  'احذيه-نسائية': 'women',
 }
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
@@ -91,7 +96,12 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const category = await getCategory(slug)
 
-  if (!category) notFound()
+  if (!category) {
+    // Old Arabic slugs that were renamed — keep shared links and ads working
+    const renamedTo = RENAMED_SLUGS[decodeURIComponent(slug)]
+    if (renamedTo) permanentRedirect(`/category/${renamedTo}`)
+    notFound()
+  }
 
   const categoryProducts = await getCategoryProducts(category.id)
 

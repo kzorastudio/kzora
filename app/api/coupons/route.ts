@@ -4,8 +4,13 @@ import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // â”€â”€â”€ GET /api/coupons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export async function GET(_request: NextRequest) {
+// Admin only — listing every code publicly would let anyone read them all.
+// Customers check a single code through POST /api/coupons/validate.
+export async function GET(request: NextRequest) {
   try {
+    const auth = await authorizeApi(request, 'manage_catalog')
+    if ('response' in auth) return auth.response
+
     const { data: coupons, error } = await supabaseAdmin
       .from('coupons')
       .select('*')

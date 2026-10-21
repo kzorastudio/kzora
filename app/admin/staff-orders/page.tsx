@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { Plus, Search, Package, CheckCircle2, XCircle } from 'lucide-react'
+import { Plus, Search, Package, CheckCircle2, XCircle, Trash2 } from 'lucide-react'
 import StatusBadge from '@/components/admin/StatusBadge'
 import AdminHeader from '@/components/admin/AdminHeader'
+import DeleteOrderModal from '@/components/admin/DeleteOrderModal'
 import CopyOrderButton from './CopyOrderButton'
 import { ORDER_STATUS_OPTIONS, ADMIN_ITEMS_PER_PAGE } from '@/lib/constants'
 import { formatDate, formatPrice, cn } from '@/lib/utils'
@@ -53,6 +54,63 @@ export default function StaffOrdersPage() {
 
   useEffect(() => { fetchOrders(page, statusFilter, search, employeeFilter) }, [fetchOrders, page, statusFilter, search, employeeFilter])
 
+  // Delete / mark-returned — same dialog as the main orders table. The list API
+  // already returns only the employee's own orders, and PUT/DELETE /api/orders/[id]
+  // re-check ownership server-side.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; orderNumber: string; isReservation: boolean } | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  function openDeleteModal(e: React.MouseEvent, o: OrderWithItems) {
+    e.stopPropagation()
+    setPendingDelete({ id: o.id, orderNumber: o.order_number, isReservation: !!(o as any).is_reservation })
+  }
+
+  async function handleMarkReturned() {
+    if (!pendingDelete) return
+    setDeleteLoading(true)
+    try {
+      const res = await fetch(`/api/orders/${pendingDelete.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'حدث خطأ أثناء تحديث الحالة')
+      }
+      toast.success('تم تحويل الطلب إلى ملغي مرتجع')
+      setOrders((prev) => prev.map((o) => (o.id === pendingDelete.id ? { ...o, status: 'cancelled' } : o)))
+      setPendingDelete(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'حدث خطأ أثناء تحديث الحالة')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  async function handleDelete(restoreStock: boolean) {
+    if (!pendingDelete) return
+    setDeleteLoading(true)
+    try {
+      const url = restoreStock ? `/api/orders/${pendingDelete.id}?restore_stock=true` : `/api/orders/${pendingDelete.id}`
+      const res = await fetch(url, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(
+          err.error ??
+            (res.status === 401 ? 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً' : 'فشل حذف الطلب')
+        )
+      }
+      toast.success(restoreStock ? 'تم حذف الطلب وإرجاع الكميات' : 'تم حذف الطلب بنجاح')
+      setOrders((prev) => prev.filter((o) => o.id !== pendingDelete.id))
+      setPendingDelete(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'فشل حذف الطلب')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetch('/api/admin/staff-orders/stats')
       .then((r) => (r.ok ? r.json() : { stats: [] }))
@@ -89,6 +147,17 @@ export default function StaffOrdersPage() {
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
+      {pendingDelete && (
+        <DeleteOrderModal
+          orderNumber={pendingDelete.orderNumber}
+          isReservation={pendingDelete.isReservation}
+          loading={deleteLoading}
+          onClose={() => { if (!deleteLoading) setPendingDelete(null) }}
+          onMarkReturned={handleMarkReturned}
+          onDeleteAndRestore={() => handleDelete(true)}
+          onDeleteOnly={() => handleDelete(false)}
+        />
+      )}
       <AdminHeader />
       <div className="flex-1 p-4 md:p-6 flex flex-col gap-4 md:gap-5">
       <div className="flex items-center justify-end">
@@ -223,8 +292,16 @@ export default function StaffOrdersPage() {
               <span>{o.customer_governorate}</span>
               <span>{formatDate(o.created_at)}</span>
             </div>
-            <div className="mt-3 pt-3 border-t border-outline-variant/20 flex justify-end">
+            <div className="mt-3 pt-3 border-t border-outline-variant/20 flex justify-end items-center gap-2">
               <CopyOrderButton order={o} shippingMethods={shippingMethods} />
+              <button
+                type="button"
+                onClick={(e) => openDeleteModal(e, o)}
+                className="h-9 w-9 flex items-center justify-center rounded-xl bg-error-container/30 text-error hover:bg-error-container/50 transition-colors"
+                title="إلغاء ومرتجع / حذف الطلب"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           </div>
         ))}
@@ -236,7 +313,7 @@ export default function StaffOrdersPage() {
           <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-outline-variant/40">
-                {['رقم الطلب', 'العميل', 'المحافظة', 'الإجمالي', 'الحالة', 'التاريخ', 'واتساب'].map((c) => (
+                {['رقم الطلب', 'العميل', 'المحافظة', 'الإجمالي', 'الحالة', 'التاريخ', 'إجراءات'].map((c) => (
                   <th key={c} className="px-4 py-3 text-right text-xs font-arabic font-semibold text-secondary whitespace-nowrap">{c}</th>
                 ))}
               </tr>
@@ -265,7 +342,17 @@ export default function StaffOrdersPage() {
                     <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={o.status as OrderStatus} /></td>
                     <td className="px-4 py-3 text-sm font-arabic text-secondary whitespace-nowrap">{formatDate(o.created_at)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <CopyOrderButton order={o} shippingMethods={shippingMethods} />
+                      <div className="flex items-center gap-1.5">
+                        <CopyOrderButton order={o} shippingMethods={shippingMethods} />
+                        <button
+                          type="button"
+                          onClick={(e) => openDeleteModal(e, o)}
+                          className="p-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container/40 transition-colors"
+                          title="إلغاء ومرتجع / حذف الطلب"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

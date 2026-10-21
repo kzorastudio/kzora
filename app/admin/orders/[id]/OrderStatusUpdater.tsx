@@ -10,7 +10,7 @@ import type { OrderStatus } from '@/types'
 interface OrderStatusUpdaterProps {
   orderId: string
   currentStatus: OrderStatus
-  /** Only super_admin may delete orders — the API rejects everyone else with 403. */
+  /** Owner of the order, or any role with view_all_orders — mirrors DELETE /api/orders/[id]. */
   canDelete?: boolean
 }
 

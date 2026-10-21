@@ -305,6 +305,8 @@ export interface HomepageSettings {
   sham_cash_image_url: string | null
   sham_cash_public_id: string | null
   sham_cash_instructions: string | null
+  /** Store-wide switch for discount codes; missing (column not added yet) means on. */
+  coupons_enabled?: boolean
   // Legacy fields (no longer used — discount is now per-product)
   discount_multi_items_enabled?: boolean
   discount_2_items_syp?: number

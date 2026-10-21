@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, areCouponsEnabled } from '@/lib/supabase'
 import type { CreateOrderPayload } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { normalizePhone } from '@/lib/utils'
@@ -295,7 +295,8 @@ export async function POST(request: NextRequest) {
     let couponId: string | null = null
     let couponUsedCount = 0
 
-    if (coupon_code) {
+    // Owner switched discount codes off: ignore any code rather than rejecting the order
+    if (coupon_code && (await areCouponsEnabled())) {
       const { data: coupon, error: couponError } = await supabaseAdmin
         .from('coupons')
         .select('*')

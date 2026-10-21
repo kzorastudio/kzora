@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { getAuthSession } from '@/lib/getSession'
 import { can } from '@/lib/permissions'
-import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
+import { supabaseAdmin, fetchAllRows, hasSoldOutColumn } from '@/lib/supabase'
+import { sortSoldOutLast } from '@/lib/productSort'
 import type { CreateProductPayload, ProductTag } from '@/types'
 
 import { revalidatePath } from 'next/cache'
@@ -254,10 +255,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Sort
-    query = query.order('created_at', { ascending: false })
-    query = query.order('stock_status', { ascending: true })
-    
+    // Sort: sold-out models always last, then the chosen sort, then newest first
+    const soldOutInDb = await hasSoldOutColumn()
+    if (soldOutInDb) query = query.order('is_sold_out', { ascending: true })
+
     switch (sort) {
       case 'price_asc':
         query = query.order('price_syp', { ascending: true })
@@ -270,12 +271,13 @@ export async function GET(request: NextRequest) {
         break
       case 'newest':
       default:
-        // Already handled above
         break
     }
+    query = query.order('created_at', { ascending: false })
 
-    // Pagination
-    query = query.range(offset, offset + limit - 1)
+    // Pagination — until products.is_sold_out exists, fetch every match and move
+    // sold-out models last below instead
+    if (soldOutInDb) query = query.range(offset, offset + limit - 1)
 
     const { data, error, count } = await query
 
@@ -285,7 +287,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Normalize sizes and tags
-    const products = (data || []).map((p: any) => ({
+    const rows = soldOutInDb ? (data || []) : sortSoldOutLast((data || []) as any[]).slice(offset, offset + limit)
+    const products = rows.map((p: any) => ({
       ...p,
       sizes: (p.sizes || []).map((s: { size: number; is_available: boolean }) => ({ size: s.size, is_available: s.is_available })),
       tags:  (p.tags  || []).map((t: { tag: ProductTag }) => t.tag),

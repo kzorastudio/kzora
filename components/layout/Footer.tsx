@@ -62,7 +62,7 @@ const SOCIAL_LINKS = [
 
 const DEFAULT_CATEGORY_FALLBACK = [
   { label: 'أحذية رجالية', href: '/category/men' },
-  { label: 'أحذية نسائية', href: '/category/احذيه-نسائية' },
+  { label: 'أحذية نسائية', href: '/category/women' },
   { label: 'أحذية رياضية', href: '/category/sports' },
   { label: 'جميع الأقسام', href: '/categories' },
 ]

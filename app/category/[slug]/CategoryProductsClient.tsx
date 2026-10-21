@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { expandProductsBySize } from '@/lib/expandProductsBySize'
+import { isSoldOut } from '@/lib/productSort'
 import type { ProductFull } from '@/types'
 
 // ─── MultiSelectDropdown (same as products page) ────────────────────────────
@@ -210,20 +211,16 @@ export default function CategoryProductsClient({ products }: Props) {
       result = result.filter(p => currency === 'SYP' ? p.price_syp <= max : p.price_usd <= max)
     }
 
-    // Sort: available products first, then unavailable
-    // Then apply the selected sort order
-    result.sort((a, b) => {
-      const aUnavail = unavailableMap[a.id] ? 1 : 0
-      const bUnavail = unavailableMap[b.id] ? 1 : 0
-      if (aUnavail !== bUnavail) return aUnavail - bUnavail
-      return 0
-    })
+    // Sort: available first, then unavailable in the chosen size, then sold-out models last.
+    // Then apply the selected sort order within each group.
+    const rank = (p: ProductFull) => (isSoldOut(p) ? 2 : unavailableMap[p.id] ? 1 : 0)
+    result.sort((a, b) => rank(a) - rank(b))
 
     switch (sort) {
-      case 'price_asc':   result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || a.price_syp - b.price_syp }); break
-      case 'price_desc':  result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || b.price_syp - a.price_syp }); break
-      case 'most_viewed': result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || b.view_count - a.view_count }); break
-      case 'name_asc':    result.sort((a, b) => { const u = (unavailableMap[a.id] ? 1 : 0) - (unavailableMap[b.id] ? 1 : 0); return u || a.name.localeCompare(b.name, 'ar') }); break
+      case 'price_asc':   result.sort((a, b) => rank(a) - rank(b) || a.price_syp - b.price_syp); break
+      case 'price_desc':  result.sort((a, b) => rank(a) - rank(b) || b.price_syp - a.price_syp); break
+      case 'most_viewed': result.sort((a, b) => rank(a) - rank(b) || b.view_count - a.view_count); break
+      case 'name_asc':    result.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'ar')); break
     }
 
     return { filtered: result, filterUnavailableMap: unavailableMap }

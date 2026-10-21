@@ -15,6 +15,9 @@ html {
   scroll-behavior: smooth;
   overflow-x: hidden;
   max-width: 100%;
+  /* Stop in-app browsers (Facebook/Instagram) from inflating font sizes */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {

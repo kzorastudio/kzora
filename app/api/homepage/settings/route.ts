@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { authorizeApi } from '@/lib/adminGuard'
+import { can } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
 import { deleteImage } from '@/lib/cloudinary'
 
@@ -49,6 +50,7 @@ export async function GET(_request: NextRequest) {
           sham_cash_image_url:    null,
           sham_cash_public_id:    null,
           sham_cash_instructions: '',
+          coupons_enabled:        true,
           discount_multi_items_enabled: false,
           discount_2_items_syp: 2000,
           discount_2_items_usd: 0,
@@ -129,6 +131,11 @@ export async function PUT(request: NextRequest) {
       'delivery_fee_3_plus_pieces_syp',
       'delivery_fee_3_plus_pieces_usd',
     ]
+
+    // The discount-code switch belongs to the store owner only. For anyone else the
+    // field is silently dropped — the homepage editor re-sends the whole settings
+    // object, so rejecting the request would break a manager's normal save.
+    if (can(auth.session.role, 'toggle_coupons')) allowed.push('coupons_enabled')
 
     const updateFields: Record<string, unknown> = {}
     for (const key of allowed) {

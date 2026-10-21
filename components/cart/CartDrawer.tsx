@@ -179,13 +179,15 @@ export function CartDrawer({ className }: CartDrawerProps) {
 
                 {/* Footer */}
                 <div className="shrink-0 px-5 pb-6 pt-3 space-y-4 bg-surface-container-lowest">
-                  {/* Coupon input */}
-                  <CouponInput
-                    onApply={handleCouponApply}
-                    onRemove={handleCouponRemove}
-                    currency={currency}
-                    appliedCode={couponCode}
-                  />
+                  {/* Coupon input — hidden when the store owner has switched discount codes off */}
+                  {settings?.coupons_enabled !== false && (
+                    <CouponInput
+                      onApply={handleCouponApply}
+                      onRemove={handleCouponRemove}
+                      currency={currency}
+                      appliedCode={couponCode}
+                    />
+                  )}
 
                   {/* Divider */}
                   <div className="h-px bg-surface-container-high" />
