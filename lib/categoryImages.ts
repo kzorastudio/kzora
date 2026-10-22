@@ -7,6 +7,8 @@ const MOBILE_CATEGORY_IMAGES: Record<string, string> = {
     'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620560/categories/fou84wrekend7r2kcnzx.jpg',
   'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620349/categories/thshdr6bv55bohqsb0kw.jpg':
     'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792620563/categories/ncgqoxdkmrlksnzi7yji.jpg',
+  'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792631117/categories/wwonvyqkcn8s7zzrr0dn.jpg':
+    'https://res.cloudinary.com/dqo6bkp4c/image/upload/v1792631119/categories/w4o5emr8sqkvkfysc098.jpg',
 }
 
 export function getMobileCategoryImage(imageUrl: string | null | undefined): string | undefined {
