@@ -149,7 +149,7 @@ export default function ProductReviews({ productId, initialReviews = [] }: Produ
   }
 
   return (
-    <section className="mt-20 border-t border-[#E8E3DB] pt-16">
+    <section id="reviews" className="mt-20 border-t border-[#E8E3DB] pt-16 scroll-mt-32">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div className="flex flex-col gap-2">
           <h2 className="font-arabic text-3xl font-bold text-[#1A1A1A] flex items-center gap-3">

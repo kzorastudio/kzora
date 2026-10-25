@@ -135,13 +135,31 @@ export default async function ProductDetailPage({ params }: PageProps) {
     : 0
 
   // JSON-LD for Product
+  // Shopper-facing facts AI answers draw on: what colours and sizes are in stock,
+  // the category, and how the last fits (same wording as the badge on the page).
+  const availableColors = product.colors.filter(c => c.is_available).map(c => c.name_ar.trim())
+  const availableSizes = product.sizes.filter(s => s.is_available).map(s => String(s.size))
+  const moldLabel = product.mold_type === 'chinese'
+    ? 'ضيّق (ننصح بمقاس أكبر)'
+    : product.mold_type === 'wide'
+    ? 'واسع (ننصح بمقاس أصغر)'
+    : 'نظامي'
+
   const productSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
+    url: `https://www.kzora.co/product/${product.slug}`,
     image: product.images.map(img => optimizeCloudinaryUrl(img.url)),
     description: product.description,
     sku: product.id,
+    ...(product.category?.name_ar ? { category: product.category.name_ar.trim() } : {}),
+    ...(availableColors.length > 0 ? { color: availableColors.join('، ') } : {}),
+    ...(availableSizes.length > 0 ? { size: availableSizes } : {}),
+    additionalProperty: [
+      { '@type': 'PropertyValue', name: 'نوع القالب', value: moldLabel },
+      { '@type': 'PropertyValue', name: 'نظام المقاسات', value: 'أوروبي (EU)' },
+    ],
     brand: {
       '@type': 'Brand',
       name: 'كزورا Kzora',
@@ -152,6 +170,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       priceCurrency: 'SYP',
       price: product.discount_price_syp || product.price_syp,
       availability: product.stock_status === 'out_of_stock' ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
       ...(priceValidUntil ? { priceValidUntil } : {}),
       seller: {
         '@type': 'Organization',

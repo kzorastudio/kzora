@@ -13,6 +13,7 @@ import OrderDetailsEditor from './OrderDetailsEditor'
 import OrderItemsEditor from './OrderItemsEditor'
 import CopyOrderButton from './CopyOrderButton'
 import SendWhatsAppButton from './SendWhatsAppButton'
+import RequestReviewButton from './RequestReviewButton'
 import ConfirmReservationButton from './ConfirmReservationButton'
 import { requireAdmin } from '@/lib/adminGuard'
 import { homePathFor, isOwnOrdersOnly, normalizeRole, ROLE_SHORT_LABELS } from '@/lib/permissions'
@@ -46,6 +47,17 @@ async function getOrder(id: string): Promise<OrderFull | null> {
   }
 
   return data as OrderFull
+}
+
+async function getReviewProducts(order: OrderFull): Promise<{ name: string; slug: string }[]> {
+  const ids = Array.from(new Set(order.items.map((i) => i.product_id).filter((id): id is string => !!id)))
+  if (ids.length === 0) return []
+  const { data } = await supabaseAdmin
+    .from('products')
+    .select('name, slug')
+    .in('id', ids)
+    .eq('is_published', true)
+  return (data ?? []) as { name: string; slug: string }[]
 }
 
 async function getCustomerLoyalty(phone: string) {
@@ -97,6 +109,10 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const shippingName = deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : (await getShippingMethodName(order.shipping_company || ''))
   const loyalty = await getCustomerLoyalty(order.customer_phone)
 
+  // Once the order is on its way, staff can ask the customer for a review of what they bought.
+  const canRequestReview = order.status === 'shipped' || order.status === 'delivered'
+  const reviewProducts = canRequestReview ? await getReviewProducts(order) : []
+
   const currency = order.currency_used
   const subtotalRaw = currency === 'USD' ? order.subtotal_usd : order.subtotal_syp
   const discountRaw = currency === 'USD' ? order.discount_amount_usd : order.discount_amount_syp
@@ -141,6 +157,13 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <div className="shrink-0 flex items-center gap-2">
             {order.is_reservation && <ConfirmReservationButton orderId={order.id} />}
             <SendWhatsAppButton order={order} />
+            {reviewProducts.length > 0 && (
+              <RequestReviewButton
+                customerName={order.customer_full_name}
+                customerPhone={order.customer_phone}
+                products={reviewProducts}
+              />
+            )}
             <CopyOrderButton order={order} />
           </div>
         </div>
