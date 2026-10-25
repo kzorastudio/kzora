@@ -83,7 +83,7 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
     },
     { 
       title: 'سياسة الإرجاع', 
-      content: settings?.return_policy || 'إرجاع خلال 7 أيام من الاستلام.' 
+      content: settings?.return_policy || 'تبديل المقاس خلال 3 أيام من الاستلام، وإرجاع عند وجود عيب مصنعي.' 
     },
   ]
 

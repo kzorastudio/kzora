@@ -13,6 +13,7 @@ import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 import type { ProductFull } from '@/types'
 import ProductPageClient from './_components/ProductPageClient'
 import RelatedProducts from './_components/RelatedProducts'
+import { RETURN_POLICY_SCHEMA } from '@/lib/returnPolicySchema'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -156,6 +157,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         '@type': 'Organization',
         name: 'كزورا Kzora',
       },
+      hasMerchantReturnPolicy: RETURN_POLICY_SCHEMA,
     },
   }
 

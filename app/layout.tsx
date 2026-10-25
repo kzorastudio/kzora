@@ -8,6 +8,7 @@ import VisitTracker from '@/components/analytics/VisitTracker'
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
 import MetaPixel from '@/components/analytics/MetaPixel'
 import { getReviewStats } from '@/lib/reviewStats'
+import { RETURN_POLICY_SCHEMA } from '@/lib/returnPolicySchema'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -189,6 +190,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 'https://www.instagram.com/kzora.studio',
               ],
               ...aggregateRating,
+              hasMerchantReturnPolicy: RETURN_POLICY_SCHEMA,
               contactPoint: {
                 '@type': 'ContactPoint',
                 telephone: '+963964514765',
