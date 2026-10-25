@@ -2,6 +2,7 @@
 export const revalidate = 300
 
 import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { getReviewStats } from '@/lib/reviewStats'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
@@ -109,7 +110,7 @@ export default async function HomePage() {
   let offers: ProductFull[]
   let settings: any = null
 
-  const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult, ordersCountResult, reviewsResult] = await Promise.all([
+  const [slidesResult, categoriesResult, _new, _best, _offers, settingsResult, ordersCountResult, reviewsResult, reviewStats] = await Promise.all([
     supabase.from('hero_slides').select('*').eq('is_active', true).order('sort_order'),
     supabase.from('categories').select('*').eq('show_in_home', true).eq('is_active', true).order('home_order', { ascending: true }),
     fetchProductsByTag('new', 8),
@@ -126,6 +127,7 @@ export default async function HomePage() {
       .gte('rating', 4)
       .order('created_at', { ascending: false })
       .limit(30),
+    getReviewStats(),
   ])
 
   slides      = slidesResult.data ?? []
@@ -158,51 +160,6 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-
-      {/* FAQ Schema for Google Search Rich Snippets */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: [
-              {
-                '@type': 'Question',
-                name: 'هل يتوفر توصيل لكافة المحافظات السورية؟',
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: 'نعم، في متجر كزورا Kzora نوفر خدمة التوصيل السريع لكافة المحافظات السورية (حلب، دمشق، حمص، حماة، اللاذقية، طرطوس، وغيرها) مع ضمان وصول المنتج بأمان.',
-                },
-              },
-              {
-                '@type': 'Question',
-                name: 'هل يمكنني تبديل المقاس إذا كان غير مناسب؟',
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: 'بالتأكيد، في كزورا Kzora رضاكم هو ركيزتنا. نوفر سياسة تبديل مرنة وسهلة خلال ٧ أيام من استلام الطلب لضمان حصولكم على المقاس المثالي.',
-                },
-              },
-              {
-                '@type': 'Question',
-                name: 'ما هي جودة الأحذية المتوفرة في كزورا Kzora؟',
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: 'نفتخر في كزورا Kzora بتقديم أحذية مصنعة من أجود الخامات والجلود الطبيعية التي تجمع بين المتانة والأناقة الكلاسيكية والراحة اليومية.',
-                },
-              },
-              {
-                '@type': 'Question',
-                name: 'كيف يمكنني الطلب من متجر كزورا أونلاين؟',
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: 'يمكنكم الطلب مباشرة عبر موقعنا الإلكتروني kzora.co بإضافة المنتجات للسلة، أو التواصل معنا مباشرة عبر الواتساب على الرقم 963964514765.',
-                },
-              },
-            ],
-          }),
-        }}
-      />
 
       <main dir="rtl" className="min-h-screen bg-[#FAF8F5] pt-32 text-right">
         {/* SEO Accessibility H1 */}
@@ -281,11 +238,11 @@ export default async function HomePage() {
         )}
 
         {/* 6.5 Customer Reviews & Social Proof */}
-        {featuredReviews.length > 0 && (
+        {featuredReviews.length > 0 && reviewStats.count > 0 && (
           <CustomerReviewsSection
             reviews={featuredReviews}
-            totalReviewsCount={41}
-            averageRating={4.9}
+            totalReviewsCount={reviewStats.count}
+            averageRating={reviewStats.average}
           />
         )}
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { REVIEW_STATS_TAG } from '@/lib/reviewStats'
 
 // GET /api/products/[id]/reviews
 // Public. Returns reviews for a specific product.
@@ -76,6 +78,10 @@ export async function POST(
       console.error('Review POST error:', error)
       return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 })
     }
+
+    // Store-wide rating and the public reviews page include this review now.
+    revalidateTag(REVIEW_STATS_TAG)
+    revalidatePath('/reviews')
 
     return NextResponse.json({ review })
   } catch (err) {

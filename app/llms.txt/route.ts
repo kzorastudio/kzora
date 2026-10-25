@@ -1,4 +1,5 @@
-import { supabase, supabaseAdmin, fetchAllRows } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { getReviewStats } from '@/lib/reviewStats'
 
 // /llms.txt — a plain-text brief of the store for AI assistants (ChatGPT, Claude,
 // Perplexity…), following the llms.txt convention. Figures are read live so the
@@ -8,21 +9,15 @@ export const revalidate = 3600
 const BASE = 'https://www.kzora.co'
 
 export async function GET() {
-  const [categoriesResult, ordersResult, reviews] = await Promise.all([
+  const [categoriesResult, ordersResult, reviewStats] = await Promise.all([
     supabase.from('categories').select('name_ar, slug').eq('is_active', true).order('sort_order'),
     // RLS hides orders from anon — only the count leaves the server.
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
-    fetchAllRows<{ rating: number }>((from, to) =>
-      supabase.from('product_reviews').select('rating').eq('is_published', true).range(from, to)
-    ).catch(() => [] as { rating: number }[]),
+    getReviewStats(),
   ])
 
   const categories = categoriesResult.data ?? []
   const ordersCount = ordersResult.count ?? 0
-  const reviewCount = reviews.length
-  const avgRating = reviewCount > 0
-    ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount).toFixed(1)
-    : null
 
   const facts = [
     '- الموقع: حلب، سوريا — متجر أونلاين يبيع لكل سوريا',
@@ -34,7 +29,7 @@ export async function GET() {
     '- التواصل: واتساب +963964514765 — فيسبوك وإنستغرام kzora.studio',
   ]
   if (ordersCount > 0) facts.push(`- عدد الطلبات عبر المتجر: أكثر من ${ordersCount.toLocaleString('en-US')} طلب`)
-  if (avgRating) facts.push(`- تقييم الزبائن: ${avgRating} من 5 بناءً على ${reviewCount} تقييم منشور على الموقع`)
+  if (reviewStats.count > 0) facts.push(`- تقييم الزبائن: ${reviewStats.average} من 5 بناءً على ${reviewStats.count} تقييم منشور على الموقع`)
 
   const body = `# متجر كزورا Kzora للأحذية
 

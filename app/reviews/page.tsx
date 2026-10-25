@@ -85,6 +85,8 @@ export default async function ReviewsPage() {
   const reviewsSchema = {
     '@context': 'https://schema.org',
     '@type': 'ShoeStore',
+    // Same @id as the root layout's ShoeStore so Google treats both as one business.
+    '@id': 'https://www.kzora.co',
     name: 'متجر كزورا Kzora للأحذية',
     url: 'https://www.kzora.co',
     aggregateRating: {

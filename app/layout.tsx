@@ -7,6 +7,7 @@ import ScrollToTop from '@/components/layout/ScrollToTop'
 import VisitTracker from '@/components/analytics/VisitTracker'
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
 import MetaPixel from '@/components/analytics/MetaPixel'
+import { getReviewStats } from '@/lib/reviewStats'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -114,7 +115,21 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Real store-wide rating for the business schemas — omitted while there are no reviews.
+  const reviewStats = await getReviewStats()
+  const aggregateRating = reviewStats.count > 0
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: reviewStats.average,
+          reviewCount: reviewStats.count,
+          bestRating: 5,
+          worstRating: 1,
+        },
+      }
+    : {}
+
   return (
     <html lang="ar" dir="rtl" className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
       <head>
@@ -173,13 +188,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 'https://www.facebook.com/kzora.studio',
                 'https://www.instagram.com/kzora.studio',
               ],
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: '4.9',
-                reviewCount: '41',
-                bestRating: '5',
-                worstRating: '1',
-              },
+              ...aggregateRating,
               contactPoint: {
                 '@type': 'ContactPoint',
                 telephone: '+963964514765',
@@ -224,13 +233,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 '@type': 'Country',
                 name: 'سوريا',
               },
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: '4.9',
-                reviewCount: '41',
-                bestRating: '5',
-                worstRating: '1',
-              },
+              ...aggregateRating,
               review: [
                 {
                   '@type': 'Review',

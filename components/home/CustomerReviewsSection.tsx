@@ -15,14 +15,14 @@ export interface HomeReviewItem {
 
 interface CustomerReviewsSectionProps {
   reviews: HomeReviewItem[]
-  totalReviewsCount?: number
-  averageRating?: number
+  totalReviewsCount: number
+  averageRating: number
 }
 
 export default function CustomerReviewsSection({
   reviews,
-  totalReviewsCount = 41,
-  averageRating = 4.9,
+  totalReviewsCount,
+  averageRating,
 }: CustomerReviewsSectionProps) {
   if (!reviews || reviews.length === 0) return null
 
@@ -62,7 +62,7 @@ export default function CustomerReviewsSection({
                   ))}
                 </div>
                 <span className="text-xs font-arabic text-[#6B6560] font-semibold mt-0.5">
-                  بناءً على أكثر من {totalReviewsCount} تقييم معتمد
+                  بناءً على {totalReviewsCount} تقييم من زبائننا
                 </span>
               </div>
             </div>

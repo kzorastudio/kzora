@@ -71,7 +71,7 @@ async function getProductReviews(productId: string): Promise<ReviewRow[]> {
     .eq('product_id', productId)
     .eq('is_published', true)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(500)
   return (data ?? []) as ReviewRow[]
 }
 
@@ -167,7 +167,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
       bestRating: 5,
       worstRating: 1,
     }
-    productSchema.review = reviews.map((r) => ({
+    // Rating covers every review; the schema embeds only the 10 newest to keep the page light.
+    productSchema.review = reviews.slice(0, 10).map((r) => ({
       '@type': 'Review',
       author: { '@type': 'Person', name: r.user_name },
       reviewRating: {
