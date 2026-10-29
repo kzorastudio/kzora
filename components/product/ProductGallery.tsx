@@ -4,12 +4,28 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { optimizeCloudinaryUrl } from '@/lib/cloudinaryUrl'
-import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import {
+  optimizeCloudinaryUrl,
+  productVideoUrl,
+  productVideoPosterUrl,
+  formatVideoDuration,
+} from '@/lib/cloudinaryUrl'
+import { X, ChevronLeft, ChevronRight, ZoomIn, Play, Volume2, VolumeX } from 'lucide-react'
 import type { ProductImage } from '@/types'
+
+export interface ProductGalleryVideo {
+  url: string
+  duration: number | null
+  position: number // 0 = first, 1 = second, -1 = last
+}
+
+type GalleryItem =
+  | { kind: 'image'; img: ProductImage; imageIndex: number }
+  | { kind: 'video' }
 
 interface ProductGalleryProps {
   images: ProductImage[]
+  video?: ProductGalleryVideo | null
   productName?: string
   tags?: string[]
   hasDiscount?: boolean
@@ -263,9 +279,123 @@ function Lightbox({
   )
 }
 
+// ─── Video slide ──────────────────────────────────────────────────────────────
+// Shows the poster right away and only mounts the <video> once the page has
+// finished loading, so the video never delays the photos, price or buttons.
+// Plays muted and looped; tap toggles pause. Respects the browser's data-saver.
+function VideoSlide({ video, priority }: { video: ProductGalleryVideo; priority: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const [mounted, setMounted] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const [muted, setMuted] = useState(true)
+  const [progress, setProgress] = useState(0)
+  const poster = productVideoPosterUrl(video.url)
+
+  useEffect(() => {
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
+    if (saveData) {
+      setPaused(true) // wait for a tap
+      return
+    }
+    if (document.readyState === 'complete') {
+      setMounted(true)
+      return
+    }
+    const onLoad = () => setMounted(true)
+    window.addEventListener('load', onLoad, { once: true })
+    return () => window.removeEventListener('load', onLoad)
+  }, [])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !mounted) return
+    // Set muted as a property before play(): mobile browsers only autoplay muted video
+    el.muted = muted
+    if (!paused) el.play().catch(() => setPaused(true))
+  }, [mounted]) // run once, when the <video> mounts
+
+  const togglePlay = () => {
+    if (!mounted) {
+      setMounted(true)
+      setPaused(false)
+      return
+    }
+    const el = ref.current
+    if (!el) return
+    if (el.paused) {
+      el.play().catch(() => {})
+      setPaused(false)
+    } else {
+      el.pause()
+      setPaused(true)
+    }
+  }
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const next = !muted
+    setMuted(next)
+    if (ref.current) ref.current.muted = next
+  }
+
+  return (
+    <div className="w-full h-full relative" onClick={togglePlay}>
+      <Image
+        src={poster}
+        alt=""
+        fill
+        sizes="(max-width: 768px) 100vw, 60vw"
+        priority={priority}
+        className="object-cover select-none"
+        draggable={false}
+      />
+      {mounted && (
+        <video
+          ref={ref}
+          src={productVideoUrl(video.url)}
+          poster={poster}
+          muted
+          loop
+          playsInline
+          preload="auto"
+          onTimeUpdate={e => {
+            const v = e.currentTarget
+            if (v.duration) setProgress(v.currentTime / v.duration)
+          }}
+          className="absolute inset-0 w-full h-full object-cover select-none"
+        />
+      )}
+
+      {paused && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <span className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white">
+            <Play size={28} fill="currentColor" className="translate-x-0.5" />
+          </span>
+        </div>
+      )}
+
+      {mounted && (
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'}
+          className="absolute bottom-9 md:bottom-4 left-4 z-10 w-9 h-9 rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center text-white"
+        >
+          {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        </button>
+      )}
+
+      <div className="absolute bottom-0 inset-x-0 h-[3px] bg-white/25 z-10 pointer-events-none">
+        <div className="h-full bg-[#785600]" style={{ width: `${progress * 100}%` }} />
+      </div>
+    </div>
+  )
+}
+
 // ─── ProductGallery Component ─────────────────────────────────────────────────
 export function ProductGallery({
   images,
+  video = null,
   productName = 'صورة المنتج',
   tags = [],
   hasDiscount = false,
@@ -283,18 +413,29 @@ export function ProductGallery({
     return [...(images ?? [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
   }, [images])
 
+  // Gallery slides: the sorted photos, with the video (if any) inserted at its position
+  const items = useMemo<GalleryItem[]>(() => {
+    const list: GalleryItem[] = sorted.map((img, i) => ({ kind: 'image', img, imageIndex: i }))
+    if (video?.url) {
+      const pos = video.position < 0 || video.position > list.length ? list.length : video.position
+      list.splice(pos, 0, { kind: 'video' })
+    }
+    return list
+  }, [sorted, video?.url, video?.position])
+
   // Stable synchronization between activeColor prop and internal gallery index
   const lastPropColor = useRef<string | null>(activeColor)
-  
+
   useEffect(() => {
     if (activeColor !== lastPropColor.current) {
       lastPropColor.current = activeColor
       if (activeColor) {
         const trimmedActive = activeColor.trim().toLowerCase()
-        const currentImg = sorted[activeIndex]
-        
-        if (currentImg?.color_variant?.trim().toLowerCase() !== trimmedActive) {
-          const colorIndex = sorted.findIndex(img => img.color_variant?.trim().toLowerCase() === trimmedActive)
+        const current = items[activeIndex]
+        const currentColor = current?.kind === 'image' ? current.img.color_variant : null
+
+        if (currentColor?.trim().toLowerCase() !== trimmedActive) {
+          const colorIndex = items.findIndex(it => it.kind === 'image' && it.img.color_variant?.trim().toLowerCase() === trimmedActive)
           if (colorIndex !== -1) {
             setDirection(colorIndex > activeIndex ? 1 : -1)
             setActiveIndex(colorIndex)
@@ -302,14 +443,22 @@ export function ProductGallery({
         }
       }
     }
-  }, [activeColor, sorted, activeIndex])
+  }, [activeColor, items, activeIndex])
 
   const handleIndexChange = useCallback((newIndex: number) => {
     if (newIndex === activeIndex) return
     setDirection(newIndex > activeIndex ? 1 : -1)
     setActiveIndex(newIndex)
-    if (onIndexChange) onIndexChange(newIndex)
-  }, [onIndexChange, activeIndex])
+    // Parent tracks photos only (to sync the selected color); the video has no color
+    const item = items[newIndex]
+    if (onIndexChange && item?.kind === 'image') onIndexChange(item.imageIndex)
+  }, [onIndexChange, activeIndex, items])
+
+  // Lightbox shows photos only, so translate between photo index and slide index
+  const handleLightboxChange = useCallback((imageIndex: number) => {
+    const slide = items.findIndex(it => it.kind === 'image' && it.imageIndex === imageIndex)
+    if (slide !== -1) handleIndexChange(slide)
+  }, [items, handleIndexChange])
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -328,9 +477,10 @@ export function ProductGallery({
     }),
   }
 
-  const activeImage = sorted[activeIndex]
+  const activeItem = items[activeIndex]
+  const activeImage = activeItem?.kind === 'image' ? activeItem.img : null
 
-  if (!sorted.length) {
+  if (!items.length) {
     return (
       <div className={cn('aspect-[4/5] rounded-2xl bg-[#F5F1EB] flex items-center justify-center', className)}>
         <span className="text-[#9E9890] font-arabic text-sm">لا توجد صورة</span>
@@ -348,9 +498,9 @@ export function ProductGallery({
           onMouseLeave={() => setIsHovered(false)}
         >
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            {activeImage && (
+            {activeItem && (
               <motion.div
-                key={activeImage.id}
+                key={activeImage ? activeImage.id : 'video'}
                 custom={direction}
                 variants={slideVariants}
                 initial="enter"
@@ -367,34 +517,38 @@ export function ProductGallery({
                   const swipe = Math.abs(offset.x) > 50 || Math.abs(velocity.x) > 500
                   if (swipe) {
                     if (offset.x > 0) {
-                      handleIndexChange(activeIndex === 0 ? sorted.length - 1 : activeIndex - 1)
+                      handleIndexChange(activeIndex === 0 ? items.length - 1 : activeIndex - 1)
                     } else {
-                      handleIndexChange(activeIndex === sorted.length - 1 ? 0 : activeIndex + 1)
+                      handleIndexChange(activeIndex === items.length - 1 ? 0 : activeIndex + 1)
                     }
                   }
                 }}
                 className="absolute inset-0 cursor-grab active:cursor-grabbing"
               >
-                <div 
-                  className="w-full h-full relative"
-                  onClick={(e) => {
-                    // Only trigger lightbox if it wasn't a significant drag
-                    setLightboxOpen(true)
-                  }}
-                >
-                  <Image
-                    src={optimizeCloudinaryUrl(activeImage.url)}
-                    alt={productName}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 60vw"
-                    priority
-                    className={cn(
-                      'object-cover transition-transform duration-500 ease-out select-none',
-                      isHovered ? 'scale-105' : 'scale-100'
-                    )}
-                    draggable={false}
-                  />
-                </div>
+                {activeImage ? (
+                  <div
+                    className="w-full h-full relative"
+                    onClick={(e) => {
+                      // Only trigger lightbox if it wasn't a significant drag
+                      setLightboxOpen(true)
+                    }}
+                  >
+                    <Image
+                      src={optimizeCloudinaryUrl(activeImage.url)}
+                      alt={productName}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 60vw"
+                      priority
+                      className={cn(
+                        'object-cover transition-transform duration-500 ease-out select-none',
+                        isHovered ? 'scale-105' : 'scale-100'
+                      )}
+                      draggable={false}
+                    />
+                  </div>
+                ) : video && (
+                  <VideoSlide video={video} priority={activeIndex === 0} />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -403,7 +557,7 @@ export function ProductGallery({
           {/* Zoom indicator (desktop only) */}
           <div className={cn(
             'hidden md:flex absolute bottom-4 right-4 z-10 items-center gap-1.5 bg-black/50 text-white text-xs font-arabic rounded-full px-3 py-1.5 backdrop-blur-sm transition-opacity duration-200 pointer-events-none',
-            isHovered ? 'opacity-100' : 'opacity-0'
+            isHovered && activeImage ? 'opacity-100' : 'opacity-0'
           )}>
             <ZoomIn size={14} />
             اضغط للتكبير
@@ -411,8 +565,8 @@ export function ProductGallery({
 
           {/* Swipe indicator (mobile only) */}
           <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
-            {sorted.map((_, i) => (
-              <div 
+            {items.map((_, i) => (
+              <div
                 key={i}
                 className={cn(
                   "w-1.5 h-1.5 rounded-full transition-all duration-300",
@@ -452,12 +606,12 @@ export function ProductGallery({
           )}
 
           {/* Controls - PC style */}
-          {sorted.length > 1 && (
+          {items.length > 1 && (
             <div className="hidden md:block">
               <button
                 type="button"
                 aria-label="الصورة السابقة"
-                onClick={(e) => { e.stopPropagation(); handleIndexChange(activeIndex === 0 ? sorted.length - 1 : activeIndex - 1) }}
+                onClick={(e) => { e.stopPropagation(); handleIndexChange(activeIndex === 0 ? items.length - 1 : activeIndex - 1) }}
                 className="absolute top-1/2 right-3 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-[#1A1A1A] hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md z-10"
               >
                 <ChevronRight size={24} />
@@ -465,7 +619,7 @@ export function ProductGallery({
               <button
                 type="button"
                 aria-label="الصورة التالية"
-                onClick={(e) => { e.stopPropagation(); handleIndexChange(activeIndex === sorted.length - 1 ? 0 : activeIndex + 1) }}
+                onClick={(e) => { e.stopPropagation(); handleIndexChange(activeIndex === items.length - 1 ? 0 : activeIndex + 1) }}
                 className="absolute top-1/2 left-3 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-[#1A1A1A] hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md z-10"
               >
                 <ChevronLeft size={24} />
@@ -475,13 +629,13 @@ export function ProductGallery({
         </div>
 
         {/* Thumbnail strip */}
-        {sorted.length > 1 && (
+        {items.length > 1 && (
           <div className="flex flex-row gap-3 overflow-x-auto md:flex-col md:overflow-y-auto md:max-h-[560px] md:w-20 shrink-0 no-scrollbar py-1">
-            {sorted.map((img, i) => (
+            {items.map((item, i) => (
               <button
-                key={img.id}
+                key={item.kind === 'image' ? item.img.id : 'video'}
                 type="button"
-                aria-label={`صورة ${i + 1}`}
+                aria-label={item.kind === 'image' ? `صورة ${item.imageIndex + 1}` : 'فيديو المنتج'}
                 onClick={() => handleIndexChange(i)}
                 className={cn(
                   'relative shrink-0 rounded-xl overflow-hidden transition-all duration-200',
@@ -492,27 +646,49 @@ export function ProductGallery({
                     : 'opacity-50 hover:opacity-100 hover:ring-1 hover:ring-[#E8E3DB] hover:ring-offset-1'
                 )}
               >
-                <Image
-                  src={optimizeCloudinaryUrl(img.url)}
-                  alt={`${productName} - صورة ${i + 1}`}
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                />
+                {item.kind === 'image' ? (
+                  <Image
+                    src={optimizeCloudinaryUrl(item.img.url)}
+                    alt={`${productName} - صورة ${item.imageIndex + 1}`}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                ) : video && (
+                  <>
+                    <Image
+                      src={productVideoPosterUrl(video.url)}
+                      alt={`${productName} - فيديو`}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/15">
+                      <span className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-[#1A1A1A]">
+                        <Play size={12} fill="currentColor" className="translate-x-px" />
+                      </span>
+                    </span>
+                    {video.duration != null && (
+                      <span dir="ltr" className="absolute bottom-1 left-1 bg-black/65 text-white text-[10px] leading-none px-1 py-0.5 rounded tabular-nums">
+                        {formatVideoDuration(video.duration)}
+                      </span>
+                    )}
+                  </>
+                )}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Lightbox */}
-      {lightboxOpen && (
+      {/* Lightbox (photos only) */}
+      {lightboxOpen && activeItem?.kind === 'image' && (
         <Lightbox
           images={sorted}
-          initialIndex={activeIndex}
+          initialIndex={activeItem.imageIndex}
           productName={productName}
           onClose={() => setLightboxOpen(false)}
-          onChange={handleIndexChange}
+          onChange={handleLightboxChange}
         />
       )}
     </>
