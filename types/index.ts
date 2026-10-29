@@ -46,6 +46,11 @@ export interface Product {
   multi_discount_2_items_usd: number
   multi_discount_3_plus_syp: number
   multi_discount_3_plus_usd: number
+  // Optional short video shown in the product gallery (see supabase/add_product_video.sql)
+  video_url?: string | null
+  video_public_id?: string | null
+  video_duration?: number | null
+  video_position?: number | null // 0 = first, 1 = second, -1 = last
   created_at: string
   updated_at: string
 }
@@ -411,6 +416,10 @@ export interface CreateProductPayload {
   multi_discount_2_items_usd?: number
   multi_discount_3_plus_syp?: number
   multi_discount_3_plus_usd?: number
+  video_url?: string | null
+  video_public_id?: string | null
+  video_duration?: number | null
+  video_position?: number
   images: { url: string; public_id: string; color_variant?: string | null; display_order: number; is_main: boolean }[]
   colors: { name_ar: string; hex_code: string; swatch_url?: string; swatch_public_id?: string; is_available: boolean }[]
   sizes: { size: number; is_available: boolean }[]
