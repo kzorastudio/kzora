@@ -27,17 +27,22 @@ export function CountUp({ value, className, duration = 1800 }: CountUpProps) {
       ? value.slice(0, match.index) + numStr + value.slice(match.index! + match[0].length)
       : value
 
-  // الحالة الابتدائية: نفس النص لكن بالرقم صفر (متطابقة على الخادم والمتصفح لتفادي hydration mismatch)
-  const [display, setDisplay] = useState(() => (match ? buildString('0') : value))
+  // الحالة الابتدائية: النص الأصلي برقمها الحقيقي ليراها محرك البحث وبوتات الذكاء فوراً في الـ HTML
+  const [display, setDisplay] = useState(value)
+  const hasAnimatedRef = useRef(false)
 
   useEffect(() => {
-    if (!inView || !match) return
+    if (!inView || !match || hasAnimatedRef.current) return
+    hasAnimatedRef.current = true
 
     const raw = match[0]
     const target = parseFloat(raw.replace(/,/g, ''))
     const decimals = raw.includes('.') ? raw.split('.')[1].length : 0
     const start = performance.now()
     let frame: number
+
+    // البدء من الصفر فور دخول مجال الرؤية لتحقيق الحركة البصرية
+    setDisplay(buildString('0'))
 
     const tick = (now: number) => {
       const progress = Math.min((now - start) / duration, 1)
@@ -58,7 +63,7 @@ export function CountUp({ value, className, duration = 1800 }: CountUpProps) {
   }, [inView])
 
   return (
-    <span ref={ref} className={className}>
+    <span ref={ref} className={className} aria-label={value} data-stat-value={value}>
       {display}
     </span>
   )

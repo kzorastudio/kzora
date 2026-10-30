@@ -486,7 +486,7 @@ export default function ProductActions({ product, settings, activeColorName, ini
             </div>
             
             <a
-              href="#size-guide"
+              href="/size-guide"
               className="text-xs font-arabic text-[#785600] hover:underline underline-offset-4 flex items-center gap-1 mt-0.5"
             >
               دليل المقاسات

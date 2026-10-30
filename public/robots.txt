@@ -9,6 +9,31 @@ Disallow: /cart
 Disallow: /order-success/
 
 # Allow AI search crawlers for citation visibility
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
 User-agent: GPTBot
 Allow: /
 Disallow: /admin/

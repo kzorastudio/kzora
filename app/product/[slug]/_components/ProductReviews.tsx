@@ -20,12 +20,18 @@ interface Metadata {
 
 interface ProductReviewsProps {
   productId: string
+  initialReviews?: Review[]
 }
 
-export default function ProductReviews({ productId }: ProductReviewsProps) {
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [metadata, setMetadata] = useState<Metadata>({ totalReviews: 0, averageRating: 0 })
-  const [isLoading, setIsLoading] = useState(true)
+export default function ProductReviews({ productId, initialReviews = [] }: ProductReviewsProps) {
+  const initialTotal = initialReviews.length
+  const initialAvg = initialTotal > 0
+    ? Number((initialReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / initialTotal).toFixed(1))
+    : 0
+
+  const [reviews, setReviews] = useState<Review[]>(initialReviews)
+  const [metadata, setMetadata] = useState<Metadata>({ totalReviews: initialTotal, averageRating: initialAvg })
+  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -54,7 +60,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   }
 
   useEffect(() => {
-    if (productId) {
+    if (productId && initialReviews.length === 0) {
       fetchReviews()
     }
   }, [productId])
@@ -143,7 +149,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   }
 
   return (
-    <section className="mt-20 border-t border-[#E8E3DB] pt-16">
+    <section id="reviews" className="mt-20 border-t border-[#E8E3DB] pt-16 scroll-mt-32">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div className="flex flex-col gap-2">
           <h2 className="font-arabic text-3xl font-bold text-[#1A1A1A] flex items-center gap-3">

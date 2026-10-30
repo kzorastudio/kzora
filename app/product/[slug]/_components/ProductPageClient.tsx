@@ -16,9 +16,10 @@ interface Props {
   product: ProductFull
   settings: HomepageSettings | null
   relatedProductsNode: React.ReactNode
+  initialReviews?: any[]
 }
 
-export default function ProductPageClient({ product, settings, relatedProductsNode }: Props) {
+export default function ProductPageClient({ product, settings, relatedProductsNode, initialReviews = [] }: Props) {
   const searchParams = useSearchParams()
 
   // Pre-selected color/size from listing card filters (e.g. /product/foo?color=أحمر&size=42)
@@ -39,7 +40,15 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
   }, [searchParams, product.sizes])
 
   const [activeColor, setActiveColor] = React.useState<string | null>(initialColorName)
-  const [reviewsMetadata, setReviewsMetadata] = useState<{ totalReviews: number; averageRating: number } | null>(null)
+  
+  const initialTotalReviews = initialReviews.length
+  const initialAvgRating = initialTotalReviews > 0
+    ? Number((initialReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / initialTotalReviews).toFixed(1))
+    : 0
+
+  const [reviewsMetadata, setReviewsMetadata] = useState<{ totalReviews: number; averageRating: number } | null>(
+    initialTotalReviews > 0 ? { totalReviews: initialTotalReviews, averageRating: initialAvgRating } : null
+  )
 
   React.useEffect(() => {
     // Increment view count
@@ -74,7 +83,7 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
     },
     { 
       title: 'سياسة الإرجاع', 
-      content: settings?.return_policy || 'إرجاع خلال 7 أيام من الاستلام.' 
+      content: settings?.return_policy || 'تبديل المقاس خلال 3 أيام من الاستلام، وإرجاع عند وجود عيب مصنعي.' 
     },
   ]
 
@@ -201,7 +210,7 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
         )}
 
         {/* Product Reviews */}
-        <ProductReviews productId={product.id} />
+        <ProductReviews productId={product.id} initialReviews={initialReviews} />
       </div>
     </main>
 

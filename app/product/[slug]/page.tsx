@@ -13,6 +13,7 @@ import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 import type { ProductFull } from '@/types'
 import ProductPageClient from './_components/ProductPageClient'
 import RelatedProducts from './_components/RelatedProducts'
+import { RETURN_POLICY_SCHEMA } from '@/lib/returnPolicySchema'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -57,6 +58,7 @@ async function getSettings() {
 }
 
 interface ReviewRow {
+  id: string
   user_name: string
   rating: number
   comment: string | null
@@ -66,11 +68,11 @@ interface ReviewRow {
 async function getProductReviews(productId: string): Promise<ReviewRow[]> {
   const { data } = await supabase
     .from('product_reviews')
-    .select('user_name, rating, comment, created_at')
+    .select('id, user_name, rating, comment, created_at')
     .eq('product_id', productId)
     .eq('is_published', true)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(500)
   return (data ?? []) as ReviewRow[]
 }
 
@@ -133,13 +135,31 @@ export default async function ProductDetailPage({ params }: PageProps) {
     : 0
 
   // JSON-LD for Product
+  // Shopper-facing facts AI answers draw on: what colours and sizes are in stock,
+  // the category, and how the last fits (same wording as the badge on the page).
+  const availableColors = product.colors.filter(c => c.is_available).map(c => c.name_ar.trim())
+  const availableSizes = product.sizes.filter(s => s.is_available).map(s => String(s.size))
+  const moldLabel = product.mold_type === 'chinese'
+    ? 'ضيّق (ننصح بمقاس أكبر)'
+    : product.mold_type === 'wide'
+    ? 'واسع (ننصح بمقاس أصغر)'
+    : 'نظامي'
+
   const productSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
+    url: `https://www.kzora.co/product/${product.slug}`,
     image: product.images.map(img => optimizeCloudinaryUrl(img.url)),
     description: product.description,
     sku: product.id,
+    ...(product.category?.name_ar ? { category: product.category.name_ar.trim() } : {}),
+    ...(availableColors.length > 0 ? { color: availableColors.join('، ') } : {}),
+    ...(availableSizes.length > 0 ? { size: availableSizes } : {}),
+    additionalProperty: [
+      { '@type': 'PropertyValue', name: 'نوع القالب', value: moldLabel },
+      { '@type': 'PropertyValue', name: 'نظام المقاسات', value: 'أوروبي (EU)' },
+    ],
     brand: {
       '@type': 'Brand',
       name: 'كزورا Kzora',
@@ -150,11 +170,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
       priceCurrency: 'SYP',
       price: product.discount_price_syp || product.price_syp,
       availability: product.stock_status === 'out_of_stock' ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
       ...(priceValidUntil ? { priceValidUntil } : {}),
       seller: {
         '@type': 'Organization',
         name: 'كزورا Kzora',
       },
+      hasMerchantReturnPolicy: RETURN_POLICY_SCHEMA,
     },
   }
 
@@ -166,7 +188,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
       bestRating: 5,
       worstRating: 1,
     }
-    productSchema.review = reviews.map((r) => ({
+    // Rating covers every review; the schema embeds only the 10 newest to keep the page light.
+    productSchema.review = reviews.slice(0, 10).map((r) => ({
       '@type': 'Review',
       author: { '@type': 'Person', name: r.user_name },
       reviewRating: {
@@ -219,6 +242,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <ProductPageClient
         product={product}
         settings={settings}
+        initialReviews={reviews}
         relatedProductsNode={
           product.category ? (
             <RelatedProducts

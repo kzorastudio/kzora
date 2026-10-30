@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { REVIEW_STATS_TAG } from '@/lib/reviewStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,6 +82,8 @@ export async function DELETE(request: NextRequest) {
       revalidatePath(`/product/${slug}`)
       revalidatePath('/') // And homepage
     }
+    revalidateTag(REVIEW_STATS_TAG)
+    revalidatePath('/reviews')
 
     return NextResponse.json({ success: true })
   } catch (err) {
