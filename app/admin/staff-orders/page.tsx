@@ -111,12 +111,18 @@ export default function StaffOrdersPage() {
     }
   }
 
+  // Stats period — a calendar month in Syria time ('' = all time). Defaults to
+  // the current month so staff pay can be read straight off the table.
+  const monthOptions = buildMonthOptions()
+  const [statsMonth, setStatsMonth] = useState(monthOptions[0].value)
+
   useEffect(() => {
-    fetch('/api/admin/staff-orders/stats')
+    const qs = statsMonth ? `?month=${statsMonth}` : ''
+    fetch(`/api/admin/staff-orders/stats${qs}`)
       .then((r) => (r.ok ? r.json() : { stats: [] }))
       .then((d) => setStats(d.stats ?? []))
       .catch(() => {})
-  }, [])
+  }, [statsMonth])
 
   // Shipping companies (to resolve the company display name in the WhatsApp message)
   useEffect(() => {
@@ -169,22 +175,29 @@ export default function StaffOrdersPage() {
         </Link>
       </div>
 
-      {/* Stats scope label (super_admin) */}
-      {!isEmployee && (
-        <div className="flex items-center gap-2 -mb-1">
+      {/* Stats scope label (super_admin) + period picker */}
+      <div className="flex items-center gap-2 -mb-1">
+        {!isEmployee && (
           <span className="text-sm font-arabic font-bold text-on-surface">
             {selectedStat ? `إحصائيات: ${selectedStat.admin_name}` : 'الإحصائيات العامة'}
           </span>
-          {selectedStat && (
-            <button
-              onClick={() => { setEmployeeFilter(''); setPage(1) }}
-              className="text-xs font-arabic text-primary hover:underline"
-            >
-              عرض الكل
-            </button>
-          )}
-        </div>
-      )}
+        )}
+        {!isEmployee && selectedStat && (
+          <button
+            onClick={() => { setEmployeeFilter(''); setPage(1) }}
+            className="text-xs font-arabic text-primary hover:underline"
+          >
+            عرض الكل
+          </button>
+        )}
+        <select
+          value={statsMonth}
+          onChange={(e) => setStatsMonth(e.target.value)}
+          className="mr-auto rounded-xl border border-outline-variant/50 bg-white px-3 py-1.5 text-xs font-arabic text-on-surface focus:outline-none focus:border-primary/60"
+        >
+          {monthOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -234,6 +247,7 @@ export default function StaffOrdersPage() {
               </tbody>
             </table>
           </div>
+          <p className="mt-2 text-[11px] font-arabic text-secondary">المبيعات = مجموع كل الطلبات غير الملغية خلال الفترة المختارة.</p>
         </div>
       )}
 
@@ -372,6 +386,22 @@ export default function StaffOrdersPage() {
       </div>
     </div>
   )
+}
+
+// Months from the current one (Syria time) back to June 2026, when staff orders
+// started, followed by an all-time option.
+function buildMonthOptions(): { value: string; label: string }[] {
+  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Damascus' }) // YYYY-MM-DD
+  let [y, m] = now.split('-').map(Number)
+  const options: { value: string; label: string }[] = []
+  while (y > 2026 || (y === 2026 && m >= 6)) {
+    const value = `${y}-${String(m).padStart(2, '0')}`
+    const label = new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString('ar-SY', { month: 'long', year: 'numeric', numberingSystem: 'latn' })
+    options.push({ value, label })
+    if (--m === 0) { m = 12; y-- }
+  }
+  options.push({ value: '', label: 'كل الفترات' })
+  return options
 }
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {

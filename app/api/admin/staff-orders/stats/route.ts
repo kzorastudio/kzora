@@ -13,6 +13,15 @@ export async function GET(request: NextRequest) {
     if ('response' in auth) return auth.response
     const { session } = auth
 
+    // Optional ?month=YYYY-MM — bounds are midnight Syria time (UTC+3, no DST).
+    const month = request.nextUrl.searchParams.get('month')
+    let range: { from: string; to: string } | null = null
+    if (month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+      const [y, m] = month.split('-').map(Number)
+      const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`
+      range = { from: `${month}-01T00:00:00+03:00`, to: `${next}-01T00:00:00+03:00` }
+    }
+
     // Fetch ALL staff orders (lightweight columns only) using fetchAllRows
     // to bypass PostgREST's default 1000-row limit.
     const orders = await fetchAllRows((from, to) => {
@@ -23,6 +32,7 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .range(from, to)
 
+      if (range) q = q.gte('created_at', range.from).lt('created_at', range.to)
       if (isOwnOrdersOnly(session.role)) {
         q = q.eq('created_by_admin_id', session.id)
       }
@@ -52,13 +62,15 @@ export async function GET(request: NextRequest) {
       }
       const s = statMap.get(id)!
       s.total_orders += 1
-      if (o.status === 'delivered') {
-        s.delivered_orders += 1
-        // Only count delivered orders toward sales
+      if (o.status === 'delivered') s.delivered_orders += 1
+      if (o.status === 'cancelled') {
+        s.cancelled_orders += 1
+      } else {
+        // Sales = every order that wasn't cancelled. Staff rarely move orders to
+        // 'delivered', so counting only delivered left sales near zero.
         s.total_sales_syp += o.total_syp || 0
         s.total_sales_usd += o.total_usd || 0
       }
-      if (o.status === 'cancelled') s.cancelled_orders += 1
     }
 
     const stats = Array.from(statMap.values()).sort((a, b) => b.total_orders - a.total_orders)
