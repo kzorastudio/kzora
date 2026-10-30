@@ -58,6 +58,11 @@ export default async function AboutPage() {
                   {heroTitle}
                 </h1>
                 
+                {/* Brand line — states the name in both scripts for search engines and AI assistants */}
+                <p className="font-arabic text-[#785600] text-sm md:text-base font-bold mb-2">
+                  متجر كزورا Kzora للأحذية — حلب، سوريا
+                </p>
+
                 {/* Subtitle */}
                 <p className="font-arabic text-[#6B6560] text-sm md:text-base max-w-md mx-auto leading-relaxed">
                   نروي في كزورا قصة شغف بالأناقة؛ نجمع بين الحرفية السورية الأصيلة والتصميم العصري، لنقدم لك حذاءً يرافقك بثقة في كل خطوة.

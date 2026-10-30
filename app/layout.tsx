@@ -155,10 +155,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
+              '@id': 'https://www.kzora.co/#website',
               name: 'كزورا Kzora',
-              alternateName: 'Kzora',
+              alternateName: ['Kzora', 'كزورا', 'متجر كزورا', 'kzora.co'],
               url: 'https://www.kzora.co',
               inLanguage: 'ar',
+              publisher: { '@id': 'https://www.kzora.co' },
               potentialAction: {
                 '@type': 'SearchAction',
                 target: 'https://www.kzora.co/products?search={search_term_string}',
@@ -168,28 +170,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
 
-        {/* JSON-LD: Organization — يربط كل أسماء العلامة (متجر كزورا / كزورا / Kzora) بكيان واحد لبحث الاسم التجاري */}
+        {/* JSON-LD: the business — ONE entity (ShoeStore is a kind of Organization) carrying
+            every way people write the name, so Google and AI assistants tie "كزورا", "متجر كزورا"
+            and "Kzora" to this store instead of reading them as a typo of "كورة"/"koora".
+            Same @id as /reviews and the WebSite publisher. */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'متجر كزورا',
-              alternateName: ['كزورا', 'Kzora', 'Kzora Store', 'Kzora Shoes', 'كزورا سوريا', 'متجر كزورا للأحذية', 'كزورا للأحذية'],
-              slogan: 'أناقة تبدأ من خطوتك',
-              url: 'https://www.kzora.co',
-              logo: 'https://www.kzora.co/logo.png',
-              image: 'https://www.kzora.co/logo.png',
-              description: 'متجر كزورا Kzora لبيع الأحذية الرجالية والنسائية والرياضية أونلاين في سوريا، مع الدفع عند الاستلام والتوصيل لكل المحافظات.',
-              knowsAbout: ['أحذية رجالية', 'أحذية نسائية', 'أحذية رياضية', 'كوتشيات', 'أحذية جلد طبيعي', 'أحذية سوريا'],
-              paymentAccepted: 'الدفع عند الاستلام، شام كاش، نقداً',
-              areaServed: { '@type': 'Country', name: 'سوريا' },
-              sameAs: [
-                'https://www.facebook.com/kzora.studio',
-                'https://www.instagram.com/kzora.studio',
+              '@type': 'ShoeStore',
+              '@id': 'https://www.kzora.co',
+              name: 'كزورا Kzora',
+              alternateName: [
+                'متجر كزورا', 'كزورا', 'Kzora', 'KZORA', 'Kzora Store', 'Kzora Shoes',
+                'متجر كزورا للأحذية', 'كزورا للأحذية', 'كزورا سوريا', 'Kzora Syria', 'kzora.co',
               ],
-              ...aggregateRating,
+              slogan: 'أناقة تبدأ من خطوتك',
+              description: 'كزورا (Kzora) متجر أحذية أونلاين في حلب، سوريا: أحذية رجالية ونسائية ورياضية بجودة عالية، مع الدفع عند الاستلام والتوصيل لجميع المحافظات السورية.',
+              knowsAbout: ['أحذية رجالية', 'أحذية نسائية', 'أحذية رياضية', 'كوتشيات', 'أحذية جلد طبيعي', 'أحذية سوريا'],
+              image: 'https://www.kzora.co/logo.png',
+              logo: 'https://www.kzora.co/logo.png',
+              url: 'https://www.kzora.co',
               hasMerchantReturnPolicy: RETURN_POLICY_SCHEMA,
               contactPoint: {
                 '@type': 'ContactPoint',
@@ -198,24 +200,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 areaServed: 'SY',
                 availableLanguage: ['Arabic'],
               },
-            }),
-          }}
-        />
-
-        {/* JSON-LD: ShoeStore with full business info & reviews */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'ShoeStore',
-              name: 'كزورا Kzora',
-              alternateName: 'Kzora',
-              description: 'متجر كزورا للأحذية الفاخرة في سوريا. أحذية رجالية ونسائية ورياضية بجودة عالية وتوصيل لجميع المحافظات.',
-              image: 'https://www.kzora.co/logo.png',
-              logo: 'https://www.kzora.co/logo.png',
-              '@id': 'https://www.kzora.co',
-              url: 'https://www.kzora.co',
               telephone: '+963964514765',
               priceRange: '$$',
               currenciesAccepted: 'SYP, USD',
@@ -266,7 +250,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 closes: '22:00',
               },
               sameAs: [
-                'https://www.kzora.co',
                 'https://www.facebook.com/kzora.studio',
                 'https://www.instagram.com/kzora.studio',
               ],
