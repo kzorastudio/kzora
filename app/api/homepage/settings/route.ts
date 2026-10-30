@@ -64,6 +64,10 @@ export async function GET(_request: NextRequest) {
           shipping_fee_3_plus_pieces_usd: 0,
           delivery_fee_syp: 0,
           delivery_fee_usd: 0,
+          pickup_enabled: false,
+          pickup_fee_syp: 100,
+          pickup_fee_usd: 1,
+          pickup_location: 'مكتب الدليفري (الموكامبو)',
         },
       })
     }
@@ -130,6 +134,10 @@ export async function PUT(request: NextRequest) {
       'delivery_fee_2_pieces_usd',
       'delivery_fee_3_plus_pieces_syp',
       'delivery_fee_3_plus_pieces_usd',
+      'pickup_enabled',
+      'pickup_fee_syp',
+      'pickup_fee_usd',
+      'pickup_location',
     ]
 
     // The discount-code switch belongs to the store owner only. For anyone else the
@@ -150,6 +158,14 @@ export async function PUT(request: NextRequest) {
 
     const existing = rows?.[0]
     const oldPublicId = existing?.promo_banner_public_id
+
+    // Pickup columns arrive with supabase/add_pickup_option.sql — until then, leave them
+    // out so the rest of the settings still save.
+    if (existing && !('pickup_enabled' in existing)) {
+      for (const key of Object.keys(updateFields)) {
+        if (key.startsWith('pickup_')) delete updateFields[key]
+      }
+    }
 
     let settings: any
     let dbError: any

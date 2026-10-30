@@ -328,6 +328,11 @@ export interface HomepageSettings {
   // Delivery fees (Flat or Quantity-based if needed)
   delivery_fee_syp: number
   delivery_fee_usd: number
+  // Aleppo pickup from the delivery office (supabase/add_pickup_option.sql)
+  pickup_enabled?: boolean
+  pickup_fee_syp?: number
+  pickup_fee_usd?: number
+  pickup_location?: string
   delivery_fee_1_piece_syp: number
   delivery_fee_1_piece_usd: number
   delivery_fee_2_pieces_syp: number

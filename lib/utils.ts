@@ -84,6 +84,7 @@ export const SHIPPING_LABELS: Record<string, string> = {
   'masarat': 'مسارات (Masarat)',
   'delivery': '\uD83D\uDE80 توصيل عادي (حلب)',
   'regular_delivery': '\uD83D\uDE80 توصيل عادي (حلب)',
+  'pickup': '\uD83D\uDCCD استلام من المكتب (حلب)',
   'shipping': '\uD83D\uDCE6 شحن للمحافظات',
 }
 

@@ -138,6 +138,34 @@ export async function PUT(
     if (delivery_type !== undefined) updateFields.delivery_type = delivery_type
     if (payment_method !== undefined) updateFields.payment_method = payment_method
 
+    // ─── Delivery fee for this order (money is hidden from own-orders-only tiers) ───
+    // The total moves by exactly the change in fee, so discounts already applied stay intact.
+    const feeSyp = body.shipping_fee_syp
+    const feeUsd = body.shipping_fee_usd
+    if (feeSyp !== undefined || feeUsd !== undefined) {
+      if (isOwnOrdersOnly(session.role)) {
+        return NextResponse.json({ error: 'غير مصرح لك بتعديل أجرة التوصيل' }, { status: 403 })
+      }
+      const nextSyp = Number(feeSyp)
+      const nextUsd = Number(feeUsd)
+      if (!Number.isFinite(nextSyp) || !Number.isFinite(nextUsd) || nextSyp < 0 || nextUsd < 0) {
+        return NextResponse.json({ error: 'قيمة الأجرة غير صحيحة' }, { status: 400 })
+      }
+      const { data: money } = await supabaseAdmin
+        .from('orders')
+        .select('shipping_fee_syp, shipping_fee_usd, total_syp, total_usd')
+        .eq('id', id)
+        .single()
+      if (!money) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+
+      updateFields.shipping_fee_syp = Math.round(nextSyp)
+      updateFields.shipping_fee_usd = parseFloat(nextUsd.toFixed(2))
+      updateFields.total_syp = Math.max(0, (money.total_syp || 0) - (money.shipping_fee_syp || 0) + updateFields.shipping_fee_syp)
+      updateFields.total_usd = Math.max(0, parseFloat(((money.total_usd || 0) - (money.shipping_fee_usd || 0) + updateFields.shipping_fee_usd).toFixed(2)))
+      // A fee typed in by staff is settled — no longer "to be agreed with the seller"
+      updateFields.shipping_fee_determined = false
+    }
+
     // ─── 1. PRIMARY UPDATE: Change the Order Status (Atomic) ─────────────
     const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from('orders')

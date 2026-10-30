@@ -6,10 +6,12 @@ import { ArrowRight, Package, MapPin, Truck, CreditCard, Clock } from 'lucide-re
 import { supabaseAdmin } from '@/lib/supabase'
 import AdminHeader from '@/components/admin/AdminHeader'
 import StatusBadge from '@/components/admin/StatusBadge'
+import { isPickupOrder } from '@/lib/pickup'
 import { formatDate, formatPrice, resolveShippingName, normalizePhone } from '@/lib/utils'
 import type { OrderFull } from '@/types'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderDetailsEditor from './OrderDetailsEditor'
+import ShippingFeeEditor from './ShippingFeeEditor'
 import OrderItemsEditor from './OrderItemsEditor'
 import CopyOrderButton from './CopyOrderButton'
 import SendWhatsAppButton from './SendWhatsAppButton'
@@ -106,6 +108,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const canDelete = !ownOrdersOnly || (order as any).created_by_admin_id === session.id
 
   const deliveryType = (order as any).delivery_type || 'shipping'
+  const isPickup = isPickupOrder(order)
   const shippingName = deliveryType === 'delivery' ? 'توصيل عادي (حلب)' : (await getShippingMethodName(order.shipping_company || ''))
   const loyalty = await getCustomerLoyalty(order.customer_phone)
 
@@ -358,7 +361,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               <div className="text-sm font-arabic">
                 <span className="text-secondary">{deliveryType === 'delivery' ? 'نوع التوصيل: ' : 'شركة الشحن: '} </span>
                 <span className="text-on-surface font-medium">
-                  {deliveryType === 'delivery' ? '🚀 توصيل عادي (مندوب داخلي)' : shippingName}
+                  {isPickup ? '📍 استلام من المكتب (حلب)' : deliveryType === 'delivery' ? '🚀 توصيل عادي (مندوب داخلي)' : shippingName}
                 </span>
               </div>
               {(order as any).payment_transaction_id && (
@@ -409,19 +412,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                       </span>
                     </div>
                   )}
-                  {order.shipping_fee_determined ? (
-                    <div className="flex justify-between items-center">
-                      <span className="text-secondary">أجرة الشحن</span>
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">تتحدد مع البائع</span>
-                    </div>
-                  ) : (order.shipping_fee_syp > 0 || order.shipping_fee_usd > 0) ? (
-                    <div className="flex justify-between">
-                      <span className="text-secondary">أجرة الشحن</span>
-                      <span className="text-on-surface">
-                        {order.currency_used === 'USD' ? formatPrice(order.shipping_fee_usd, 'USD') : formatPrice(order.shipping_fee_syp, 'SYP')}
-                      </span>
-                    </div>
-                  ) : null}
+                  <ShippingFeeEditor
+                    orderId={order.id}
+                    updatedAt={order.updated_at}
+                    currency={order.currency_used === 'USD' ? 'USD' : 'SYP'}
+                    feeSyp={order.shipping_fee_syp || 0}
+                    feeUsd={order.shipping_fee_usd || 0}
+                    determinedLater={!!order.shipping_fee_determined}
+                  />
                   <div className="flex justify-between pt-2 border-t border-outline-variant/40">
                     <span className="text-on-surface font-semibold">الإجمالي</span>
                     <span className="text-on-surface font-bold text-base">{total}</span>

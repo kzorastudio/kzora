@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import AdminHeader from '@/components/admin/AdminHeader'
 import OrderTable from '@/components/admin/OrderTable'
-import { Search, Printer, X } from 'lucide-react'
+import { Search, Printer, X, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { ADMIN_ITEMS_PER_PAGE } from '@/lib/constants'
@@ -19,6 +19,70 @@ interface OrdersResponse {
 interface EmployeeRef { id: string; name: string; role: string }
 interface ShippingMethodRef { slug: string; name: string }
 
+/** Checkbox dropdown for picking several order sources at once (store, staff, specific employees). */
+function SourceMultiSelect({
+  options,
+  selected,
+  onChange,
+  className,
+}: {
+  options: { value: string; label: string }[]
+  selected: string[]
+  onChange: (next: string[]) => void
+  className: string
+}) {
+  const [open, setOpen] = useState(false)
+  const label =
+    selected.length === 0 ? 'المصدر: الكل'
+    : selected.length === 1 ? (options.find((o) => o.value === selected[0])?.label ?? 'المصدر (1)')
+    : `المصدر (${selected.length})`
+
+  function toggle(value: string) {
+    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value])
+  }
+
+  return (
+    <div className="relative w-full sm:w-auto">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`${className} w-full sm:min-w-[160px] flex items-center justify-between gap-2 text-right`}
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown size={15} className={`shrink-0 text-secondary transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full mt-1 right-0 left-0 sm:left-auto sm:min-w-[220px] max-h-72 overflow-y-auto bg-surface-container-lowest shadow-xl border border-outline-variant/40 rounded-xl z-50 p-1.5">
+            {options.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer hover:bg-surface-container text-sm font-arabic text-on-surface">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(opt.value)}
+                  onChange={() => toggle(opt.value)}
+                  className="w-4 h-4 accent-primary"
+                />
+                {opt.label}
+              </label>
+            ))}
+            {selected.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="w-full mt-1 px-2.5 py-2 rounded-lg text-xs font-arabic text-secondary hover:text-error hover:bg-error-container/20 text-right"
+              >
+                إلغاء التحديد
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function OrdersPage() {
   const { data: session } = useSession()
   const isSuperAdmin = can(session?.user?.role, 'print_orders')
@@ -29,8 +93,12 @@ export default function OrdersPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const [printedFilter, setPrintedFilter] = useState('')   // '', 'true', 'false'
-  const [sourceFilter, setSourceFilter]   = useState('')    // '', 'store', 'staff', or employee id
+  const [sourceValues, setSourceValues]   = useState<string[]>([])  // any of 'store', 'staff', employee ids
   const [companyFilter, setCompanyFilter] = useState('')    // '', 'delivery', or shipping company slug
+  const [fromDate, setFromDate] = useState('')              // YYYY-MM-DD
+  const [toDate, setToDate]     = useState('')
+  const sourceFilter = sourceValues.join(',')
+  const dateRange    = `${fromDate}|${toDate}`
   const [search, setSearch]       = useState('')
   const [searchInput, setSearchInput] = useState('')
 
@@ -38,15 +106,18 @@ export default function OrdersPage() {
   const [companies, setCompanies] = useState<ShippingMethodRef[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const fetchOrders = useCallback(async (p: number, status: string, q: string, printed: string, source: string, company: string) => {
+  const fetchOrders = useCallback(async (p: number, status: string, q: string, printed: string, source: string, company: string, range: string) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ page: String(p), limit: String(ADMIN_ITEMS_PER_PAGE) })
+      const [from, to] = range.split('|')
       if (status)  params.set('status', status)
       if (q)       params.set('search', q)
       if (printed) params.set('printed', printed)
       if (source)  params.set('source', source)
       if (company) params.set('company', company)
+      if (from)    params.set('from', from)
+      if (to)      params.set('to', to)
 
       const res = await fetch(`/api/orders?${params.toString()}`)
       if (!res.ok) throw new Error('فشل تحميل الطلبات')
@@ -61,8 +132,8 @@ export default function OrdersPage() {
   }, [])
 
   useEffect(() => {
-    fetchOrders(page, statusFilter, search, printedFilter, sourceFilter, companyFilter)
-  }, [fetchOrders, page, statusFilter, search, printedFilter, sourceFilter, companyFilter])
+    fetchOrders(page, statusFilter, search, printedFilter, sourceFilter, companyFilter, dateRange)
+  }, [fetchOrders, page, statusFilter, search, printedFilter, sourceFilter, companyFilter, dateRange])
 
   // Load employees for the source filter (super_admin only)
   useEffect(() => {
@@ -93,7 +164,7 @@ export default function OrdersPage() {
       toast.success('تم تحديث حالة الطلب')
     } catch {
       toast.error('حدث خطأ أثناء تحديث الحالة')
-      fetchOrders(page, statusFilter, search, printedFilter, sourceFilter, companyFilter)
+      fetchOrders(page, statusFilter, search, printedFilter, sourceFilter, companyFilter, dateRange)
     }
   }
 
@@ -172,6 +243,7 @@ export default function OrdersPage() {
           <select value={companyFilter} onChange={(e) => { setCompanyFilter(e.target.value); setPage(1) }} className={`${FIELD_CLASS} w-full sm:w-auto sm:min-w-[160px]`}>
             <option value="">الشركة: الكل</option>
             <option value="delivery">توصيل عادي (حلب)</option>
+            <option value="pickup">استلام من المكتب (حلب)</option>
             {companies.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
 
@@ -183,18 +255,47 @@ export default function OrdersPage() {
                 <option value="true">مطبوع</option>
               </select>
 
-              <select value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value); setPage(1) }} className={`${FIELD_CLASS} w-full sm:w-auto sm:min-w-[160px]`}>
-                <option value="">المصدر: الكل</option>
-                <option value="store">طلبات المتجر</option>
-                <option value="staff">طلبيات الموظفين</option>
-                {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-              </select>
+              <SourceMultiSelect
+                options={[
+                  { value: 'store', label: 'طلبات المتجر' },
+                  { value: 'staff', label: 'طلبيات الموظفين' },
+                  ...employees.map((e) => ({ value: e.id, label: e.name })),
+                ]}
+                selected={sourceValues}
+                onChange={(next) => { setSourceValues(next); setPage(1) }}
+                className={FIELD_CLASS}
+              />
             </>
           )}
 
-          {(search || statusFilter || printedFilter || sourceFilter || companyFilter) && (
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <label className="flex items-center gap-1.5 flex-1 sm:flex-none text-xs font-arabic text-secondary">
+              من
+              <input
+                id="orders-from-date"
+                type="date"
+                value={fromDate}
+                max={toDate || undefined}
+                onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
+                className={`${FIELD_CLASS} flex-1 min-w-0`}
+              />
+            </label>
+            <label className="flex items-center gap-1.5 flex-1 sm:flex-none text-xs font-arabic text-secondary">
+              إلى
+              <input
+                id="orders-to-date"
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(e) => { setToDate(e.target.value); setPage(1) }}
+                className={`${FIELD_CLASS} flex-1 min-w-0`}
+              />
+            </label>
+          </div>
+
+          {(search || statusFilter || printedFilter || sourceFilter || companyFilter || fromDate || toDate) && (
             <button
-              onClick={() => { setSearch(''); setSearchInput(''); setStatusFilter(''); setPrintedFilter(''); setSourceFilter(''); setCompanyFilter(''); setPage(1) }}
+              onClick={() => { setSearch(''); setSearchInput(''); setStatusFilter(''); setPrintedFilter(''); setSourceValues([]); setCompanyFilter(''); setFromDate(''); setToDate(''); setPage(1) }}
               className="px-4 py-2 rounded-xl text-sm font-arabic text-secondary hover:text-error hover:bg-error-container/20 transition-colors"
             >
               مسح الفلاتر

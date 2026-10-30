@@ -108,6 +108,8 @@ export default function HomepagePage() {
   const [shamCashImages, setShamCashImages] = useState<UploadedImage[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  // The pickup columns exist only after supabase/add_pickup_option.sql has run
+  const pickupReady = 'pickup_enabled' in settings
 
   const fetchSettings = useCallback(async () => {
     setLoading(true)
@@ -566,7 +568,72 @@ export default function HomepagePage() {
                 <span className="w-1.5 h-6 bg-[#2E7D32] rounded-full" />
                 أسعار التوصيل والشحن
               </h2>
-              
+
+              {/* Aleppo pickup from the delivery office */}
+              <div className="mb-8 p-6 rounded-3xl bg-[#785600]/5 border border-[#785600]/15 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-arabic font-bold text-on-surface">الاستلام من مكتب الدليفري (حلب)</p>
+                    <p className="text-xs font-arabic text-secondary mt-1 leading-relaxed">
+                      عند التشغيل يظهر لزبائن حلب كأول خيار في صفحة الدفع، بدل التوصيل لباب المنزل.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.pickup_enabled === true}
+                    disabled={!pickupReady}
+                    onClick={() => { setSettings({ ...settings, pickup_enabled: !settings.pickup_enabled }); setDirty(true) }}
+                    className={`relative shrink-0 w-12 h-7 rounded-full transition-colors disabled:opacity-40 ${settings.pickup_enabled ? 'bg-[#785600]' : 'bg-outline-variant/60'}`}
+                  >
+                    <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all ${settings.pickup_enabled ? 'right-6' : 'right-1'}`} />
+                  </button>
+                </div>
+
+                {!pickupReady ? (
+                  <p className="text-[11px] font-arabic text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">
+                    هذا الخيار يحتاج تشغيل ملف <span dir="ltr">supabase/add_pickup_option.sql</span> مرة واحدة في Supabase قبل استخدامه.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1 md:col-span-3">
+                      <label htmlFor="pickup-location" className="text-[11px] font-arabic text-secondary">اسم المكان كما يظهر للزبون</label>
+                      <input
+                        id="pickup-location"
+                        type="text"
+                        value={settings.pickup_location ?? ''}
+                        placeholder="مكتب الدليفري (الموكامبو)"
+                        onChange={(e) => { setSettings({ ...settings, pickup_location: e.target.value }); setDirty(true) }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-arabic focus:border-[#785600] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label htmlFor="pickup-fee-syp" className="text-[11px] font-arabic text-secondary">الأجرة ل.س</label>
+                      <input
+                        id="pickup-fee-syp"
+                        type="number"
+                        min={0}
+                        value={settings.pickup_fee_syp ?? 0}
+                        onChange={(e) => { setSettings({ ...settings, pickup_fee_syp: parseInt(e.target.value) || 0 }); setDirty(true) }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#785600] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label htmlFor="pickup-fee-usd" className="text-[11px] font-arabic text-secondary">الأجرة $</label>
+                      <input
+                        id="pickup-fee-usd"
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={settings.pickup_fee_usd ?? 0}
+                        onChange={(e) => { setSettings({ ...settings, pickup_fee_usd: parseFloat(e.target.value) || 0 }); setDirty(true) }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-sm font-body focus:border-[#785600] outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Delivery Fee (Aleppo) - Flat rate */}
               <div className="mb-8 p-6 rounded-3xl bg-[#2E7D32]/5 border border-[#2E7D32]/10">
                 <div className="space-y-4">

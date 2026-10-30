@@ -20,7 +20,7 @@ interface Props {
   shippingFeeSyp?: number
   shippingFeeUsd?: number
   shippingFeeDetermined?: boolean
-  deliveryType?: 'delivery' | 'shipping' | null
+  deliveryType?: 'pickup' | 'delivery' | 'shipping' | null
   loyaltyDiscountSyp?: number
   loyaltyDiscountUsd?: number
   multiItemDiscountSyp?: number
@@ -234,7 +234,7 @@ export default function OrderSummaryPanel({
           ) : deliveryType ? (
             <div className="flex items-center justify-between text-sm">
               <span className="font-arabic text-[#6B6560]">
-                {deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
+                {deliveryType === 'pickup' ? 'أجرة الاستلام من المكتب' : deliveryType === 'delivery' ? 'أجرة التوصيل' : 'أجرة الشحن'}
               </span>
               <span className="font-body tabular-nums font-semibold text-[#2E7D32]" dir="rtl">
                 {formatCurrency(shippingFee, currency)}

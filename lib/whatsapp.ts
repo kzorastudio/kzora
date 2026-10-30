@@ -1,5 +1,6 @@
 import type { CartItem, Currency } from '@/types'
 import { formatPrice, resolveShippingName } from './utils'
+import { PICKUP_SLUG } from './pickup'
 
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || '963964514765'
 
@@ -102,7 +103,8 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
   lines.push(``)
   lines.push(`${EMOJI.TRUCK} *تفاصيل الشحن*`)
-  lines.push(`${EMOJI.ROCKET} *النوع:* ${isAleppoDelivery ? 'توصيل عادي (حلب)' : 'شحن للمحافظات'}`)
+  const isPickup = order.shippingCompany === PICKUP_SLUG
+  lines.push(`${EMOJI.ROCKET} *النوع:* ${isPickup ? 'استلام من المكتب (حلب)' : isAleppoDelivery ? 'توصيل عادي (حلب)' : 'شحن للمحافظات'}`)
 
   if (!isAleppoDelivery) {
     lines.push(`${EMOJI.OFFICE} *الشركة:* ${order.shippingCompanyName || resolveShippingName(order.shippingCompany)}`)

@@ -12,6 +12,7 @@ const SHIPPING_DISPLAY: Record<string, string> = {
   qadmous: 'قدموس للشحن',
   masarat: 'مسارات للشحن',
   delivery: 'توصيل عادي (داخل المدينة)',
+  pickup: 'استلام من المكتب',
   shipping: 'شحن شركات',
 }
 

@@ -13,12 +13,14 @@ import type { Order, OrderStatus } from '@/types'
 import { useSession } from 'next-auth/react'
 import { isOwnOrdersOnly } from '@/lib/permissions'
 import { loadShippingNames, resolveShippingName, useShippingNames } from '@/lib/shippingNames'
+import { isPickupOrder } from '@/lib/pickup'
 
 const SHIPPING_DISPLAY: Record<string, string> = {
   karam:   'كرم',
   qadmous: 'قدموس',
   masarat: 'مسارات',
   delivery: 'توصيل عادي (حلب)',
+  pickup:   'استلام من المكتب (حلب)',
   shipping: 'شحن شركات',
 }
 
@@ -77,7 +79,9 @@ export default function OrderTable({
     const isAleppo = order.delivery_type === 'delivery'
     const cur = order.currency_used === 'USD' ? 'USD' : 'SYP'
     const pick = (syp: number, usd: number) => (cur === 'USD' ? usd : syp)
-    const shippingLabel = isAleppo
+    const shippingLabel = isPickupOrder(order)
+      ? SHIPPING_DISPLAY.pickup
+      : isAleppo
       ? 'توصيل عادي (حلب)'
       : shippingName(order.shipping_company, shippingNames ?? await loadShippingNames())
     const pMethod = order.payment_method === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
@@ -419,7 +423,9 @@ export default function OrderTable({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm font-arabic text-on-surface-variant whitespace-nowrap">
-                      {order.delivery_type === 'delivery' 
+                      {isPickupOrder(order)
+                        ? '📍 استلام من المكتب (حلب)'
+                        : order.delivery_type === 'delivery'
                         ? '🚀 توصيل عادي (حلب)'
                         : shippingName(order.shipping_company)}
                     </td>

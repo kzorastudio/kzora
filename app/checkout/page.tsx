@@ -41,7 +41,7 @@ export default function CheckoutPage() {
   const [discountSyp,  setDiscountSyp]  = useState(0)
   const [discountUsd,  setDiscountUsd]  = useState(0)
   const [settings,     setSettings]     = useState<HomepageSettings | null>(null)
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping' | null>(null)
+  const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery' | 'shipping' | null>(null)
   const [selectedGovernorate, setSelectedGovernorate] = useState('')
   const [selectedShippingCompany, setSelectedShippingCompany] = useState('')
 
@@ -131,7 +131,12 @@ export default function CheckoutPage() {
 
   // Shipping/Delivery fee calculation
   if (settings) {
-    if (deliveryType === 'delivery') {
+    if (deliveryType === 'pickup') {
+      // Aleppo pickup from the delivery office — flat fee set in the admin panel
+      shippingFeeSyp = settings.pickup_fee_syp || 0
+      shippingFeeUsd = settings.pickup_fee_usd || 0
+      shippingFeeDetermined = false
+    } else if (deliveryType === 'delivery') {
       // Aleppo Delivery is ALWAYS a flat fee
       shippingFeeSyp = settings.delivery_fee_syp || 0
       shippingFeeUsd = settings.delivery_fee_usd || 0
@@ -254,7 +259,8 @@ export default function CheckoutPage() {
             address:     formData.address ?? '',
             center_name: formData.center_name ?? null,
           },
-          delivery_type: formData.delivery_type,
+          // CheckoutForm already turned 'pickup' into delivery + shipping_company 'pickup'
+          delivery_type: formData.delivery_type as 'delivery' | 'shipping',
           shipping_company: (formData.shipping_company as string) ?? null,
           payment_method:   formData.payment_method,
           payment_transaction_id: formData.payment_transaction_id ?? undefined,
@@ -304,7 +310,7 @@ export default function CheckoutPage() {
           governorate:     formData.governorate ?? '',
           centerName:      formData.center_name,
           address:         formData.address ?? '',
-          deliveryType:    formData.delivery_type,
+          deliveryType:    formData.delivery_type as 'delivery' | 'shipping',
           shippingCompany: shippingSlug,
           shippingCompanyName,
           items,

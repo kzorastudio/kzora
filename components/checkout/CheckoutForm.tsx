@@ -6,16 +6,17 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@/lib/utils'
 import { checkoutSchema, type CheckoutFormData } from '@/lib/validators'
 import { ShippingCompanySelector } from '@/components/checkout/ShippingCompanySelector'
-import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown, Package } from 'lucide-react'
+import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown, Package, Store } from 'lucide-react'
 
 import type { HomepageSettings } from '@/types'
+import { PICKUP_SLUG, isPickupEnabled, pickupLocation } from '@/lib/pickup'
 
 interface Props {
   onSubmit: (data: CheckoutFormData) => Promise<void>
   isSubmitting: boolean
   settings: HomepageSettings | null
   shippingMethods?: any[]
-  onDeliveryTypeChange?: (type: 'delivery' | 'shipping') => void
+  onDeliveryTypeChange?: (type: 'pickup' | 'delivery' | 'shipping') => void
   onPhoneChange?: (phone: string) => void
   onGovernorateChange?: (gov: string) => void
   onShippingCompanyChange?: (slug: string) => void
@@ -74,6 +75,9 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
     },
   })
 
+  const pickupOn    = isPickupEnabled(settings)
+  const pickupPlace = pickupLocation(settings)
+
   const deliveryType   = watch('delivery_type')
   const governorate    = watch('governorate')
   const centerId       = watch('center')
@@ -106,7 +110,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       onDeliveryTypeChange(deliveryType)
     }
     // Reset shipping fields when switching modes
-    if (deliveryType === 'delivery') {
+    if (deliveryType === 'delivery' || deliveryType === 'pickup') {
       setValue('governorate', '')
       setValue('center', '')
       setValue('shipping_company', '')
@@ -163,6 +167,18 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
 
   const handleFormSubmit = handleSubmit(async (data) => {
     const selectedCenter = centers.find(c => c.id === data.center)
+    // Pickup: goes to the API as an Aleppo delivery with company 'pickup', address = the office
+    if (data.delivery_type === 'pickup') {
+      await onSubmit({
+        ...data,
+        delivery_type: 'delivery',
+        shipping_company: PICKUP_SLUG,
+        governorate: 'حلب',
+        address: `استلام من ${pickupPlace}`,
+        center_name: undefined,
+      })
+      return
+    }
     // For delivery: governorate = Aleppo, address = manual text
     // For shipping: governorate = selected, address = center name (for order records)
     const finalGov = data.delivery_type === 'delivery' ? 'حلب' : (data.governorate ?? '')
@@ -195,7 +211,43 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
           <p className="font-arabic text-sm text-[#6B6560] mt-1">يجب اختيار طريقة الاستلام للمتابعة</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className={cn("grid grid-cols-1 gap-5", pickupOn ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+          {/* استلام من المكتب — Aleppo only, first when the owner has switched it on */}
+          {pickupOn && (
+            <label className={cn(
+              "flex flex-col items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 relative overflow-hidden group",
+              deliveryType === 'pickup'
+                ? "bg-[#FFF9F0] border-[#785600] shadow-md ring-2 ring-[#785600]/20"
+                : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF] hover:bg-white"
+            )}>
+              <input
+                type="radio"
+                value="pickup"
+                className="sr-only"
+                {...register('delivery_type')}
+              />
+              <div className={cn(
+                "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
+                deliveryType === 'pickup' ? "bg-[#785600] -rotate-3 scale-110" : "bg-[#F0EBE3] group-hover:scale-105"
+              )}>
+                <Store size={32} className={deliveryType === 'pickup' ? "text-white" : "text-[#9E9890]"} />
+              </div>
+              <div className="text-center">
+                <p className={cn("font-arabic font-bold text-xl mb-1", deliveryType === 'pickup' ? "text-[#785600]" : "text-[#1A1A1A]")}>
+                  استلام من المكتب
+                </p>
+                <p className="font-arabic text-sm text-[#6B6560] leading-relaxed">
+                  {pickupPlace}<br/>مدينة حلب حصراً
+                </p>
+              </div>
+              {deliveryType === 'pickup' && (
+                <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[#785600] flex items-center justify-center shadow-lg">
+                  <CheckCircle2 size={14} className="text-white" />
+                </div>
+              )}
+            </label>
+          )}
+
           {/* توصيل */}
           <label className={cn(
             "flex flex-col items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 relative overflow-hidden group",
@@ -366,7 +418,18 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       </div>
 
       {/* ═══ Section 3: Delivery Details (conditional) ══════════════════════════════ */}
-      {deliveryType === 'delivery' ? (
+      {deliveryType === 'pickup' ? (
+        /* ── استلام من المكتب: no address needed ── */
+        <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
+          <SectionHeading icon={Store} title="مكان الاستلام — حلب" />
+          <div className="flex items-start gap-3 px-4 py-3 bg-[#FFF9F0] border border-[#785600]/20 rounded-xl">
+            <MapPin size={18} className="text-[#785600] shrink-0 mt-0.5" />
+            <p className="font-arabic text-sm text-[#5D4037] leading-relaxed">
+              تستلم طلبك من <strong>{pickupPlace}</strong>. سنتواصل معك على واتساب عندما يصبح الطلب جاهزاً للاستلام.
+            </p>
+          </div>
+        </div>
+      ) : deliveryType === 'delivery' ? (
         /* ── توصيل: Aleppo only, manual address ── */
         <div className="bg-white rounded-2xl p-6 shadow-[0_2px_20px_rgba(27,28,26,0.06)] border border-[#F0EBE3] mt-5">
           <SectionHeading icon={MapPin} title="عنوان التوصيل — حلب" />

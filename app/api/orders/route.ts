@@ -10,6 +10,10 @@ import { sendPurchaseEvent } from '@/lib/metaCapi'
 import { isArabicTripleName } from '@/lib/validators'
 import { generateRandomOrderNumber } from '@/lib/orderNumber'
 import { syncStockStatus } from '@/lib/stock'
+import { PICKUP_SLUG, isPickupEnabled } from '@/lib/pickup'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 // ─── GET /api/orders ───────────────────────────────────────────────────────────
 // Admin only. Returns paginated orders list.
@@ -25,8 +29,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const printed = searchParams.get('printed')        // 'true' | 'false'
-    const source  = searchParams.get('source')         // 'store' | 'staff' | admin_id
+    const source  = searchParams.get('source')         // comma list of 'store' | 'staff' | admin_id
     const company = searchParams.get('company')        // shipping_company slug (e.g. 'karam') or 'delivery'
+    const from    = searchParams.get('from')           // YYYY-MM-DD, Syria time, inclusive
+    const to      = searchParams.get('to')             // YYYY-MM-DD, Syria time, inclusive
     const offset = (page - 1) * limit
 
     let query = supabaseAdmin
@@ -39,16 +45,20 @@ export async function GET(request: NextRequest) {
       // These tiers can only ever see the orders they created themselves.
       query = query.eq('created_by_admin_id', session.id)
     } else {
-      // Tiers with view_all_orders may optionally filter by source.
-      if (source === 'store') {
-        query = query.is('created_by_admin_id', null)
-      } else if (source === 'staff') {
-        query = query.not('created_by_admin_id', 'is', null)
-      } else if (source) {
-        // a specific employee id
-        query = query.eq('created_by_admin_id', source)
-      }
+      // Tiers with view_all_orders may optionally filter by one or more sources;
+      // an order matches if it fits any of them.
+      const parts = (source ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+      const ids = parts.filter((p) => UUID_RE.test(p))
+      const conditions: string[] = []
+      if (parts.includes('store')) conditions.push('created_by_admin_id.is.null')
+      if (parts.includes('staff')) conditions.push('created_by_admin_id.not.is.null')
+      if (ids.length > 0) conditions.push(`created_by_admin_id.in.(${ids.join(',')})`)
+      if (conditions.length > 0) query = query.or(conditions.join(','))
     }
+
+    // Date range in Syria time (UTC+3 all year)
+    if (from && DATE_RE.test(from)) query = query.gte('created_at', `${from}T00:00:00+03:00`)
+    if (to && DATE_RE.test(to))     query = query.lte('created_at', `${to}T23:59:59.999+03:00`)
 
     if (printed === 'true')  query = query.eq('printed', true)
     if (printed === 'false') query = query.eq('printed', false)
@@ -98,6 +108,8 @@ export async function POST(request: NextRequest) {
     } = body
 
     let shipping_fee_determined = body.shipping_fee_determined || false
+    // Aleppo pickup from the delivery office: sent as delivery + shipping_company 'pickup'
+    const isPickup = delivery_type === 'delivery' && shipping_company === PICKUP_SLUG
 
     // ── Basic validation ───────────────────────────────────────────────────────
     if (!items || items.length === 0) {
@@ -275,17 +287,18 @@ export async function POST(request: NextRequest) {
     // ── Step 4: Fetch homepage settings ───────────────────────────────────────
     const totalItemsCount = sanitizedItems.reduce((acc, i) => acc + i.quantity, 0)
 
+    // select('*') so the optional pickup columns are read when they exist and
+    // simply absent before supabase/add_pickup_option.sql has run.
     const { data: settingsRaw } = await supabaseAdmin
       .from('homepage_settings')
-      .select(
-        'shipping_fee_1_piece_syp, shipping_fee_1_piece_usd, ' +
-        'shipping_fee_2_pieces_syp, shipping_fee_2_pieces_usd, ' +
-        'shipping_fee_3_plus_pieces_syp, shipping_fee_3_plus_pieces_usd, ' +
-        'delivery_fee_syp, delivery_fee_usd'
-      )
+      .select('*')
       .limit(1)
       .maybeSingle()
     const settings = settingsRaw as any
+
+    if (isPickup && !isPickupEnabled(settings)) {
+      return NextResponse.json({ error: 'الاستلام من المكتب غير متاح حالياً، يرجى اختيار طريقة أخرى' }, { status: 400 })
+    }
 
 
     // ── Step 6: Coupon validation (NOT increment yet) ─────────────────────────
@@ -342,6 +355,9 @@ export async function POST(request: NextRequest) {
       // Fee will be negotiated via WhatsApp — store as 0
       shipping_fee_syp = 0
       shipping_fee_usd = 0
+    } else if (isPickup) {
+      shipping_fee_syp = settings?.pickup_fee_syp ?? 0
+      shipping_fee_usd = settings?.pickup_fee_usd ?? 0
     } else if (delivery_type === 'delivery') {
       shipping_fee_syp = settings?.delivery_fee_syp ?? 0
       shipping_fee_usd = settings?.delivery_fee_usd ?? 0
@@ -449,7 +465,7 @@ export async function POST(request: NextRequest) {
         customer_address:        customer.address || null,
         center_name:             customer.center_name || null,
         delivery_type:           delivery_type || 'delivery',
-        shipping_company:        delivery_type === 'delivery' ? 'delivery' : (shipping_company || ''),
+        shipping_company:        isPickup ? PICKUP_SLUG : delivery_type === 'delivery' ? 'delivery' : (shipping_company || ''),
         shipping_fee_syp,
         shipping_fee_usd,
         payment_method:          payment_method || 'cod',

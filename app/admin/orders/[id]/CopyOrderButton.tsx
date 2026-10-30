@@ -23,8 +23,10 @@ export default function CopyOrderButton({ order }: CopyOrderButtonProps) {
     try {
       const governorate = order.customer_governorate
       const deliveryType = (order as any).delivery_type || 'shipping'
-      const shippingInfo = deliveryType === 'delivery' 
-        ? 'توصيل شامي (مندوب)' 
+      const shippingInfo = order.shipping_company === 'pickup'
+        ? 'استلام من المكتب (حلب)'
+        : deliveryType === 'delivery'
+        ? 'توصيل شامي (مندوب)'
         : resolveShippingName(order.shipping_company, await loadShippingNames(), 'شحن خارجي')
 
       const itemsText = order.items.map((item, idx) => (

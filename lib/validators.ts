@@ -21,7 +21,8 @@ export const checkoutSchema = z.object({
   phone: z
     .string()
     .regex(/^(\+963|0)?[9٩][0-9٠-٩]{8}$/, 'رقم الهاتف غير صحيح. مثال: 0987654321'),
-  delivery_type: z.enum(['delivery', 'shipping'], {
+  // 'pickup' = Aleppo pickup from the delivery office; sent to the API as delivery + shipping_company 'pickup'
+  delivery_type: z.enum(['pickup', 'delivery', 'shipping'], {
     required_error: 'يرجى اختيار طريقة الاستلام',
     invalid_type_error: 'يرجى اختيار طريقة الاستلام',
   }),
