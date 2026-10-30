@@ -143,7 +143,7 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 // ── Header ──────────────────────────────────────────────────────────────────
 export function Header() {
   const pathname  = usePathname()
-  const itemCount = useCartStore((s) => s.itemCount())
+  const storedItemCount = useCartStore((s) => s.itemCount())
   const openCart  = useCartStore((s) => s.openCart)
   const { currency, setCurrency } = useCurrencyStore()
 
@@ -151,6 +151,12 @@ export function Header() {
   const [searchOpen,  setSearchOpen]  = useState(false)
   const [mobileOpen,  setMobileOpen]  = useState(false)
   const [navCategories, setNavCategories] = useState<Category[]>([])
+  const [mounted,     setMounted]     = useState(false)
+
+  // The cart lives in localStorage, which the server can't see — show the badge
+  // only after mount so the first client render matches the server HTML.
+  useEffect(() => { setMounted(true) }, [])
+  const itemCount = mounted ? storedItemCount : 0
 
   useEffect(() => {
     async function fetchNav() {
