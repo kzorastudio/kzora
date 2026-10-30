@@ -6,36 +6,28 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { getReviewStats } from '@/lib/reviewStats'
 import { cn } from '@/lib/utils'
-import { Star, CheckCircle2, MessageSquare, ShieldCheck, HeartHandshake, Truck } from 'lucide-react'
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
+import { Star, MessageSquare, ShieldCheck, HeartHandshake, Truck } from 'lucide-react'
+import ReviewsBrowser, { type ReviewItem } from './ReviewsBrowser'
 
-export const metadata: Metadata = {
-  title: 'آراء وتقييمات العملاء — متجر كزورا Kzora للأحذية في سوريا',
-  description: 'اطلع على تقييمات وتجارب زبائن متجر كزورا Kzora الحقيقيين في حلب ودمشق وكافة المحافظات السورية. أحذية رجالية ونسائية وسبورات بجودة عالية مع الدفع عند الاستلام.',
-  alternates: {
-    canonical: '/reviews',
-  },
-  openGraph: {
-    title: 'آراء وتقييمات العملاء — متجر كزورا Kzora',
-    description: 'تقييمات وتجارب حقيقية من عملائنا في سوريا. تقييم 4.9 من 5 بناءً على أكثر من 40 تقييم معتمد.',
-    url: 'https://www.kzora.co/reviews',
-    type: 'website',
-  },
-}
-
-interface ReviewItem {
-  id: string
-  user_name: string
-  rating: number
-  comment: string | null
-  created_at: string
-  products?: {
-    name: string
-    slug: string
-  } | null
+export async function generateMetadata(): Promise<Metadata> {
+  const { count, average } = await getReviewStats()
+  const ratingLine = count > 0 ? ` تقييم ${average} من 5 بناءً على ${count} تقييم معتمد.` : ''
+  return {
+    title: 'آراء وتقييمات العملاء — متجر كزورا Kzora للأحذية في سوريا',
+    description: 'اطلع على تقييمات وتجارب زبائن متجر كزورا Kzora الحقيقيين في حلب ودمشق وكافة المحافظات السورية. أحذية رجالية ونسائية وسبورات بجودة عالية مع الدفع عند الاستلام.',
+    alternates: {
+      canonical: '/reviews',
+    },
+    openGraph: {
+      title: 'آراء وتقييمات العملاء — متجر كزورا Kzora',
+      description: `تقييمات وتجارب حقيقية من عملائنا في سوريا.${ratingLine}`,
+      url: 'https://www.kzora.co/reviews',
+      type: 'website',
+    },
+  }
 }
 
 async function getReviewsData() {
@@ -63,23 +55,31 @@ async function getReviewsData() {
   })
 
   const totalReviews = rawReviews.length
-  const fiveStarsCount = rawReviews.filter((r) => r.rating === 5).length
-  const fourStarsCount = rawReviews.filter((r) => r.rating === 4).length
   const averageRating = totalReviews > 0
     ? Number((rawReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalReviews).toFixed(1))
-    : 4.9
+    : 0
+
+  // Every star level from 5 down to 1, counted over all published reviews
+  const distribution = [5, 4, 3, 2, 1].map((stars) => {
+    const count = rawReviews.filter((r) => r.rating === stars).length
+    return { stars, count, percent: totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0 }
+  })
+
+  // Live order count, the same figure the homepage counter uses. Admin client because
+  // RLS hides orders from anonymous readers — only the total leaves the server.
+  const { count: ordersCount } = await supabaseAdmin.from('orders').select('id', { count: 'exact', head: true })
 
   return {
     reviews: validReviews,
     totalCount: totalReviews,
     averageRating,
-    fiveStarsPercent: totalReviews > 0 ? Math.round((fiveStarsCount / totalReviews) * 100) : 95,
-    fourStarsPercent: totalReviews > 0 ? Math.round((fourStarsCount / totalReviews) * 100) : 5,
+    distribution,
+    ordersCount: ordersCount ?? 0,
   }
 }
 
 export default async function ReviewsPage() {
-  const { reviews, totalCount, averageRating, fiveStarsPercent, fourStarsPercent } = await getReviewsData()
+  const { reviews, totalCount, averageRating, distribution, ordersCount } = await getReviewsData()
 
   // JSON-LD Schema
   const reviewsSchema = {
@@ -202,30 +202,32 @@ export default async function ReviewsPage() {
                       ))}
                     </div>
                     <div className="text-sm font-arabic font-bold text-[#1A1A1A]">
-                      تقييم ممتاز ({totalCount}+ تقييم معتمد)
+                      بناءً على {totalCount} تقييم معتمد
                     </div>
-                    <div className="text-xs font-arabic text-[#6B6560] mt-0.5">
-                      أكثر من 1500+ طلب تم تسليمه بنجاح
-                    </div>
+                    {ordersCount >= 100 && (
+                      <div className="text-xs font-arabic text-[#6B6560] mt-0.5">
+                        أكثر من {(Math.floor(ordersCount / 100) * 100).toLocaleString('en-US')} طلب من زبائننا
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Bars */}
+                {/* Bars — every star level, so the split is exact */}
                 <div className="space-y-2.5 font-arabic text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 text-[#6B6560]">5 نجوم</span>
-                    <div className="flex-1 h-2 bg-[#E8E3DB] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#785600] rounded-full" style={{ width: `${fiveStarsPercent}%` }} />
+                  {distribution.map(({ stars, count, percent }) => (
+                    <div key={stars} className="flex items-center gap-3">
+                      <span className="w-12 text-[#6B6560]">{stars} {stars === 1 ? 'نجمة' : 'نجوم'}</span>
+                      <div className="flex-1 h-2 bg-[#E8E3DB] rounded-full overflow-hidden">
+                        <div
+                          className={cn('h-full rounded-full', stars >= 4 ? 'bg-[#785600]' : stars === 3 ? 'bg-[#C59B27]' : 'bg-[#B5654A]')}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <span className="w-14 text-left font-bold text-[#1A1A1A] tabular-nums">
+                        {percent}% <span className="font-normal text-[#9E9890]">({count})</span>
+                      </span>
                     </div>
-                    <span className="w-8 text-left font-bold text-[#1A1A1A]">{fiveStarsPercent}%</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 text-[#6B6560]">4 نجوم</span>
-                    <div className="flex-1 h-2 bg-[#E8E3DB] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#C59B27] rounded-full" style={{ width: `${fourStarsPercent}%` }} />
-                    </div>
-                    <span className="w-8 text-left font-bold text-[#1A1A1A]">{fourStarsPercent}%</span>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -238,61 +240,7 @@ export default async function ReviewsPage() {
               أحدث آراء المشترين
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {reviews.map((r, idx) => {
-                const isLastOdd = idx === reviews.length - 1 && reviews.length % 2 !== 0
-                return (
-                  <div
-                    key={r.id}
-                    className={cn(
-                      "bg-white p-6 rounded-2xl border border-[#E8E3DB] hover:border-[#785600]/40 transition-all duration-200 shadow-sm flex flex-col justify-between",
-                      isLastOdd && "md:col-span-2 md:max-w-[calc(50%-0.75rem)] md:mx-auto w-full"
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                          <div className="font-arabic font-bold text-base text-[#1A1A1A] flex items-center gap-1.5">
-                            {r.user_name}
-                            <span title="مشتري موثق" className="inline-flex items-center">
-                              <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                            </span>
-                          </div>
-                          <div className="text-xs font-arabic text-[#9E9890] mt-0.5">
-                            {format(new Date(r.created_at), 'd MMMM yyyy', { locale: ar })}
-                          </div>
-                        </div>
-                        <div className="flex gap-0.5 text-[#FFD700]">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              size={16}
-                              className={star <= r.rating ? 'fill-[#FFD700] text-[#FFD700]' : 'text-[#D1C9BE]'}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      <p className="font-arabic text-[#1A1A1A] text-sm leading-relaxed mb-4 bg-[#FAF8F5] p-4 rounded-xl border border-[#F1EFE9]">
-                        &ldquo;{r.comment}&rdquo;
-                      </p>
-                    </div>
-
-                    {r.products?.name && (
-                      <div className="pt-3 border-t border-[#F5F1EB] flex items-center justify-between text-xs font-arabic">
-                        <span className="text-[#9E9890]">المنتج المشترى:</span>
-                        <Link
-                          href={`/product/${r.products.slug}`}
-                          className="text-[#785600] font-bold hover:underline"
-                        >
-                          {r.products.name}
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+            <ReviewsBrowser reviews={reviews} />
           </div>
         </div>
       </main>
