@@ -9,6 +9,7 @@ import { productSchema, type ProductFormData } from '@/lib/validators'
 import { cn } from '@/lib/utils'
 import type { ProductFull, Category } from '@/types'
 import ImageUploader, { type UploadedImage } from './ImageUploader'
+import VideoUploader, { uploadProductVideo, type ProductVideoDraft } from './VideoUploader'
 
 interface ProductFormProps {
   initialData?: ProductFull
@@ -34,6 +35,9 @@ export default function ProductForm({
 
   const [images, setImages] = useState<UploadedImage[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
+  const [video, setVideo] = useState<ProductVideoDraft | null>(null)
+  const [videoPosition, setVideoPosition] = useState(0)
+  const [videoProgress, setVideoProgress] = useState<number | null>(null)
 
   const {
     register,
@@ -88,6 +92,12 @@ export default function ProductForm({
           isLocal: false
         })))
       }
+      setVideo(initialData.video_url ? {
+        url: initialData.video_url,
+        public_id: initialData.video_public_id ?? '',
+        duration: initialData.video_duration ?? null,
+      } : null)
+      setVideoPosition(initialData.video_position ?? 0)
       reset({
         name: initialData.name,
         description: initialData.description,
@@ -211,8 +221,40 @@ export default function ProductForm({
     })
   }, [colorOptions])
 
+  const handleVideoPick = useCallback((next: ProductVideoDraft) => {
+    setVideo(prev => {
+      if (prev?.isLocal) URL.revokeObjectURL(prev.url)
+      return next
+    })
+  }, [])
+
+  const handleVideoRemove = useCallback(() => {
+    setVideo(prev => {
+      if (prev?.isLocal) URL.revokeObjectURL(prev.url)
+      return null
+    })
+  }, [])
+
   async function onSubmit(data: ProductFormData) {
     try {
+      // Upload a newly picked video first (straight to Cloudinary). The old one, if any,
+      // is deleted by the server only after the product saves.
+      let finalVideo = video
+      if (video?.isLocal && video.file) {
+        setVideoProgress(0)
+        try {
+          const uploaded = await uploadProductVideo(video.file, setVideoProgress)
+          URL.revokeObjectURL(video.url)
+          finalVideo = { ...uploaded, duration: uploaded.duration ?? video.duration }
+          setVideo(finalVideo) // so a retry after a failed save doesn't upload it again
+        } finally {
+          setVideoProgress(null)
+        }
+      }
+      const videoChanged =
+        (finalVideo?.url ?? null) !== (initialData?.video_url ?? null) ||
+        (finalVideo !== null && videoPosition !== (initialData?.video_position ?? 0))
+
       const updatedImages = await Promise.all(
         images.map(async (img) => {
           if (!img.isLocal || !img.file) return img
@@ -276,6 +318,13 @@ export default function ProductForm({
           color_variant: img.color_variant ? img.color_variant.trim() : null,
           is_main: img.is_main
         })),
+        // Sent only when the video changed, so ordinary saves never touch the video columns
+        ...(videoChanged ? {
+          video_url:       finalVideo?.url ?? null,
+          video_public_id: finalVideo?.public_id || null,
+          video_duration:  finalVideo?.duration ?? null,
+          video_position:  videoPosition,
+        } : {}),
       }
 
       const url = isEdit ? `/api/products/${initialData!.id}` : '/api/products'
@@ -731,6 +780,21 @@ export default function ProductForm({
           onColorChange={handleImageColorChange}
           onSetMain={handleImageSetMain}
           colorOptions={colorOptions}
+        />
+      </section>
+
+      <section className={cn(SECTION_CLASS, 'max-sm:p-4')}>
+        <div>
+          <h2 className="text-base font-arabic font-semibold">فيديو المنتج <span className="text-xs font-normal text-secondary">(اختياري)</span></h2>
+          <p className="text-xs font-arabic text-secondary mt-0.5">مقطع قصير يعمل تلقائياً بدون صوت في معرض صور المنتج.</p>
+        </div>
+        <VideoUploader
+          video={video}
+          position={videoPosition}
+          uploadProgress={videoProgress}
+          onPick={handleVideoPick}
+          onRemove={handleVideoRemove}
+          onPositionChange={setVideoPosition}
         />
       </section>
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 import { syncStockStatus } from '@/lib/stock'
-import { deleteImages } from '@/lib/cloudinary'
+import { deleteImages, deleteVideo } from '@/lib/cloudinary'
 import type { ProductTag } from '@/types'
 
 import { revalidatePath } from 'next/cache'
@@ -93,7 +93,24 @@ export async function PUT(
       multi_discount_2_items_usd,
       multi_discount_3_plus_syp,
       multi_discount_3_plus_usd,
+      video_url,
+      video_public_id,
+      video_duration,
+      video_position,
     } = body
+
+    // The form only sends video fields when the video changed, so saving a product
+    // never touches these columns otherwise.
+    const videoChanged = video_url !== undefined
+    let oldVideoPublicId: string | null = null
+    if (videoChanged) {
+      const { data: oldVideo } = await supabaseAdmin
+        .from('products')
+        .select('video_public_id')
+        .eq('id', id)
+        .single()
+      oldVideoPublicId = oldVideo?.video_public_id ?? null
+    }
 
     // 1. Fetch existing product with category slug to handle revalidation
     const { data: existing } = await supabaseAdmin
@@ -129,6 +146,12 @@ export async function PUT(
     if (multi_discount_2_items_usd  !== undefined) updateFields.multi_discount_2_items_usd  = multi_discount_2_items_usd
     if (multi_discount_3_plus_syp   !== undefined) updateFields.multi_discount_3_plus_syp   = multi_discount_3_plus_syp
     if (multi_discount_3_plus_usd   !== undefined) updateFields.multi_discount_3_plus_usd   = multi_discount_3_plus_usd
+    if (videoChanged) {
+      updateFields.video_url       = video_url || null
+      updateFields.video_public_id = video_url ? video_public_id || null : null
+      updateFields.video_duration  = video_url ? video_duration ?? null : null
+      updateFields.video_position  = Number.isInteger(video_position) ? video_position : 0
+    }
 
     // Update product core fields
     const { data: product, error: updateError } = await supabaseAdmin
@@ -145,7 +168,14 @@ export async function PUT(
 
     const newCategorySlug = (product?.categories as any)?.slug
 
-
+    // Video replaced or removed → drop the old file from Cloudinary
+    if (videoChanged && oldVideoPublicId && oldVideoPublicId !== product.video_public_id) {
+      try {
+        await deleteVideo(oldVideoPublicId)
+      } catch (err) {
+        console.error('Cloudinary video cleanup error:', err)
+      }
+    }
 
     // Replace relations if provided
     if (images !== undefined) {
@@ -380,7 +410,7 @@ export async function DELETE(
     const { id } = params
 
     // Collect all cloudinary public_ids before deletion
-    const [{ data: images }, { data: colors }] = await Promise.all([
+    const [{ data: images }, { data: colors }, { data: productRow }] = await Promise.all([
       supabaseAdmin
         .from('product_images')
         .select('public_id')
@@ -389,6 +419,11 @@ export async function DELETE(
         .from('product_colors')
         .select('swatch_public_id')
         .eq('product_id', id),
+      supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle(),
     ])
 
     const publicIds: string[] = [
@@ -404,6 +439,13 @@ export async function DELETE(
         await deleteImages(publicIds)
       } catch (cloudErr) {
         console.error('Cloudinary delete error (continuing):', cloudErr)
+      }
+    }
+    if (productRow?.video_public_id) {
+      try {
+        await deleteVideo(productRow.video_public_id)
+      } catch (cloudErr) {
+        console.error('Cloudinary video delete error (continuing):', cloudErr)
       }
     }
 

@@ -341,6 +341,10 @@ export async function POST(request: NextRequest) {
       multi_discount_2_items_usd,
       multi_discount_3_plus_syp,
       multi_discount_3_plus_usd,
+      video_url,
+      video_public_id,
+      video_duration,
+      video_position,
     } = body
 
     if (!name || !price_syp || !price_usd) {
@@ -381,6 +385,13 @@ export async function POST(request: NextRequest) {
         multi_discount_2_items_usd: multi_discount_2_items_usd ?? 0,
         multi_discount_3_plus_syp: multi_discount_3_plus_syp ?? 0,
         multi_discount_3_plus_usd: multi_discount_3_plus_usd ?? 0,
+        // Only sent when a video was added, so creating products works before the video migration
+        ...(video_url ? {
+          video_url,
+          video_public_id: video_public_id || null,
+          video_duration:  video_duration ?? null,
+          video_position:  Number.isInteger(video_position) ? video_position : 0,
+        } : {}),
       })
       .select()
       .single()

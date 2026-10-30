@@ -110,6 +110,11 @@ export default function ProductPageClient({ product, settings, relatedProductsNo
           <div className="md:col-span-6">
             <ProductGallery
               images={product.images}
+              video={product.video_url ? {
+                url: product.video_url,
+                duration: product.video_duration ?? null,
+                position: product.video_position ?? 0,
+              } : null}
               productName={product.name}
               tags={product.tags}
               hasDiscount={hasDiscount}
