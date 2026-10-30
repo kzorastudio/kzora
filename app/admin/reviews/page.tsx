@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import AdminHeader from '@/components/admin/AdminHeader'
-import { Trash2, Star, Loader2, MessageSquare, Package } from 'lucide-react'
+import { Trash2, Star, Loader2, MessageSquare, Package, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -13,6 +13,7 @@ interface Review {
   comment: string
   created_at: string
   product_id: string
+  is_published: boolean
   products: { name: string }
 }
 
@@ -38,6 +39,28 @@ export default function ReviewsPage() {
   useEffect(() => {
     fetchReviews()
   }, [])
+
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  const handleToggle = async (review: Review) => {
+    setTogglingId(review.id)
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: review.id, is_published: !review.is_published }),
+      })
+      if (!res.ok) throw new Error()
+      setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_published: !review.is_published } : r))
+      toast.success(review.is_published ? 'تم إخفاء التقييم من المتجر' : 'التقييم ظاهر في المتجر الآن')
+    } catch {
+      toast.error('فشل تغيير حالة التقييم')
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
+  const hiddenCount = reviews.filter(r => !r.is_published).length
 
   const handleDelete = async (id: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا التقييم؟')) return
@@ -66,10 +89,10 @@ export default function ReviewsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-arabic font-black text-on-surface">إدارة التقييمات</h1>
-            <p className="text-xs font-arabic text-secondary mt-1">تصفح واحذف تعليقات الزبائن على المنتجات</p>
+            <p className="text-xs font-arabic text-secondary mt-1">كل التقييمات تظهر في المتجر — أخفِ أي تقييم لا تريده أن يظهر</p>
           </div>
           <div className="bg-white px-3 py-1.5 rounded-xl border border-outline-variant/30 text-xs font-arabic font-bold text-secondary">
-            إجمالي التعليقات: {reviews.length}
+            إجمالي التعليقات: {reviews.length}{hiddenCount > 0 && ` · مخفي: ${hiddenCount}`}
           </div>
         </div>
 
@@ -85,10 +108,18 @@ export default function ReviewsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {reviews.map((review) => (
-              <div 
-                key={review.id} 
-                className="bg-white rounded-2xl p-4 shadow-sm border border-outline-variant/10 flex flex-col gap-3 hover:shadow-md transition-shadow relative overflow-hidden group"
+              <div
+                key={review.id}
+                className={cn(
+                  "bg-white rounded-2xl p-4 shadow-sm border border-outline-variant/10 flex flex-col gap-3 hover:shadow-md transition-shadow relative overflow-hidden group",
+                  !review.is_published && "opacity-60 border-dashed border-outline-variant/60"
+                )}
               >
+                {!review.is_published && (
+                  <span className="self-start text-[10px] font-arabic font-bold text-secondary bg-surface-container px-2 py-0.5 rounded-md">
+                    مخفي عن المتجر
+                  </span>
+                )}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
@@ -116,6 +147,17 @@ export default function ReviewsPage() {
                     <Package size={14} className="shrink-0 opacity-40" />
                     <span className="text-[10px] font-arabic truncate">{review.products?.name || 'منتج محذوف'}</span>
                   </div>
+                  <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleToggle(review)}
+                    disabled={togglingId === review.id}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    {togglingId === review.id
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : review.is_published ? <EyeOff size={14} /> : <Eye size={14} />}
+                    <span className="text-[10px] font-arabic font-bold">{review.is_published ? 'إخفاء' : 'إظهار'}</span>
+                  </button>
                   <button
                     onClick={() => handleDelete(review.id)}
                     disabled={deletingId === review.id}
@@ -124,6 +166,7 @@ export default function ReviewsPage() {
                     {deletingId === review.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                     <span className="text-[10px] font-arabic font-bold uppercase">حذف</span>
                   </button>
+                  </div>
                 </div>
                 
                 {/* Visual hover indicator */}

@@ -8,7 +8,8 @@ import VisitTracker from '@/components/analytics/VisitTracker'
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
 import MetaPixel from '@/components/analytics/MetaPixel'
 import { getReviewStats } from '@/lib/reviewStats'
-import { RETURN_POLICY_SCHEMA } from '@/lib/returnPolicySchema'
+import { returnPolicySchema } from '@/lib/returnPolicySchema'
+import { getExchangeDays } from '@/lib/returnPolicy'
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
@@ -118,7 +119,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Real store-wide rating for the business schemas — omitted while there are no reviews.
-  const reviewStats = await getReviewStats()
+  const [reviewStats, exchangeDays] = await Promise.all([getReviewStats(), getExchangeDays()])
   const aggregateRating = reviewStats.count > 0
     ? {
         aggregateRating: {
@@ -192,7 +193,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               image: 'https://www.kzora.co/logo.png',
               logo: 'https://www.kzora.co/logo.png',
               url: 'https://www.kzora.co',
-              hasMerchantReturnPolicy: RETURN_POLICY_SCHEMA,
+              hasMerchantReturnPolicy: returnPolicySchema(exchangeDays),
               contactPoint: {
                 '@type': 'ContactPoint',
                 telephone: '+963964514765',

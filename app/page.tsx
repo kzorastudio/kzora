@@ -154,13 +154,9 @@ export default async function HomePage() {
   // order, so the figure is current without anyone editing it by hand.
   const ordersCount = ordersCountResult.count ?? 0
 
-  const negativeWords = ['كيف', 'اسا', 'سكسي', 'لم اجرب', 'لم نجربه', 'كندره رسمي', 'لماذا', 'نمره', 'مقاس']
+  // Latest written 4–5 star reviews; the owner hides any he doesn't want from /admin/reviews
   const featuredReviews: HomeReviewItem[] = (reviewsResult.data || [])
-    .filter((r: any) => {
-      if (!r.comment || r.comment.trim().length < 4) return false
-      const lower = r.comment.toLowerCase()
-      return !negativeWords.some(kw => lower.includes(kw))
-    })
+    .filter((r: any) => r.comment && r.comment.trim().length >= 4)
     .slice(0, 6)
     .map((r: any) => ({
       id: r.id,

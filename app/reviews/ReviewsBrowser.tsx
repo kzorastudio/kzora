@@ -83,7 +83,7 @@ export default function ReviewsBrowser({ reviews }: { reviews: ReviewItem[] }) {
       {/* List */}
       {shown.length === 0 ? (
         <p className="font-arabic text-sm text-[#6B6560] bg-white border border-[#E8E3DB] rounded-2xl p-6 text-center">
-          لا توجد تعليقات مكتوبة بهذا الاختيار.
+          لا توجد تقييمات بهذا الاختيار.
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -121,9 +121,13 @@ export default function ReviewsBrowser({ reviews }: { reviews: ReviewItem[] }) {
                     </div>
                   </div>
 
-                  <p className="font-arabic text-[#1A1A1A] text-sm leading-relaxed mb-4 bg-[#FAF8F5] p-4 rounded-xl border border-[#F1EFE9]">
-                    &ldquo;{r.comment}&rdquo;
-                  </p>
+                  {r.comment?.trim() ? (
+                    <p className="font-arabic text-[#1A1A1A] text-sm leading-relaxed mb-4 bg-[#FAF8F5] p-4 rounded-xl border border-[#F1EFE9]">
+                      &ldquo;{r.comment.trim()}&rdquo;
+                    </p>
+                  ) : (
+                    <p className="font-arabic text-[#9E9890] text-sm mb-4">تقييم بالنجوم بدون تعليق</p>
+                  )}
                 </div>
 
                 {r.products?.name && (

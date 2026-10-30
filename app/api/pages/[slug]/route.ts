@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { RETURN_POLICY_TAG } from '@/lib/returnPolicy'
 
 // ─── GET /api/pages/[slug] ────────────────────────────────────────────────────
 // Public. Returns a static page by its slug.
@@ -104,6 +106,15 @@ export async function PUT(
     if (dbError || !page) {
       console.error('Static page PUT error:', dbError)
       return NextResponse.json({ error: 'Failed to update page' }, { status: 500 })
+    }
+
+    // The exchange window on this page feeds the FAQ, /llms.txt and the return-policy
+    // markup on every page, so refresh them all at once.
+    if (slug === 'returns-exchanges') {
+      revalidateTag(RETURN_POLICY_TAG)
+      revalidatePath('/', 'layout')
+    } else {
+      revalidatePath(`/${slug}`)
     }
 
     return NextResponse.json({ page })

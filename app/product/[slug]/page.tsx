@@ -13,7 +13,8 @@ import { optimizeCloudinaryUrl } from '@/lib/cloudinary'
 import type { ProductFull } from '@/types'
 import ProductPageClient from './_components/ProductPageClient'
 import RelatedProducts from './_components/RelatedProducts'
-import { RETURN_POLICY_SCHEMA } from '@/lib/returnPolicySchema'
+import { returnPolicySchema } from '@/lib/returnPolicySchema'
+import { getExchangeDays } from '@/lib/returnPolicy'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -112,9 +113,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const product = await getProduct(slug)
   if (!product) notFound()
 
-  const [settings, reviews] = await Promise.all([
+  const [settings, reviews, exchangeDays] = await Promise.all([
     getSettings(),
     getProductReviews(product.id),
+    getExchangeDays(),
   ])
 
   const hasDiscountSchema = (product.discount_price_syp != null && product.discount_price_syp < product.price_syp) ||
@@ -174,9 +176,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
       ...(priceValidUntil ? { priceValidUntil } : {}),
       seller: {
         '@type': 'Organization',
+        '@id': 'https://www.kzora.co',
         name: 'كزورا Kzora',
       },
-      hasMerchantReturnPolicy: RETURN_POLICY_SCHEMA,
+      hasMerchantReturnPolicy: returnPolicySchema(exchangeDays),
     },
   }
 

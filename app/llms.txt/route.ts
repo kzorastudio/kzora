@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 import { getReviewStats } from '@/lib/reviewStats'
+import { getExchangeDays, daysText } from '@/lib/returnPolicy'
 
 // /llms.txt — a plain-text brief of the store for AI assistants (ChatGPT, Claude,
 // Perplexity…), following the llms.txt convention. Figures are read live so the
@@ -9,11 +10,12 @@ export const revalidate = 3600
 const BASE = 'https://www.kzora.co'
 
 export async function GET() {
-  const [categoriesResult, ordersResult, reviewStats] = await Promise.all([
+  const [categoriesResult, ordersResult, reviewStats, exchangeDays] = await Promise.all([
     supabase.from('categories').select('name_ar, slug').eq('is_active', true).order('sort_order'),
     // RLS hides orders from anon — only the count leaves the server.
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
     getReviewStats(),
+    getExchangeDays(),
   ])
 
   const categories = categoriesResult.data ?? []
@@ -25,7 +27,7 @@ export async function GET() {
     '- المنتجات: أحذية رجالية ونسائية ورياضية',
     '- التوصيل: داخل مدينة حلب عبر مندوبي كزورا لباب المنزل مع فحص المقاس قبل الدفع، ولباقي المحافظات عبر شركات شحن معتمدة (القدموس، الكرم، مسارات) خلال ٢ إلى ٤ أيام عمل',
     '- الدفع: نقداً عند الاستلام، أو دفع مسبق عبر شام كاش. الأسعار بالليرة السورية والدولار، وأجور الشحن تُحسب في السلة حسب عدد القطع',
-    '- التبديل والإرجاع: تبديل المقاس خلال ٣ أيام من الاستلام، وإرجاع عند وجود عيب مصنعي، بشرط أن يكون الحذاء غير ملبوس وبعلبته الأصلية',
+    `- التبديل والإرجاع: تبديل المقاس خلال ${daysText(exchangeDays)} من الاستلام، وإرجاع عند وجود عيب مصنعي، بشرط أن يكون الحذاء غير ملبوس وبعلبته الأصلية`,
     '- أوقات العمل: يومياً من ٩ صباحاً حتى ١٠ مساءً عدا الجمعة',
     '- التواصل: واتساب +963964514765 — فيسبوك وإنستغرام kzora.studio',
   ]

@@ -37,8 +37,7 @@ async function getReviewsData() {
     .eq('is_published', true)
     .order('created_at', { ascending: false })
 
-  const negativeWords = ['كيف', 'اسا', 'سكسي', 'لم اجرب', 'لم نجربه', 'كندره رسمي', 'لماذا', 'نمره', 'مقاس']
-
+  // Every published review is shown; the owner hides any he doesn't want from /admin/reviews.
   const rawReviews: ReviewItem[] = (data || []).map((r: any) => ({
     id: r.id,
     user_name: r.user_name,
@@ -47,12 +46,6 @@ async function getReviewsData() {
     created_at: r.created_at,
     products: Array.isArray(r.products) ? (r.products[0] ?? null) : (r.products ?? null),
   }))
-
-  const validReviews = rawReviews.filter((r) => {
-    if (!r.comment || r.comment.trim().length < 3) return false
-    const lower = r.comment.toLowerCase()
-    return !negativeWords.some((kw) => lower.includes(kw))
-  })
 
   const totalReviews = rawReviews.length
   const averageRating = totalReviews > 0
@@ -70,7 +63,7 @@ async function getReviewsData() {
   const { count: ordersCount } = await supabaseAdmin.from('orders').select('id', { count: 'exact', head: true })
 
   return {
-    reviews: validReviews,
+    reviews: rawReviews,
     totalCount: totalReviews,
     averageRating,
     distribution,
@@ -96,7 +89,8 @@ export default async function ReviewsPage() {
       bestRating: 5,
       worstRating: 1,
     },
-    review: reviews.slice(0, 15).map((r) => ({
+    // Markup only for reviews with written text — a Review needs a body to be useful
+    review: reviews.filter((r) => r.comment?.trim()).slice(0, 15).map((r) => ({
       '@type': 'Review',
       author: {
         '@type': 'Person',

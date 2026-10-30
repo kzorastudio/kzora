@@ -5,6 +5,7 @@ import { FileText, Save, Loader2, CheckCircle, ExternalLink } from 'lucide-react
 import AdminHeader from '@/components/admin/AdminHeader'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
+import { DEFAULT_EXCHANGE_DAYS, isPeriodCard } from '@/lib/exchangeDays'
 
 const PAGE_LIST = [
   {
@@ -58,13 +59,14 @@ export default function AdminPagesPage() {
             if (res.ok) {
               const data = await res.json()
               const pageMeta = data.page?.meta || {}
-              if (slug === 'returns-exchanges' && !pageMeta.features) {
-                // Default features fallback strictly for the editor locally
-                pageMeta.features = [
-                  { count: '٧ أيام', label: 'فترة الإرجاع', desc: 'يحق لك الإرجاع أو الاستبدال خلال 7 أيام من استلام الطلب' },
+              if (slug === 'returns-exchanges') {
+                // The period card is built on the site from exchange_days, so it isn't edited as a card
+                const cards = (pageMeta.features ?? [
                   { count: 'غير مستخدم', label: 'شرط للاسترجاع', desc: 'يجب أن يكون المنتج بحالته الأصلية تماماً وبعلبته الأساسية' },
                   { count: '٤٨ ساعة', label: 'سرعة الإنجاز', desc: 'تتم معالجة الطلب واسترداد المبلغ فور فحص المنتج المسترجع' },
-                ]
+                ]) as { label?: string }[]
+                pageMeta.features = cards.filter((c) => !isPeriodCard(c))
+                if (!pageMeta.exchange_days) pageMeta.exchange_days = DEFAULT_EXCHANGE_DAYS
               }
               results[slug] = { slug, title: data.page?.title ?? label, content: data.page?.content ?? '', meta: pageMeta }
             } else {
@@ -250,11 +252,35 @@ export default function AdminPagesPage() {
                   />
                 </div>
 
+                {/* Exchange window — one number that the whole site reads */}
+                {activeSlug === 'returns-exchanges' && (
+                  <div className="flex flex-col gap-2 mt-6 pt-6 border-t border-outline-variant/30">
+                    <label htmlFor="exchange-days" className="text-sm font-arabic font-semibold text-on-surface">
+                      مدة تبديل المقاس (بالأيام)
+                    </label>
+                    <input
+                      id="exchange-days"
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={current.meta?.exchange_days ?? DEFAULT_EXCHANGE_DAYS}
+                      onChange={(e) => {
+                        const days = Math.max(1, parseInt(e.target.value, 10) || 1)
+                        handleChange('meta', { ...current.meta, exchange_days: days })
+                      }}
+                      className="h-10 w-32 px-3 rounded-lg border border-outline-variant/50 text-sm font-body focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition"
+                    />
+                    <p className="text-xs font-arabic text-secondary leading-relaxed">
+                      هذا الرقم يظهر تلقائياً في بطاقة «فترة التبديل» بهذه الصفحة، وفي الأسئلة الشائعة، وفي معلومات المتجر لـ Google والذكاء الاصطناعي. إذا ذكرتَ المدة في النص أعلاه فاكتب نفس الرقم.
+                    </p>
+                  </div>
+                )}
+
                 {/* Custom Features for Returns & Exchanges */}
                 {activeSlug === 'returns-exchanges' && current.meta?.features && (
                   <div className="flex flex-col gap-3 mt-6 pt-6 border-t border-outline-variant/30">
                     <label className="text-sm font-arabic font-semibold text-on-surface">
-                      بطاقات السرعة والضمان (تظهر تحت العنوان مباشرة)
+                      بطاقات السرعة والضمان (تظهر تحت العنوان مباشرة، بعد بطاقة فترة التبديل)
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {current.meta.features.map((feature: any, idx: number) => (

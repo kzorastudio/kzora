@@ -5,6 +5,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { ChevronDown } from 'lucide-react'
+import { getExchangeDays, daysText } from '@/lib/returnPolicy'
 
 export const metadata: Metadata = {
   title: 'الأسئلة الشائعة — متجر كزورا Kzora للأحذية في سوريا',
@@ -20,9 +21,14 @@ export const metadata: Metadata = {
   },
 }
 
+// The exchange window comes from the admin panel; saving the returns page purges this page.
+export const revalidate = 3600
+
 // Single source for both the visible page and the FAQPage schema — Google only
 // honours FAQ markup whose answers are also visible on the page.
-const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
+// `exchange` is the admin-set exchange window as text, e.g. "٣ أيام".
+function faqGroups(exchange: string): { title: string; items: { q: string; a: string }[] }[] {
+  return [
   {
     title: 'الطلب والدفع',
     items: [
@@ -74,11 +80,11 @@ const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
     items: [
       {
         q: 'هل يمكنني تبديل المقاس إذا لم يكن مناسباً؟',
-        a: 'نعم. في حلب تفحص المقاس لحظة وصول المندوب، وإذا لم يناسبك تعيده معه فوراً وتدفع أجرة التوصيل فقط. وفي باقي المحافظات يحق لك تبديل المقاس خلال ٣ أيام من الاستلام، بشرط ألا يكون الحذاء ملبوساً وأن يكون بعلبته الأصلية، ويتحمل الزبون أجور الشحن ذهاباً وإياباً.',
+        a: `نعم. في حلب تفحص المقاس لحظة وصول المندوب، وإذا لم يناسبك تعيده معه فوراً وتدفع أجرة التوصيل فقط. وفي باقي المحافظات يحق لك تبديل المقاس خلال ${exchange} من الاستلام، بشرط ألا يكون الحذاء ملبوساً وأن يكون بعلبته الأصلية، ويتحمل الزبون أجور الشحن ذهاباً وإياباً.`,
       },
       {
         q: 'ما هي سياسة الإرجاع؟',
-        a: 'يمكن إرجاع المنتج خلال ٣ أيام من الاستلام في حال وجود عيب مصنعي أو إرسال منتج خاطئ، وفي هذه الحالة تتحمل كزورا تكاليف الشحن. يُشترط أن يكون الحذاء غير ملبوس وبعلبته الأصلية. تواصل معنا عبر الواتساب مع رقم الطلب.',
+        a: `يمكن إرجاع المنتج خلال ${exchange} من الاستلام في حال وجود عيب مصنعي أو إرسال منتج خاطئ، وفي هذه الحالة تتحمل كزورا تكاليف الشحن. يُشترط أن يكون الحذاء غير ملبوس وبعلبته الأصلية. تواصل معنا عبر الواتساب مع رقم الطلب.`,
       },
       {
         q: 'كيف أعرف مقاسي؟',
@@ -103,9 +109,12 @@ const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
       },
     ],
   },
-]
+  ]
+}
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const FAQ_GROUPS = faqGroups(daysText(await getExchangeDays()))
+
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',

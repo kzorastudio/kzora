@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getExchangeDays, daysText, isPeriodCard } from '@/lib/returnPolicy'
 
 export const revalidate = 3600
 
@@ -36,11 +37,21 @@ export default async function ReturnPolicyPage() {
         'للبدء بطلب الإرجاع أو الاستبدال، يُرجى التواصل معنا عبر واتساب وتزويدنا برقم الطلب.',
       ]
 
-  const features = page?.meta?.features || [
-    { count: '٣ أيام', label: 'فترة التبديل', desc: 'تبديل المقاس خلال 3 أيام من الاستلام، والإرجاع عند وجود عيب مصنعي' },
-    { count: 'غير مستخدم', label: 'شرط للاسترجاع', desc: 'يجب أن يكون المنتج بحالته الأصلية تماماً وبعلبته الأساسية' },
-    { count: 'قبل الدفع', label: 'فحص في حلب', desc: 'في حلب تفحص المقاس والجودة أمام المندوب قبل أن تدفع' },
-  ]
+  // The period card is always built from the admin-set exchange window (the same number
+  // the FAQ, /llms.txt and Google's markup use); the other cards are the admin's own.
+  const exchangeDays = await getExchangeDays()
+  const periodCard = {
+    count: daysText(exchangeDays),
+    label: 'فترة التبديل',
+    desc: `تبديل المقاس خلال ${daysText(exchangeDays)} من الاستلام، والإرجاع عند وجود عيب مصنعي`,
+  }
+  const otherCards: { count: string; label: string; desc: string }[] =
+    (page?.meta?.features as { count: string; label: string; desc: string }[] | undefined)
+      ?.filter((f) => !isPeriodCard(f)) ?? [
+      { count: 'غير مستخدم', label: 'شرط للاسترجاع', desc: 'يجب أن يكون المنتج بحالته الأصلية تماماً وبعلبته الأساسية' },
+      { count: 'قبل الدفع', label: 'فحص في حلب', desc: 'في حلب تفحص المقاس والجودة أمام المندوب قبل أن تدفع' },
+    ]
+  const features = [periodCard, ...otherCards]
 
   const icons = [
     (
