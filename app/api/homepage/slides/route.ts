@@ -1,5 +1,6 @@
 ﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -77,6 +78,8 @@ export async function POST(request: NextRequest) {
       console.error('Slide insert error:', error)
       return NextResponse.json({ error: 'Failed to create slide' }, { status: 500 })
     }
+
+    revalidatePath('/')
 
     return NextResponse.json({ slide }, { status: 201 })
   } catch (err) {

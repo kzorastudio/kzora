@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { authorizeApi } from '@/lib/adminGuard'
 import { supabaseAdmin } from '@/lib/supabase'
 import { deleteImage } from '@/lib/cloudinary'
@@ -73,6 +74,9 @@ export async function PUT(
 
     if (deletePromises.length > 0) await Promise.all(deletePromises)
 
+    // Homepage is ISR; without this the change waits out the 5-minute window.
+    revalidatePath('/')
+
     return NextResponse.json({ slide })
   } catch (err) {
     console.error('Slide PUT [id] unexpected error:', err)
@@ -134,6 +138,8 @@ export async function DELETE(
       console.error('Slide delete DB error:', deleteError)
       return NextResponse.json({ error: 'Failed to delete slide' }, { status: 500 })
     }
+
+    revalidatePath('/')
 
     return NextResponse.json({ success: true })
   } catch (err) {

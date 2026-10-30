@@ -11,6 +11,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
+import { ScrollHint } from '@/components/ui/ScrollHint'
 import CategoryProductsClient from './CategoryProductsClient'
 import type { Category, ProductFull } from '@/types'
 
@@ -236,6 +237,7 @@ export default async function CategoryPage({ params }: PageProps) {
       <Footer />
       <WhatsAppFAB />
       <CartDrawer />
+      <ScrollHint />
     </>
   )
 }
