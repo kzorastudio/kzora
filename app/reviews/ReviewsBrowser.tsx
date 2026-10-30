@@ -3,8 +3,6 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Star, CheckCircle2 } from 'lucide-react'
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
 export interface ReviewItem {
@@ -13,6 +11,8 @@ export interface ReviewItem {
   rating: number
   comment: string | null
   created_at: string
+  /** Formatted on the server in Syria time, so server and browser render the same day */
+  date_label: string
   products?: { name: string; slug: string } | null
 }
 
@@ -107,7 +107,7 @@ export default function ReviewsBrowser({ reviews }: { reviews: ReviewItem[] }) {
                         </span>
                       </div>
                       <div className="text-xs font-arabic text-[#9E9890] mt-0.5">
-                        {format(new Date(r.created_at), 'd MMMM yyyy', { locale: ar })}
+                        {r.date_label}
                       </div>
                     </div>
                     <div className="flex gap-0.5 text-[#FFD700]">

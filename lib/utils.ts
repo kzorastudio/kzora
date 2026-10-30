@@ -225,3 +225,16 @@ export function toArabicNumerals(num: number | string): string {
   const arabicDigits = '٠١٢٣٤٥٦٧٨٩'
   return String(num).replace(/[0-9]/g, (w) => arabicDigits[englishDigits.indexOf(w)])
 }
+
+const REVIEW_DATE_FORMAT = new Intl.DateTimeFormat('ar', {
+  day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Damascus', numberingSystem: 'latn',
+})
+
+/**
+ * "30 أكتوبر 2026" in Syria time. Pinned to one time zone so a client component renders
+ * the same day the server did — formatting in the visitor's zone breaks hydration for
+ * anything posted near midnight.
+ */
+export function formatReviewDate(iso: string): string {
+  return REVIEW_DATE_FORMAT.format(new Date(iso))
+}

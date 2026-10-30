@@ -8,7 +8,7 @@ import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 import { getReviewStats } from '@/lib/reviewStats'
-import { cn } from '@/lib/utils'
+import { cn, formatReviewDate } from '@/lib/utils'
 import { Star, MessageSquare, ShieldCheck, HeartHandshake, Truck } from 'lucide-react'
 import ReviewsBrowser, { type ReviewItem } from './ReviewsBrowser'
 
@@ -44,6 +44,7 @@ async function getReviewsData() {
     rating: r.rating,
     comment: r.comment,
     created_at: r.created_at,
+    date_label: formatReviewDate(r.created_at),
     products: Array.isArray(r.products) ? (r.products[0] ?? null) : (r.products ?? null),
   }))
 

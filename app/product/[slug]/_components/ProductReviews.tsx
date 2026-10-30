@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Star, MessageSquare, User, Send, StarHalf } from 'lucide-react'
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
+import { formatReviewDate } from '@/lib/utils'
 
 interface Review {
   id: string
@@ -253,7 +252,7 @@ export default function ProductReviews({ productId, initialReviews = [] }: Produ
                       </div>
                       <div>
                         <div className="font-bold text-[#1A1A1A] group-hover:text-[#785600] transition-colors">{review.user_name}</div>
-                        <div className="text-xs text-[#9E9890]">{format(new Date(review.created_at), 'd MMMM yyyy', { locale: ar })}</div>
+                        <div className="text-xs text-[#9E9890]">{formatReviewDate(review.created_at)}</div>
                       </div>
                     </div>
                     {renderStars(review.rating)}
