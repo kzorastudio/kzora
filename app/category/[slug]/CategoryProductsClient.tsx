@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { expandProductsBySize } from '@/lib/expandProductsBySize'
-import { isSoldOut } from '@/lib/productSort'
+import { isSoldOut, isLowStock } from '@/lib/productSort'
 import type { ProductFull } from '@/types'
 
 // ─── MultiSelectDropdown (same as products page) ────────────────────────────
@@ -211,9 +211,9 @@ export default function CategoryProductsClient({ products }: Props) {
       result = result.filter(p => currency === 'SYP' ? p.price_syp <= max : p.price_usd <= max)
     }
 
-    // Sort: available first, then unavailable in the chosen size, then sold-out models last.
-    // Then apply the selected sort order within each group.
-    const rank = (p: ProductFull) => (isSoldOut(p) ? 2 : unavailableMap[p.id] ? 1 : 0)
+    // Sort: available first, then limited quantity, then unavailable in the chosen size,
+    // then sold-out models last. Then apply the selected sort order within each group.
+    const rank = (p: ProductFull) => (isSoldOut(p) ? 3 : unavailableMap[p.id] ? 2 : isLowStock(p) ? 1 : 0)
     result.sort((a, b) => rank(a) - rank(b))
 
     switch (sort) {

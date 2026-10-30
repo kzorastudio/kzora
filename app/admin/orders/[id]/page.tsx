@@ -129,8 +129,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
       <AdminHeader />
 
       <div className="flex-1 p-6 flex flex-col gap-5">
-        {/* Page header */}
-        <div className="flex items-center gap-3">
+        {/* Page header — on phones the action buttons drop to their own row */}
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href={backHref}
             className="h-9 w-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors"
@@ -154,7 +154,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               {formatDate(order.created_at)}
             </p>
           </div>
-          <div className="shrink-0 flex items-center gap-2">
+          <div className="w-full sm:w-auto sm:shrink-0 flex flex-wrap items-center gap-2">
             {order.is_reservation && <ConfirmReservationButton orderId={order.id} />}
             <SendWhatsAppButton order={order} />
             {reviewProducts.length > 0 && (

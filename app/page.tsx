@@ -2,7 +2,7 @@
 export const revalidate = 300
 
 import { supabase, supabaseAdmin } from '@/lib/supabase'
-import { sortSoldOutLast } from '@/lib/productSort'
+import { sortByStock } from '@/lib/productSort'
 import { getReviewStats } from '@/lib/reviewStats'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -48,8 +48,8 @@ async function fetchProductsByTag(tag: string, limit = 8): Promise<ProductFull[]
     category: Array.isArray(p.categories) ? (p.categories[0] ?? null) : (p.categories ?? null),
     variants: p.product_variants ?? [],
   }))
-  // Tag sets are small: fetch them all so sold-out models drop behind available ones before the cut
-  return sortSoldOutLast(mapped as ProductFull[]).slice(0, limit)
+  // Tag sets are small: fetch them all so limited and sold-out models drop behind available ones before the cut
+  return sortByStock(mapped as ProductFull[]).slice(0, limit)
 }
 
 // ─── Promo Banner ──────────────────────────────────────────────────────────────

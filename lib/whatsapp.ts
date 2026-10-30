@@ -171,6 +171,13 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
   lines.push(``)
   lines.push(`${EMOJI.MONEY_BAG} *الإجمالي النهائي: ${total}*`)
 
+  // Task: Explicitly check and add notes
+  if (order.notes && order.notes.trim()) {
+    lines.push(``)
+    lines.push(`${EMOJI.NOTE} *ملاحظات الزبون:*`)
+    lines.push(order.notes.trim())
+  }
+
   lines.push(``)
   lines.push(`${EMOJI.GIFT} *مبروك! لقد كسبت نقطة ولاء من هذا الطلب*`)
   lines.push(`_(سيتم تفعيل النقطة فور استلام الطلب)_`)
@@ -201,13 +208,6 @@ export function buildWhatsAppUrl(order: OrderForWhatsApp): string {
 
   if (order.paymentMethod === 'sham_cash' && order.paymentTransactionId) {
     lines.push(`${EMOJI.NUMBERS} *رقم العملية:* ${order.paymentTransactionId}`)
-  }
-
-  // Task: Explicitly check and add notes
-  if (order.notes && order.notes.trim()) {
-    lines.push(``)
-    lines.push(`${EMOJI.NOTE} *ملاحظات الزبون:*`)
-    lines.push(order.notes.trim())
   }
 
   lines.push(``)

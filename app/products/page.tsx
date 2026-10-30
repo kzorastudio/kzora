@@ -4,8 +4,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
-import { supabase, hasSoldOutColumn } from '@/lib/supabase'
-import { sortSoldOutLast } from '@/lib/productSort'
+import { supabase } from '@/lib/supabase'
 import type { Category, ProductFull, ProductTag } from '@/types'
 import ProductsClientPage from './_components/ProductsClientPage'
 
@@ -145,9 +144,10 @@ async function getInitialProducts(params: Record<string, string | undefined>): P
       query = query.or(`name.ilike.%${params.search}%,description.ilike.%${params.search}%`)
     }
 
-    // Sold-out models always last, then the chosen sort, then newest first
-    const soldOutInDb = await hasSoldOutColumn()
-    if (soldOutInDb) query = query.order('is_sold_out', { ascending: true })
+    // Available first, limited quantity next, sold-out models last — then the chosen sort,
+    // then newest first. stock_status sorts alphabetically into exactly that order:
+    // in_stock < low_stock < out_of_stock.
+    query = query.order('stock_status', { ascending: true })
     switch (params.sort) {
       case 'price_asc':   query = query.order('price_syp', { ascending: true }); break
       case 'price_desc':  query = query.order('price_syp', { ascending: false }); break
@@ -158,12 +158,10 @@ async function getInitialProducts(params: Record<string, string | undefined>): P
     const limit = 24
     const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
     const offset = (page - 1) * limit
-    // Until products.is_sold_out exists, fetch every match and move sold-out models last here
-    if (soldOutInDb) query = query.range(offset, offset + limit - 1)
+    query = query.range(offset, offset + limit - 1)
 
     const { data, count } = await query
-    const rows = soldOutInDb ? (data ?? []) : sortSoldOutLast((data ?? []) as any[]).slice(offset, offset + limit)
-    const products = rows.map((p: any) => ({
+    const products = (data ?? []).map((p: any) => ({
       ...p,
       sizes: (p.sizes ?? []).map((s: { size: number; is_available: boolean }) => ({ size: s.size, is_available: s.is_available })),
       tags:  (p.tags  ?? []).map((t: { tag: ProductTag }) => t.tag),

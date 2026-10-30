@@ -6,7 +6,17 @@ export function isSoldOut(p: Pick<ProductFull, 'stock_status' | 'variants'>): bo
   return !!p.variants && p.variants.length > 0 && p.variants.every(v => (v.quantity ?? 0) <= 0)
 }
 
-/** Moves sold-out products to the end, keeping everything else in its current order. */
-export function sortSoldOutLast<T extends Pick<ProductFull, 'stock_status' | 'variants'>>(products: T[]): T[] {
-  return [...products].sort((a, b) => Number(isSoldOut(a)) - Number(isSoldOut(b)))
+/** Same rule ProductCard uses to show "كمية محدودة". */
+export function isLowStock(p: Pick<ProductFull, 'stock_status' | 'variants'>): boolean {
+  return p.stock_status === 'low_stock' && !isSoldOut(p)
+}
+
+/** 0 = available, 1 = limited quantity, 2 = sold out. */
+export function stockRank(p: Pick<ProductFull, 'stock_status' | 'variants'>): number {
+  return isSoldOut(p) ? 2 : isLowStock(p) ? 1 : 0
+}
+
+/** Available models first, then limited quantity, then sold out — keeping the current order inside each group. */
+export function sortByStock<T extends Pick<ProductFull, 'stock_status' | 'variants'>>(products: T[]): T[] {
+  return [...products].sort((a, b) => stockRank(a) - stockRank(b))
 }
