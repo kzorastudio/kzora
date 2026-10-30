@@ -80,7 +80,8 @@ export default function HeroSlider({ slides, badgeText, badgeColor }: Props) {
               )}
               
               {/* Premium Gradient Overlays */}
-              <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/40 to-transparent hidden md:block" />
+              {/* RTL: text sits on the right, so the wash starts there and leaves the left side clear */}
+              <div className="absolute inset-0 bg-gradient-to-l from-white/95 via-white/40 to-transparent hidden md:block" />
               {/* Mobile: subtler white gradient from bottom */}
               <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent md:hidden" />
               <div className="absolute inset-0 bg-black/[0.02]" />
