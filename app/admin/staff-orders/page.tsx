@@ -115,12 +115,14 @@ export default function StaffOrdersPage() {
   // the current month so staff pay can be read straight off the table.
   const monthOptions = buildMonthOptions()
   const [statsMonth, setStatsMonth] = useState(monthOptions[0].value)
+  // Website orders (no staff creator), shown as an extra row; not part of the totals.
+  const [storeStat, setStoreStat] = useState<StaffOrderStat | null>(null)
 
   useEffect(() => {
     const qs = statsMonth ? `?month=${statsMonth}` : ''
     fetch(`/api/admin/staff-orders/stats${qs}`)
       .then((r) => (r.ok ? r.json() : { stats: [] }))
-      .then((d) => setStats(d.stats ?? []))
+      .then((d) => { setStats(d.stats ?? []); setStoreStat(d.store ?? null) })
       .catch(() => {})
   }, [statsMonth])
 
@@ -213,7 +215,7 @@ export default function StaffOrdersPage() {
       </div>
 
       {/* super_admin: per-employee breakdown */}
-      {!isEmployee && stats.length > 0 && (
+      {!isEmployee && (stats.length > 0 || storeStat) && (
         <div className="bg-white rounded-2xl p-4 shadow-ambient border border-outline-variant/20">
           <h2 className="text-sm font-arabic font-bold text-on-surface mb-3">أداء الموظفين</h2>
           <div className="overflow-x-auto">
@@ -244,6 +246,15 @@ export default function StaffOrdersPage() {
                     <td className="py-2 px-2 font-label text-on-surface">{s.total_sales_syp.toLocaleString()}</td>
                   </tr>
                 ))}
+                {storeStat && (
+                  <tr className="border-t-2 border-outline-variant/30 bg-surface-container-low/40">
+                    <td className="py-2 px-2 font-arabic font-semibold text-primary">{storeStat.admin_name}</td>
+                    <td className="py-2 px-2 font-label text-on-surface">{storeStat.total_orders}</td>
+                    <td className="py-2 px-2 font-label text-green-600">{storeStat.delivered_orders}</td>
+                    <td className="py-2 px-2 font-label text-red-600">{storeStat.cancelled_orders}</td>
+                    <td className="py-2 px-2 font-label text-on-surface">{storeStat.total_sales_syp.toLocaleString()}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

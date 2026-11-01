@@ -46,21 +46,17 @@ export async function GET(request: NextRequest) {
 
     const nameMap = new Map((admins || []).map((a: any) => [a.id, a.name]))
 
-    const statMap = new Map<string, StaffOrderStat>()
-    for (const o of orders || []) {
-      const id = o.created_by_admin_id as string
-      if (!statMap.has(id)) {
-        statMap.set(id, {
-          admin_id: id,
-          admin_name: nameMap.get(id) || 'موظف محذوف',
-          total_orders: 0,
-          delivered_orders: 0,
-          cancelled_orders: 0,
-          total_sales_syp: 0,
-          total_sales_usd: 0,
-        })
-      }
-      const s = statMap.get(id)!
+    const emptyStat = (id: string, name: string): StaffOrderStat => ({
+      admin_id: id,
+      admin_name: name,
+      total_orders: 0,
+      delivered_orders: 0,
+      cancelled_orders: 0,
+      total_sales_syp: 0,
+      total_sales_usd: 0,
+    })
+
+    const addOrder = (s: StaffOrderStat, o: any) => {
       s.total_orders += 1
       if (o.status === 'delivered') s.delivered_orders += 1
       if (o.status === 'cancelled') {
@@ -73,9 +69,34 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const statMap = new Map<string, StaffOrderStat>()
+    for (const o of orders || []) {
+      const id = o.created_by_admin_id as string
+      if (!statMap.has(id)) statMap.set(id, emptyStat(id, nameMap.get(id) || 'موظف محذوف'))
+      addOrder(statMap.get(id)!, o)
+    }
+
     const stats = Array.from(statMap.values()).sort((a, b) => b.total_orders - a.total_orders)
 
-    return NextResponse.json({ stats })
+    // Orders placed by customers on the website (no staff creator) — shown to
+    // super_admin as an extra row, kept out of `stats` so the totals stay staff-only.
+    let store: StaffOrderStat | null = null
+    if (!isOwnOrdersOnly(session.role)) {
+      const storeOrders = await fetchAllRows((from, to) => {
+        let q = supabaseAdmin
+          .from('orders')
+          .select('status, total_syp, total_usd, created_at')
+          .is('created_by_admin_id', null)
+          .order('created_at', { ascending: false })
+          .range(from, to)
+        if (range) q = q.gte('created_at', range.from).lt('created_at', range.to)
+        return q
+      })
+      store = emptyStat('store', 'المتجر (الموقع)')
+      for (const o of storeOrders || []) addOrder(store, o)
+    }
+
+    return NextResponse.json({ stats, store })
   } catch (err) {
     console.error('Staff stats unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
