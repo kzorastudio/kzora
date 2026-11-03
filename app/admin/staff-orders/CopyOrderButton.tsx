@@ -77,6 +77,7 @@ export default function CopyOrderButton({ order, shippingMethods, className }: P
       const totalWithoutShipping = pick(order.total_syp, order.total_usd) - shippingFee
       lines.push(`الإجمالي بدون الشحن: ${formatCurrency(totalWithoutShipping, cur)}`)
     }
+    if (order.payment_method === 'sham_cash') lines.push('مدفوع مسبقاً (شام كاش) — المطلوب تحصيله: 0')
 
     lines.push(`الحالة: ${statusLabel}`)
     lines.push(`التاريخ: ${formatDate(order.created_at)}`)

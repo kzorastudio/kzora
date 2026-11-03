@@ -29,18 +29,23 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [popularCats, setPopularCats] = useState<{ name_ar: string; slug: string }[]>([])
+  // Size shortcut: pick a category (or all), then tap a size that's in stock there
+  const [sizeCat, setSizeCat] = useState('')
+  const [sizes, setSizes] = useState<number[]>([])
+  const [sizesLoading, setSizesLoading] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
     setQuery('')
-    
+    setSizeCat('')
+
     // Fetch some real categories for suggestions
     async function fetchPopular() {
       const { data } = await supabase
         .from('categories')
         .select('name_ar, slug')
         .eq('is_active', true)
-        .limit(6)
+        .order('sort_order', { ascending: true })
       if (data) setPopularCats(data)
     }
     fetchPopular()
@@ -54,6 +59,27 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
       document.body.style.overflow = ''
     }
   }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    setSizesLoading(true)
+    const params = sizeCat ? `?category=${encodeURIComponent(sizeCat)}` : ''
+    fetch(`/api/products/filters${params}`)
+      .then(r => r.json())
+      .then(data => { if (!cancelled) setSizes(data.sizes ?? []) })
+      .catch(() => { if (!cancelled) setSizes([]) })
+      .finally(() => { if (!cancelled) setSizesLoading(false) })
+    return () => { cancelled = true }
+  }, [isOpen, sizeCat])
+
+  const goToSize = (size: number) => {
+    const params = new URLSearchParams()
+    if (sizeCat) params.set('category', sizeCat)
+    params.set('size', String(size))
+    router.push(`/products?${params.toString()}`)
+    onClose()
+  }
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -95,12 +121,54 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             </button>
           </div>
 
-          <div className="mt-8 space-y-6" dir="rtl">
+          <div className="mt-8 space-y-6 max-h-[calc(100vh-12rem)] overflow-y-auto pb-6" dir="rtl">
+            {/* Size shortcut — category first, then the sizes in stock there */}
+            <div className="space-y-3 bg-white/[0.06] border border-white/15 rounded-2xl p-4">
+              <p className="text-sm font-arabic font-bold text-white px-1">ابحث بمقاسك 👟</p>
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none]">
+                {[{ name_ar: 'كل الأقسام', slug: '' }, ...popularCats].map((cat) => (
+                  <button
+                    key={cat.slug || 'all'}
+                    type="button"
+                    onClick={() => setSizeCat(cat.slug)}
+                    className={cn(
+                      'shrink-0 px-3.5 py-1.5 text-xs font-arabic font-semibold rounded-full border transition-colors',
+                      sizeCat === cat.slug
+                        ? 'bg-white text-[#785600] border-white'
+                        : 'bg-transparent text-white/80 border-white/25 hover:border-white/60'
+                    )}
+                  >
+                    {cat.name_ar}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 min-h-[2.75rem]">
+                {sizesLoading ? (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="w-11 h-11 rounded-xl bg-white/10 animate-pulse" />
+                  ))
+                ) : sizes.length > 0 ? (
+                  sizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => goToSize(size)}
+                      className="w-11 h-11 flex items-center justify-center rounded-xl bg-white text-[#1A1A1A] hover:bg-[#B8860B] hover:text-white text-sm font-bold tabular-nums transition-colors"
+                    >
+                      {size}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-xs font-arabic text-white/60 px-1 self-center">لا توجد مقاسات متوفرة حالياً في هذا القسم</p>
+                )}
+              </div>
+            </div>
+
             {/* Suggested Categories */}
             <div className="space-y-3">
               <p className="text-xs font-arabic font-bold text-white/60 tracking-widest uppercase px-1">الأقسام الأكثر بحثاً</p>
               <div className="flex flex-wrap gap-2.5">
-                {popularCats.map((cat) => (
+                {popularCats.slice(0, 6).map((cat) => (
                   <button
                     key={cat.slug}
                     type="button"

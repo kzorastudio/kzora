@@ -17,8 +17,9 @@ import CopyOrderButton from './CopyOrderButton'
 import SendWhatsAppButton from './SendWhatsAppButton'
 import RequestReviewButton from './RequestReviewButton'
 import ConfirmReservationButton from './ConfirmReservationButton'
+import PaymentMethodEditor from './PaymentMethodEditor'
 import { requireAdmin } from '@/lib/adminGuard'
-import { homePathFor, isOwnOrdersOnly, normalizeRole, ROLE_SHORT_LABELS } from '@/lib/permissions'
+import { isOwnOrdersOnly, normalizeRole, ROLE_SHORT_LABELS } from '@/lib/permissions'
 
 interface OrderDetailPageProps {
   params: { id: string }
@@ -93,7 +94,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   // Tiers without view_all_orders see only what they created themselves, and the
   // money figures on this page stay hidden from them.
   const ownOrdersOnly = isOwnOrdersOnly(session.role)
-  const backHref = homePathFor(session.role)
+  // Back goes to the orders list this role works from, not the dashboard home.
+  const backHref = ownOrdersOnly ? '/admin/staff-orders' : '/admin/orders'
 
   const order = await getOrder(params.id)
   if (!order) notFound()
@@ -126,6 +128,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const baseDiscount = formatPrice(baseDiscountRaw, currency)
   const loyaltyDiscount = formatPrice(loyaltyDiscountRaw, currency)
   const total = formatPrice(currency === 'USD' ? order.total_usd : order.total_syp, currency)
+  // What the courier collects on a cash-on-delivery order — same rule as the printed
+  // label: Aleppo includes the delivery fee, elsewhere shipping is paid to the company.
+  const isAleppoOrder = order.customer_governorate === 'حلب' || deliveryType === 'delivery'
+  const shipRaw = currency === 'USD' ? order.shipping_fee_usd : order.shipping_fee_syp
+  const dueOnDelivery = formatPrice(
+    Math.max(0, subtotalRaw - discountRaw + (isAleppoOrder ? shipRaw || 0 : 0)),
+    currency
+  )
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
@@ -137,7 +147,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <Link
             href={backHref}
             className="h-9 w-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors"
-            title="رجوع"
+            title="رجوع للطلبات"
           >
             <ArrowRight size={18} />
           </Link>
@@ -424,12 +434,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     <span className="text-on-surface font-semibold">الإجمالي</span>
                     <span className="text-on-surface font-bold text-base">{total}</span>
                   </div>
-                  <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
-                    <span className="text-secondary text-xs">طريقة الدفع</span>
-                    <span className="text-[11px] font-arabic font-bold text-on-surface">
-                      {order.payment_method === 'sham_cash' ? '📱 شام كاش' : '💵 عند الاستلام'}
-                    </span>
-                  </div>
+                  <PaymentMethodEditor
+                    orderId={order.id}
+                    paymentMethod={order.payment_method}
+                    dueOnDelivery={dueOnDelivery}
+                  />
                   <div className="flex justify-between items-center bg-surface-container/50 px-3 py-2 rounded-xl border border-outline-variant/30 mt-1">
                     <span className="text-secondary text-xs">مصدر الطلب</span>
                     <span className="text-[11px] font-arabic font-bold text-on-surface">

@@ -56,7 +56,7 @@ ${itemsText}
 
 🚚 الشحن: ${shippingInfo}
 💳 الدفع: ${paymentMethod}
-${!hideTotals ? `💰 الإجمالي: ${totalPrice}\n` : ''}
+${!hideTotals ? `💰 الإجمالي: ${totalPrice}\n` : ''}${order.payment_method === 'sham_cash' ? '✅ مدفوع مسبقاً — المطلوب تحصيله: 0\n' : ''}
 
 ✨ شكراً لاختياركم كزورا ✨
       `.trim()

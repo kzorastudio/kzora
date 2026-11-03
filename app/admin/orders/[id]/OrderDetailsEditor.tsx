@@ -157,6 +157,12 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
         }),
       })
 
+      if (res.status === 409) {
+        // Changed elsewhere since this page loaded — pull the latest version in
+        // (the open form reloads from it), so the next save goes through.
+        router.refresh()
+        throw new Error('تم تعديل الطلب من مكان آخر للتو. حمّلنا آخر نسخة منه — راجع البيانات وعدّل من جديد.')
+      }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'فشل التحديث')

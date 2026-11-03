@@ -71,7 +71,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // expires and the edit is allowed through.
     const clientUpdatedAt = body?.client_updated_at ? String(body.client_updated_at) : null
     const LOCK_WINDOW_MS = 5 * 60 * 1000
-    if (clientUpdatedAt && order.updated_at && order.updated_at !== clientUpdatedAt) {
+    // Compared as instants, not strings ("+00:00" vs "Z" is the same moment).
+    if (clientUpdatedAt && order.updated_at &&
+        new Date(order.updated_at).getTime() !== new Date(clientUpdatedAt).getTime()) {
       const diffMs = Date.now() - new Date(order.updated_at).getTime()
       if (diffMs < LOCK_WINDOW_MS) {
         return NextResponse.json(

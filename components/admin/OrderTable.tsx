@@ -138,6 +138,7 @@ export default function OrderTable({
         const totalWithoutShipping = pick(order.total_syp, order.total_usd) - shippingFee
         lines.push(`الإجمالي بدون الشحن: ${formatPrice(totalWithoutShipping, cur)}`)
       }
+      if (order.payment_method === 'sham_cash') lines.push('مدفوع مسبقاً (شام كاش) — المطلوب تحصيله: 0')
     }
 
     lines.push(`الحالة: ${statusLabel}`)

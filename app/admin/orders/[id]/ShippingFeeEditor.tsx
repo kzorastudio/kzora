@@ -38,6 +38,11 @@ export default function ShippingFeeEditor({ orderId, updatedAt, currency, feeSyp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shipping_fee_syp: nextSyp, shipping_fee_usd: nextUsd, client_updated_at: updatedAt }),
       })
+      if (res.status === 409) {
+        // Changed elsewhere since this page loaded — refresh so the next save goes through.
+        router.refresh()
+        throw new Error('تم تعديل الطلب من مكان آخر للتو. حدّثنا الصفحة بآخر نسخة — اضغط حفظ مرة ثانية.')
+      }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'فشل تعديل الأجرة')

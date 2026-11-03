@@ -105,7 +105,10 @@ export async function PUT(
     // If >= 5 minutes, the lock window has elapsed, allow the update.
     const clientUpdatedAt = body.client_updated_at ? String(body.client_updated_at) : null
     const LOCK_WINDOW_MS = 5 * 60 * 1000
-    if (clientUpdatedAt && (currentOrder as any).updated_at && (currentOrder as any).updated_at !== clientUpdatedAt) {
+    // Compared as instants, not strings: the same moment can be spelled differently
+    // ("+00:00" vs "Z", trailing zeros) and must not count as someone else's edit.
+    if (clientUpdatedAt && (currentOrder as any).updated_at &&
+        new Date((currentOrder as any).updated_at).getTime() !== new Date(clientUpdatedAt).getTime()) {
       const diffMs = Date.now() - new Date((currentOrder as any).updated_at).getTime()
       if (diffMs < LOCK_WINDOW_MS) {
         return NextResponse.json(
@@ -136,7 +139,12 @@ export async function PUT(
     if (center_name !== undefined) updateFields.center_name = center_name
     if (shipping_company !== undefined) updateFields.shipping_company = shipping_company
     if (delivery_type !== undefined) updateFields.delivery_type = delivery_type
-    if (payment_method !== undefined) updateFields.payment_method = payment_method
+    if (payment_method !== undefined) {
+      if (payment_method !== 'cod' && payment_method !== 'sham_cash') {
+        return NextResponse.json({ error: 'طريقة دفع غير صالحة' }, { status: 400 })
+      }
+      updateFields.payment_method = payment_method
+    }
 
     // ─── Delivery fee for this order (money is hidden from own-orders-only tiers) ───
     // The total moves by exactly the change in fee, so discounts already applied stay intact.

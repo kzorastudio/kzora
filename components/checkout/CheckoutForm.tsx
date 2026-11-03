@@ -84,6 +84,10 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
   const shippingCompany = watch('shipping_company')
   const paymentMethod  = watch('payment_method')
   const phoneValue     = watch('phone')
+  const isAleppo       = deliveryType === 'delivery' || deliveryType === 'pickup'
+
+  const chooseDeliveryType = (type: 'delivery' | 'pickup') =>
+    setValue('delivery_type', type, { shouldValidate: true, shouldDirty: true })
 
   useEffect(() => {
     if (onPhoneChange && phoneValue !== undefined) {
@@ -211,76 +215,87 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
           <p className="font-arabic text-sm text-[#6B6560] mt-1">يجب اختيار طريقة الاستلام للمتابعة</p>
         </div>
 
-        <div className={cn("grid grid-cols-1 gap-5", pickupOn ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
-          {/* استلام من المكتب — Aleppo only, first when the owner has switched it on */}
-          {pickupOn && (
-            <label className={cn(
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* داخل حلب — one card; when office pickup is on, the home/office choice
+              happens inside the Aleppo section below instead of as a third card */}
+          <label
+            className={cn(
               "flex flex-col items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 relative overflow-hidden group",
-              deliveryType === 'pickup'
+              isAleppo
                 ? "bg-[#FFF9F0] border-[#785600] shadow-md ring-2 ring-[#785600]/20"
                 : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF] hover:bg-white"
-            )}>
+            )}
+            onClick={pickupOn ? (e) => { e.preventDefault(); if (!isAleppo) chooseDeliveryType('delivery') } : undefined}
+          >
+            {!pickupOn && (
               <input
                 type="radio"
-                value="pickup"
+                value="delivery"
                 className="sr-only"
                 {...register('delivery_type')}
               />
-              <div className={cn(
-                "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
-                deliveryType === 'pickup' ? "bg-[#785600] -rotate-3 scale-110" : "bg-[#F0EBE3] group-hover:scale-105"
-              )}>
-                <Store size={32} className={deliveryType === 'pickup' ? "text-white" : "text-[#9E9890]"} />
-              </div>
-              <div className="text-center">
-                <p className={cn("font-arabic font-bold text-xl mb-1", deliveryType === 'pickup' ? "text-[#785600]" : "text-[#1A1A1A]")}>
-                  استلام من المكتب
-                </p>
-                <p className="font-arabic text-sm text-[#6B6560] leading-relaxed">
-                  {pickupPlace}<br/>مدينة حلب حصراً
-                </p>
-              </div>
-              {deliveryType === 'pickup' && (
-                <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[#785600] flex items-center justify-center shadow-lg">
-                  <CheckCircle2 size={14} className="text-white" />
-                </div>
-              )}
-            </label>
-          )}
-
-          {/* توصيل */}
-          <label className={cn(
-            "flex flex-col items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 relative overflow-hidden group",
-            deliveryType === 'delivery'
-              ? "bg-[#FFF9F0] border-[#785600] shadow-md ring-2 ring-[#785600]/20"
-              : "bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF] hover:bg-white"
-          )}>
-            <input
-              type="radio"
-              value="delivery"
-              className="sr-only"
-              {...register('delivery_type')}
-            />
+            )}
             <div className={cn(
               "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
-              deliveryType === 'delivery' ? "bg-[#785600] rotate-3 scale-110" : "bg-[#F0EBE3] group-hover:scale-105"
+              isAleppo ? "bg-[#785600] rotate-3 scale-110" : "bg-[#F0EBE3] group-hover:scale-105"
             )}>
-              <Truck size={32} className={deliveryType === 'delivery' ? "text-white" : "text-[#9E9890]"} />
+              <Truck size={32} className={isAleppo ? "text-white" : "text-[#9E9890]"} />
             </div>
             <div className="text-center">
-              <p className={cn("font-arabic font-bold text-xl mb-1", deliveryType === 'delivery' ? "text-[#785600]" : "text-[#1A1A1A]")}>
-                توصيل
+              <p className={cn("font-arabic font-bold text-xl mb-1", isAleppo ? "text-[#785600]" : "text-[#1A1A1A]")}>
+                {pickupOn ? 'داخل حلب' : 'توصيل'}
               </p>
               <p className="font-arabic text-sm text-[#6B6560] leading-relaxed">
-                لباب المنزل<br/>مدينة حلب حصراً
+                {pickupOn ? <>توصيل لباب المنزل<br/>أو استلام من المكتب</> : <>لباب المنزل<br/>مدينة حلب حصراً</>}
               </p>
             </div>
-            {deliveryType === 'delivery' && (
+            {isAleppo && (
               <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[#785600] flex items-center justify-center shadow-lg">
                 <CheckCircle2 size={14} className="text-white" />
               </div>
             )}
           </label>
+
+          {isAleppo && pickupOn && (
+            /* ── داخل حلب: home delivery or office pickup. Sits right under the Aleppo
+               card on phones, and spans the row below both cards on wider screens ── */
+            <div className="sm:col-span-2 sm:order-last -mt-2 sm:mt-0 bg-[#FFFCF7] border border-[#785600]/15 rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="font-arabic font-bold text-base text-[#1A1A1A] mb-3 text-center">كيف تحب تستلم طلبك في حلب؟</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup">
+                {([
+                  { type: 'delivery', icon: Truck, title: 'توصيل لباب المنزل', desc: 'مندوب كزورا يوصل الطلب لعنوانك' },
+                  { type: 'pickup',   icon: Store, title: 'استلام من المكتب',   desc: pickupPlace },
+                ] as const).map(({ type, icon: Icon, title, desc }) => {
+                  const active = deliveryType === type
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => chooseDeliveryType(type)}
+                      className={cn(
+                        'flex items-center gap-3 text-right border-2 rounded-xl px-4 py-3 transition-all',
+                        active ? 'bg-[#FFF9F0] border-[#785600]' : 'bg-[#FAF8F5] border-[#E8E3DB] hover:border-[#D3C4AF]'
+                      )}
+                    >
+                      <span className={cn(
+                        'w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center',
+                        active ? 'border-[#785600]' : 'border-[#C9BFB2]'
+                      )}>
+                        {active && <span className="w-2.5 h-2.5 rounded-full bg-[#785600]" />}
+                      </span>
+                      <Icon size={20} className={active ? 'text-[#785600] shrink-0' : 'text-[#9E9890] shrink-0'} />
+                      <span className="flex-1 min-w-0">
+                        <span className={cn('block font-arabic font-bold text-sm', active ? 'text-[#785600]' : 'text-[#1A1A1A]')}>{title}</span>
+                        <span className="block font-arabic text-xs text-[#6B6560] mt-0.5">{desc}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* شحن */}
           <label className={cn(
