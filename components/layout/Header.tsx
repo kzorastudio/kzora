@@ -108,7 +108,7 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="عن ماذا تبحث اليوم؟"
+              placeholder="ابحث عن منتج أو قسم..."
               dir="rtl"
               className="flex-1 bg-transparent outline-none text-lg font-arabic text-[#1A1A1A] placeholder:text-[#C0B8B0]"
             />
@@ -124,9 +124,12 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           <div className="mt-8 space-y-6 max-h-[calc(100vh-12rem)] overflow-y-auto pb-6" dir="rtl">
             {/* Size shortcut — category first, then the sizes in stock there */}
             <div className="space-y-3 bg-white/[0.06] border border-white/15 rounded-2xl p-4">
-              <p className="text-sm font-arabic font-bold text-white px-1">ابحث بمقاسك 👟</p>
+              <div className="px-1 space-y-0.5">
+                <p className="text-sm font-arabic font-bold text-white">تسوّق حسب المقاس</p>
+                <p className="text-xs font-arabic text-white/60">اختر القسم، ثم المقاس المناسب لك</p>
+              </div>
               <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none]">
-                {[{ name_ar: 'كل الأقسام', slug: '' }, ...popularCats].map((cat) => (
+                {[{ name_ar: 'جميع الأقسام', slug: '' }, ...popularCats].map((cat) => (
                   <button
                     key={cat.slug || 'all'}
                     type="button"
@@ -159,14 +162,14 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                     </button>
                   ))
                 ) : (
-                  <p className="text-xs font-arabic text-white/60 px-1 self-center">لا توجد مقاسات متوفرة حالياً في هذا القسم</p>
+                  <p className="text-xs font-arabic text-white/60 px-1 self-center">نعتذر، لا تتوفر مقاسات في هذا القسم حالياً</p>
                 )}
               </div>
             </div>
 
             {/* Suggested Categories */}
             <div className="space-y-3">
-              <p className="text-xs font-arabic font-bold text-white/60 tracking-widest uppercase px-1">الأقسام الأكثر بحثاً</p>
+              <p className="text-xs font-arabic font-bold text-white/60 tracking-widest uppercase px-1">أقسام قد تهمّك</p>
               <div className="flex flex-wrap gap-2.5">
                 {popularCats.slice(0, 6).map((cat) => (
                   <button
@@ -183,11 +186,11 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
             {/* Quick Filters */}
             <div className="space-y-3">
-              <p className="text-xs font-arabic font-bold text-white/60 tracking-widest uppercase px-1">اقتراحات ذكية</p>
+              <p className="text-xs font-arabic font-bold text-white/60 tracking-widest uppercase px-1">مختارات لك</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: 'العروض الخاصة', href: '/products?tag=on_sale' },
-                  { label: 'وصلنا حديثاً', href: '/products?tag=new' },
+                  { label: 'وصل حديثاً', href: '/products?tag=new' },
                   { label: 'الأكثر مبيعاً', href: '/products?tag=best_seller' },
                 ].map((item) => (
                   <button

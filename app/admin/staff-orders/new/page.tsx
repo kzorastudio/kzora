@@ -9,6 +9,7 @@ import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
 import { formatCurrency, cn, resolveShippingName, ORDER_STATUS_LABELS, formatDate, toArabicNumerals } from '@/lib/utils'
 import type { Currency, HomepageSettings } from '@/types'
+import { PICKUP_SLUG, pickupLocation } from '@/lib/pickup'
 
 interface PickerProduct {
   id: string
@@ -122,7 +123,8 @@ export default function NewStaffOrderPage() {
   const [address, setAddress] = useState('')
   const [centerName, setCenterName] = useState('')
   // Default delivery method = shipping. The company is derived from the chosen center.
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping'>('shipping')
+  // 'pickup' = Aleppo office pickup; sent to the API as delivery + shipping_company 'pickup'
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'shipping' | 'pickup'>('shipping')
   const [shippingCompany, setShippingCompany] = useState('')
   const [shippingFee, setShippingFee] = useState('')
   // Whether the admin manually edited the shipping fee. While false, the fee is
@@ -171,7 +173,7 @@ export default function NewStaffOrderPage() {
     setGovernorate(o.customer_governorate || '')
     setAddress(o.customer_address || '')
     setCenterName(o.center_name || '')
-    setDeliveryType(o.delivery_type || 'shipping')
+    setDeliveryType(o.shipping_company === PICKUP_SLUG ? 'pickup' : (o.delivery_type || 'shipping'))
     setShippingCompany(o.shipping_company || '')
     setPaymentMethod(o.payment_method || 'cod')
     setNotes(o.notes || '')
@@ -392,6 +394,7 @@ export default function NewStaffOrderPage() {
 
   // ── Totals ────────────────────────────────────────────────────────────────
   const isUSD = currency === 'USD'
+  const pickupPlace = pickupLocation(settings)
   const subtotal = cart.reduce(
     (s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0
   )
@@ -441,6 +444,9 @@ export default function NewStaffOrderPage() {
   //  • 4+ pieces (or 3 pieces with no fee set): "determined with the seller"
   const autoShipping: { fee: number; determined: boolean } = (() => {
     if (!settings) return { fee: 0, determined: false }
+    if (deliveryType === 'pickup') {
+      return { fee: (isUSD ? settings.pickup_fee_usd : settings.pickup_fee_syp) || 0, determined: false }
+    }
     if (deliveryType === 'delivery') {
       return { fee: (isUSD ? settings.delivery_fee_usd : settings.delivery_fee_syp) || 0, determined: false }
     }
@@ -520,11 +526,11 @@ export default function NewStaffOrderPage() {
           full_name: fullName.trim(),
           phone: phone.trim(),
           governorate,
-          address: address.trim() || '',
+          address: deliveryType === 'pickup' ? `استلام من ${pickupPlace}` : (address.trim() || ''),
           center_name: centerName.trim() || null,
         },
-        delivery_type: deliveryType,
-        shipping_company: deliveryType === 'shipping' ? shippingCompany : null,
+        delivery_type: deliveryType === 'pickup' ? 'delivery' : deliveryType,
+        shipping_company: deliveryType === 'shipping' ? shippingCompany : deliveryType === 'pickup' ? PICKUP_SLUG : null,
         shipping_fee_syp: isUSD ? 0 : feeNum,
         shipping_fee_usd: isUSD ? feeNum : 0,
         shipping_fee_determined: feeDetermined,
@@ -554,6 +560,8 @@ export default function NewStaffOrderPage() {
       let shippingCompanyName =
         deliveryType === 'delivery'
           ? 'توصيل عادي (حلب)'
+          : deliveryType === 'pickup'
+          ? `استلام من ${pickupPlace}`
           : shippingMethod?.name || resolveShippingName(shippingSlug, null, '')
 
       // Strip emojis and parenthesized English text from the shipping name
@@ -563,7 +571,7 @@ export default function NewStaffOrderPage() {
       }
 
       const pMethod = paymentMethod === 'sham_cash' ? 'شام كاش' : 'الدفع عند الاستلام'
-      const isAleppoOrder = deliveryType === 'delivery'
+      const isAleppoOrder = deliveryType === 'delivery' || deliveryType === 'pickup'
 
       // Build the order-details message (same NEW format as the "نسخ الطلب" button).
       const msgLines: (string | null)[] = [
@@ -573,7 +581,7 @@ export default function NewStaffOrderPage() {
         `المحافظة: ${governorate}`,
         centerName.trim() ? `المنطقة/المركز: ${centerName.trim()}` : null,
         // Only Aleppo carries a real street address; other governorates use the center.
-        isAleppoOrder && address.trim() ? `العنوان: ${address.trim()}` : null,
+        deliveryType === 'delivery' && address.trim() ? `العنوان: ${address.trim()}` : null,
         `الشحن: ${shippingCompanyName || 'غير محدد'}`,
         `طريقة الدفع: ${pMethod}`,
       ]
@@ -936,14 +944,25 @@ export default function NewStaffOrderPage() {
             {/* Delivery type */}
             <select
               value={deliveryType}
-              onChange={(e) => { setDeliveryType(e.target.value as any); setAddress(''); setCenterName(''); setShippingCompany(''); setShippingFeeTouched(false) }}
+              onChange={(e) => {
+                const t = e.target.value as 'delivery' | 'shipping' | 'pickup'
+                setDeliveryType(t)
+                // Office pickup is Aleppo-only
+                if (t === 'pickup') setGovernorate('حلب')
+                setAddress(''); setCenterName(''); setShippingCompany(''); setShippingFeeTouched(false)
+              }}
               className={FIELD}
             >
               <option value="shipping">شحن للمحافظات</option>
               <option value="delivery">توصيل عادي (حلب)</option>
+              <option value="pickup">استلام من المكتب (حلب)</option>
             </select>
 
-            {deliveryType === 'delivery' ? (
+            {deliveryType === 'pickup' ? (
+              <div className="rounded-xl border border-dashed border-outline-variant/50 px-3 py-2.5 text-sm font-arabic text-secondary text-center">
+                يستلم الزبون طلبه من <strong className="text-on-surface">{pickupPlace}</strong>
+              </div>
+            ) : deliveryType === 'delivery' ? (
               /* Aleppo delivery → free-text address */
               <input
                 value={address}

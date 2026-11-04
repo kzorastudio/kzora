@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { PICKUP_SLUG } from '@/lib/pickup'
 import { authorizeApi, authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -297,7 +298,10 @@ export async function POST(request: NextRequest) {
         customer_address:        customer.address || '',
         center_name:             customer.center_name || null,
         delivery_type:           delivery_type || 'delivery',
-        shipping_company:        delivery_type === 'delivery' ? 'delivery' : (shipping_company || ''),
+        // Aleppo office pickup = delivery + shipping_company 'pickup' (see lib/pickup.ts)
+        shipping_company:        delivery_type === 'delivery'
+          ? (shipping_company === PICKUP_SLUG ? PICKUP_SLUG : 'delivery')
+          : (shipping_company || ''),
         shipping_fee_syp:        shippingFeeSyp,
         shipping_fee_usd:        shippingFeeUsd,
         shipping_fee_determined: shippingFeeDetermined,
