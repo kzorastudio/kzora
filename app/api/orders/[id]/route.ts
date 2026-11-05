@@ -85,7 +85,7 @@ export async function PUT(
     // ─── Fetch current order to check status change ───────────────────────
     const { data: currentOrder, error: fetchErr } = await supabaseAdmin
       .from('orders')
-      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id, is_reservation, updated_at')
+      .select('status, loyalty_discount_syp, customer_phone, created_by_admin_id, is_reservation, updated_at, customer_full_name, customer_governorate, customer_address, center_name, shipping_company, delivery_type, notes')
       .eq('id', id)
       .single()
 
@@ -98,21 +98,26 @@ export async function PUT(
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
 
-    // ─── 5-Minute Concurrency / Lock Window ───────────────────────────────
-    // If client provided client_updated_at and the order was modified in DB
-    // since the client loaded it, check how long ago it was modified.
-    // If < 5 minutes (300s), block to prevent overwrite collisions ("منشان ما يخربط").
-    // If >= 5 minutes, the lock window has elapsed, allow the update.
-    const clientUpdatedAt = body.client_updated_at ? String(body.client_updated_at) : null
-    const LOCK_WINDOW_MS = 5 * 60 * 1000
-    // Compared as instants, not strings: the same moment can be spelled differently
-    // ("+00:00" vs "Z", trailing zeros) and must not count as someone else's edit.
-    if (clientUpdatedAt && (currentOrder as any).updated_at &&
-        new Date((currentOrder as any).updated_at).getTime() !== new Date(clientUpdatedAt).getTime()) {
-      const diffMs = Date.now() - new Date((currentOrder as any).updated_at).getTime()
-      if (diffMs < LOCK_WINDOW_MS) {
+    // ─── Conflict check (field level) ─────────────────────────────────────
+    // The details form sends the values it loaded (client_original). We refuse
+    // only when one of THOSE fields was changed by someone else meanwhile.
+    // The old check compared updated_at, which a DB trigger bumps on every
+    // update (status, printing, payment, the user's own previous save), so it
+    // kept locking the order for five minutes for no real reason.
+    // Old open tabs still send client_updated_at — it is deliberately ignored.
+    const original = body.client_original
+    if (original && typeof original === 'object') {
+      const CHECKED = ['customer_full_name', 'customer_phone', 'customer_governorate', 'customer_address',
+        'center_name', 'shipping_company', 'delivery_type', 'notes'] as const
+      const norm = (v: unknown) => (v === null || v === undefined ? '' : String(v).trim())
+      const changedElsewhere = CHECKED.filter((k) =>
+        k in original && norm((original as any)[k]) !== norm((currentOrder as any)[k]) &&
+        // Same value as what this save writes anyway → no real conflict.
+        norm(body[k]) !== norm((currentOrder as any)[k])
+      )
+      if (changedElsewhere.length > 0) {
         return NextResponse.json(
-          { error: 'تم تعديل هذا الطلب للتو من مكان آخر (قفل الأمان 5 دقائق لمنع التضارب). حدّث الصفحة وحاول مرة أخرى.' },
+          { error: 'بيانات هذا الطلب تعدّلت من جهاز آخر. حمّلنا آخر نسخة — راجعها وعدّل من جديد.', code: 'details_changed' },
           { status: 409 }
         )
       }

@@ -262,7 +262,9 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currency,
-          client_updated_at: order.updated_at,
+          // The rows this editor was built from - the server refuses only if
+          // someone else changed the products since (not on status/print/etc).
+          client_item_ids: order.items.map((i) => i.id),
           // Only the edited currency's discount is sent; the other one keeps its
           // stored value server-side (no exchange rate is applied anywhere).
           ...(isUSD ? { discount_usd: discount } : { discount_syp: discount }),

@@ -36,7 +36,9 @@ export default function ShippingFeeEditor({ orderId, updatedAt, currency, feeSyp
       const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shipping_fee_syp: nextSyp, shipping_fee_usd: nextUsd, client_updated_at: updatedAt }),
+        // No conflict check: the server moves the total by the fee difference from
+        // what is stored now, so a concurrent edit can't corrupt the total.
+        body: JSON.stringify({ shipping_fee_syp: nextSyp, shipping_fee_usd: nextUsd }),
       })
       if (res.status === 409) {
         // Changed elsewhere since this page loaded — refresh so the next save goes through.

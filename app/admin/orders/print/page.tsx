@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { Printer, CheckCircle2, XCircle, Loader2, Tag, FileText } from 'lucide-react'
+import { Printer, CheckCircle2, XCircle, Loader2, Tag, FileText, RefreshCw } from 'lucide-react'
 import type { OrderFull } from '@/types'
 import { LabelPage, ReceiptBody, isElectroOrder, LABEL_W_MM, LABEL_H_MM, LABEL_PAD_MM } from './ReceiptLabel'
 
@@ -21,6 +21,44 @@ export default function PrintPreparationPage() {
   const [ids, setIds] = useState<string[]>([])
   const [printMode, setPrintMode] = useState<PrintMode>('label')
 
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [printing, setPrinting] = useState(false)
+  // Orders that were picked but can't be printed any more (deleted after a merge, or cancelled).
+  const [skipped, setSkipped] = useState<{ missing: number; cancelled: string[] }>({ missing: 0, cancelled: [] })
+  const idsRef = useRef<string[]>([])
+
+  // Always print what is in the database *now*. This tab can sit open for a long
+  // time (phones keep it in the background), and an order edited or merged in the
+  // meantime used to come out of the PDF in its old form.
+  const loadOrders = useCallback(async (silent = false): Promise<boolean> => {
+    const wanted = idsRef.current
+    if (wanted.length === 0) return false
+    if (silent) setRefreshing(true)
+    try {
+      const res = await fetch(`/api/admin/orders/print-data?t=${Date.now()}`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: wanted }),
+      })
+      if (!res.ok) throw new Error()
+      const d = await res.json()
+      const all: OrderFull[] = d.orders ?? []
+      const cancelled = all.filter((o) => o.status === 'cancelled')
+      setOrders(all.filter((o) => o.status !== 'cancelled'))
+      setSkipped({ missing: Math.max(0, wanted.length - all.length), cancelled: cancelled.map((o) => o.order_number) })
+      setLoadedAt(new Date())
+      return true
+    } catch {
+      toast.error('تعذر تحميل بيانات الطباعة')
+      return false
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
   useEffect(() => {
     let stored: string[] = []
     try {
@@ -34,18 +72,33 @@ export default function PrintPreparationPage() {
       setLoading(false)
       return
     }
+    idsRef.current = stored
     setIds(stored)
+    loadOrders()
+  }, [loadOrders])
 
-    fetch('/api/admin/orders/print-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: stored }),
-    })
-      .then((r) => r.json())
-      .then((d) => setOrders(d.orders ?? []))
-      .catch(() => toast.error('تعذر تحميل بيانات الطباعة'))
-      .finally(() => setLoading(false))
-  }, [])
+  // Coming back to this tab (or the browser restoring it from memory) reloads the data.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadOrders(true) }
+    const onShow = (e: PageTransitionEvent) => { if (e.persisted) loadOrders(true) }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onShow)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onShow)
+    }
+  }, [loadOrders])
+
+  async function handlePrint() {
+    if (printing) return
+    setPrinting(true)
+    const ok = await loadOrders(true)
+    if (!ok) { setPrinting(false); return }
+    // Let React paint the fresh labels (and their auto-fit scale) before the dialog opens.
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150))))
+    setPrinting(false)
+    window.print()
+  }
 
   // Chrome prints the document title in the header when headers/footers are on.
   // Keep it short and meaningful instead of "كزورا — لوحة التحكم".
@@ -59,13 +112,14 @@ export default function PrintPreparationPage() {
   }, [orders])
 
   async function handleConfirm() {
-    if (ids.length === 0) return
+    if (ids.length === 0 || orders.length === 0) return
     setConfirming(true)
     try {
       const res = await fetch('/api/admin/orders/bulk-print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids }),
+        // Only what was actually on the labels — not deleted or cancelled picks.
+        body: JSON.stringify({ ids: orders.map((o) => o.id) }),
       })
       if (!res.ok) throw new Error()
       const data = await res.json().catch(() => ({}))
@@ -127,10 +181,19 @@ export default function PrintPreparationPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-arabic font-bold hover:bg-blue-700 shadow-sm transition"
+            onClick={() => loadOrders(true)}
+            disabled={refreshing || printing}
+            title="جلب آخر نسخة من الطلبات"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 border border-gray-300 text-gray-800 text-sm font-arabic font-bold hover:bg-gray-200 transition disabled:opacity-60"
           >
-            <Printer size={18} /> بدء الطباعة الأن
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} /> تحديث
+          </button>
+          <button
+            onClick={handlePrint}
+            disabled={printing || orders.length === 0}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-arabic font-bold hover:bg-blue-700 shadow-sm transition disabled:opacity-60"
+          >
+            {printing ? <Loader2 className="animate-spin" size={18} /> : <Printer size={18} />} بدء الطباعة الأن
           </button>
           <button
             onClick={handleConfirm}
@@ -153,7 +216,21 @@ export default function PrintPreparationPage() {
       </div>
 
       {/* Screen helper note */}
-      <div className="no-print max-w-4xl mx-auto px-4 pt-3 pb-1">
+      <div className="no-print max-w-4xl mx-auto px-4 pt-3 pb-1 flex flex-col gap-2">
+        {loadedAt && (
+          <div className="p-2.5 bg-green-50 border border-green-300 rounded-xl text-xs font-arabic text-green-900">
+            ✅ البيانات محدّثة من النظام الساعة{' '}
+            <b dir="ltr">{loadedAt.toLocaleTimeString('en-GB', { timeZone: 'Asia/Damascus' })}</b>
+            {' '}— وبتتحدث تلقائياً قبل كل طباعة أو حفظ PDF.
+          </div>
+        )}
+        {(skipped.missing > 0 || skipped.cancelled.length > 0) && (
+          <div className="p-2.5 bg-red-50 border border-red-300 rounded-xl text-xs font-arabic text-red-900 leading-relaxed">
+            ⚠️ تم استبعاد طلبات من الطباعة:
+            {skipped.missing > 0 && <> {skipped.missing} طلب محذوف (مثلاً بعد دمجه بطلب آخر).</>}
+            {skipped.cancelled.length > 0 && <> طلبات ملغاة: <b dir="ltr">{skipped.cancelled.join('، ')}</b>.</>}
+          </div>
+        )}
         <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-arabic text-amber-900 leading-relaxed">
           💡 <b>إعدادات نافذة الطباعة (Xprinter XP-480B — لصاقة 10×15):</b>
           <ul className="list-disc list-inside mt-1 space-y-0.5">

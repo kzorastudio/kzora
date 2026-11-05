@@ -64,20 +64,27 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا الطلب' }, { status: 403 })
     }
 
-    // ── 5-Minute Concurrency / Lock Window ───────────────────────────────────────
-    // If another session modified this order AFTER the client loaded it, check how
-    // long ago that modification happened. If it was within the last 5 minutes (300s),
-    // block to prevent race conditions ("منشان ما يخربط"). After 5 minutes, the lock
-    // expires and the edit is allowed through.
-    const clientUpdatedAt = body?.client_updated_at ? String(body.client_updated_at) : null
-    const LOCK_WINDOW_MS = 5 * 60 * 1000
-    // Compared as instants, not strings ("+00:00" vs "Z" is the same moment).
-    if (clientUpdatedAt && order.updated_at &&
-        new Date(order.updated_at).getTime() !== new Date(clientUpdatedAt).getTime()) {
-      const diffMs = Date.now() - new Date(order.updated_at).getTime()
-      if (diffMs < LOCK_WINDOW_MS) {
+    // ── Conflict check: did someone else change the PRODUCTS since this page loaded? ──
+    // The page sends the ids of the item rows it was showing. Saving replaces all
+    // rows (new ids), so a mismatch means another device edited the products and
+    // this save would wipe that edit. Anything else that touches the order —
+    // status, printing, payment, delivery fee — bumps updated_at via a DB trigger
+    // but is NOT a conflict here. Comparing updated_at used to lock the order for
+    // five minutes after any of those, even the user's own previous save.
+    const clientItemIds: string[] | null = Array.isArray(body?.client_item_ids)
+      ? body.client_item_ids.filter((x: unknown) => typeof x === 'string')
+      : null
+    if (clientItemIds) {
+      const { data: currentRows, error: curErr } = await supabaseAdmin
+        .from('order_items')
+        .select('id')
+        .eq('order_id', id)
+      if (curErr) return NextResponse.json({ error: 'تعذر جلب عناصر الطلب' }, { status: 500 })
+      const current = new Set((currentRows || []).map((r: { id: string }) => r.id))
+      const same = current.size === new Set(clientItemIds).size && clientItemIds.every((x) => current.has(x))
+      if (!same) {
         return NextResponse.json(
-          { error: 'تم تعديل هذا الطلب للتو من مكان آخر (قفل الأمان 5 دقائق لمنع التضارب). حدّث الصفحة وحاول مرة أخرى.' },
+          { error: 'منتجات هذا الطلب تعدّلت من جهاز آخر. حمّلنا آخر نسخة — راجعها وعدّل من جديد.', code: 'items_changed' },
           { status: 409 }
         )
       }
@@ -108,8 +115,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'تعذر تعديل الطلب' }, { status: 500 })
     }
     if (!claimed || claimed.length === 0) {
+      // Another save on this same order landed in the same instant (double tap,
+      // two devices). Nothing was written by this request.
       return NextResponse.json(
-        { error: 'تم تعديل هذا الطلب للتو من مكان آخر (قفل الأمان 5 دقائق لمنع التضارب). حدّث الصفحة وحاول مرة أخرى.' },
+        { error: 'في حفظ ثاني على نفس الطلب بنفس اللحظة. حمّلنا آخر نسخة — راجعها وجرّب مرة ثانية.', code: 'busy' },
         { status: 409 }
       )
     }

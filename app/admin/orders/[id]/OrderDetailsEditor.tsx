@@ -153,7 +153,18 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          client_updated_at: order.updated_at,
+          // The values this form was loaded with — the server refuses only if one
+          // of these fields was changed by someone else since.
+          client_original: {
+            customer_full_name: order.customer_full_name,
+            customer_phone: order.customer_phone,
+            customer_governorate: order.customer_governorate,
+            customer_address: order.customer_address,
+            center_name: (order as any).center_name || null,
+            shipping_company: order.shipping_company,
+            delivery_type: (order as any).delivery_type || 'shipping',
+            notes: order.notes || '',
+          },
         }),
       })
 
@@ -161,7 +172,8 @@ export default function OrderDetailsEditor({ order }: OrderDetailsEditorProps) {
         // Changed elsewhere since this page loaded — pull the latest version in
         // (the open form reloads from it), so the next save goes through.
         router.refresh()
-        throw new Error('تم تعديل الطلب من مكان آخر للتو. حمّلنا آخر نسخة منه — راجع البيانات وعدّل من جديد.')
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'بيانات الطلب تعدّلت من جهاز آخر. حمّلنا آخر نسخة — راجعها وعدّل من جديد.')
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
