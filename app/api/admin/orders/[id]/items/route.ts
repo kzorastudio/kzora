@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
 import { syncStockStatus } from '@/lib/stock'
-import { supabaseAdmin } from '@/lib/supabase'
+// Every read here must be live: Next caches supabase-js GETs even with
+// force-dynamic, and a cached order row carries an old updated_at, which made
+// the claim below fail with "busy" on every save after the first one (and a
+// cached item/variant read would reconcile stock against stale numbers).
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
 const norm = (s: string | null) => (s || '').trim()
