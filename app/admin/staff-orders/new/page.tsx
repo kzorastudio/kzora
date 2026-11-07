@@ -104,8 +104,9 @@ export default function NewStaffOrderPage() {
   const [results, setResults] = useState<PickerProduct[]>([])
   const [searching, setSearching] = useState(false)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [recentOrders, setRecentOrders] = useState<any[]>([])
-  const [importingRecentOrder, setImportingRecentOrder] = useState<string | null>(null)
+  // Quick-add: the last few distinct products used in recent staff orders.
+  const [recentProducts, setRecentProducts] = useState<{ product_id: string; name: string; image: string | null }[]>([])
+  const [addingRecentId, setAddingRecentId] = useState<string | null>(null)
 
   // Cart
   const [cart, setCart] = useState<CartLine[]>([])
@@ -159,92 +160,42 @@ export default function NewStaffOrderPage() {
       .catch(() => {})
   }, [])
 
-  // Load last 3 orders once for suggestions
+  // Load the last 5 distinct products used in recent staff orders (newest first)
   useEffect(() => {
-    fetch('/api/admin/staff-orders?limit=3')
+    fetch('/api/admin/staff-orders?limit=30', { cache: 'no-store' })
       .then((r) => r.json())
-      .then((d) => setRecentOrders(d.orders || []))
+      .then((d) => {
+        const seen = new Set<string>()
+        const list: { product_id: string; name: string; image: string | null }[] = []
+        for (const o of d.orders || []) {
+          for (const it of o.items || []) {
+            if (!it.product_id || seen.has(it.product_id)) continue
+            seen.add(it.product_id)
+            list.push({ product_id: it.product_id, name: it.product_name, image: it.product_image || null })
+            if (list.length === 5) break
+          }
+          if (list.length === 5) break
+        }
+        setRecentProducts(list)
+      })
       .catch(() => {})
   }, [])
 
-  const importCustomer = (o: any) => {
-    setFullName(o.customer_full_name || '')
-    setPhone(o.customer_phone || '')
-    setGovernorate(o.customer_governorate || '')
-    setAddress(o.customer_address || '')
-    setCenterName(o.center_name || '')
-    setDeliveryType(o.shipping_company === PICKUP_SLUG ? 'pickup' : (o.delivery_type || 'shipping'))
-    setShippingCompany(o.shipping_company || '')
-    setPaymentMethod(o.payment_method || 'cod')
-    setNotes(o.notes || '')
-    // Reset pricing/currency to DB originals in the order's currency
-    setShippingFeeTouched(false)
-    setDiscountTouched(false)
-    setCurrency(o.currency_used || 'SYP')
-    toast.success(`تم استيراد بيانات العميل للطلب ${o.order_number}`)
-  }
-
-  const importProducts = async (o: any) => {
-    setImportingRecentOrder(o.id)
-    const toastId = toast.loading(`جاري استيراد منتجات الطلب ${o.order_number}...`)
+  // Load the product through the same search the picker uses (live stock, drafts
+  // included) and add it exactly like a search result.
+  const addRecentProduct = async (productId: string, name: string) => {
+    setAddingRecentId(productId)
     try {
-      const res = await fetch(`/api/orders/${o.id}`)
-      if (!res.ok) throw new Error()
-      const data = await res.json()
-      const items = data.order?.items || []
-
-      const newCartLines: CartLine[] = []
-      for (const item of items) {
-        const pRes = await fetch(`/api/products/${item.product_id}`)
-        if (!pRes.ok) continue
-        const pData = await pRes.json()
-        const p = pData.product
-        if (!p) continue
-
-        const availColors = p.colors.filter((c: any) => c.is_available).map((c: any) => c.name_ar)
-        const availSizes = p.sizes.filter((s: any) => s.is_available).map((s: any) => s.size)
-        const variants = p.variants.map((v: any) => ({ color: v.color, size: v.size, quantity: v.quantity }))
-
-        newCartLines.push({
-          id: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          product_id: p.id,
-          name: p.name,
-          image: p.images.find((i: any) => i.is_main)?.url || p.images[0]?.url || null,
-          color: item.color,
-          size: item.size,
-          quantity: item.quantity,
-          unit_price_syp: item.unit_price_syp,
-          unit_price_usd: item.unit_price_usd,
-          orig_price_syp: p.discount_price_syp ?? p.price_syp,
-          orig_price_usd: p.discount_price_usd ?? p.price_usd,
-          max_stock: stockFor(variants, item.color, item.size),
-          availColors,
-          availSizes,
-          variants,
-          multi_discount_enabled: p.multi_discount_enabled,
-          multi_discount_2_items_syp: p.multi_discount_2_items_syp,
-          multi_discount_2_items_usd: p.multi_discount_2_items_usd,
-          multi_discount_3_plus_syp: p.multi_discount_3_plus_syp,
-          multi_discount_3_plus_usd: p.multi_discount_3_plus_usd,
-        })
-      }
-
-      if (newCartLines.length > 0) {
-        setCart((prev) => [...prev, ...newCartLines])
-        toast.success(`تم استيراد ${newCartLines.length} منتج بنجاح`, { id: toastId })
-      } else {
-        toast.error('لم يتم العثور على منتجات صالحة للاستيراد', { id: toastId })
-      }
+      const res = await fetch(`/api/products?search=${encodeURIComponent(name)}&limit=12&include_unpublished=1`, { cache: 'no-store' })
+      const data = res.ok ? await res.json() : null
+      const p = (data?.products as PickerProduct[] | undefined)?.find((x) => x.id === productId)
+      if (!p) throw new Error()
+      addProduct(p)
     } catch {
-      toast.error('فشل استيراد المنتجات', { id: toastId })
+      toast.error('تعذر إضافة المنتج — ابحث عنه بالاسم')
     } finally {
-      setImportingRecentOrder(null)
+      setAddingRecentId(null)
     }
-  }
-
-  const importEntireOrder = async (o: any) => {
-    importCustomer(o)
-    await importProducts(o)
   }
 
   // Load centers whenever the governorate changes (shipping only)
@@ -686,44 +637,27 @@ export default function NewStaffOrderPage() {
               />
             </div>
 
-            {isSearchFocused && searchInput.trim() === '' && recentOrders.length > 0 && (
+            {isSearchFocused && searchInput.trim() === '' && recentProducts.length > 0 && (
               <div className="border border-outline-variant/30 rounded-xl p-3 bg-surface-container-lowest shadow-md mb-3 animate-fade-in flex flex-col gap-2">
-                <span className="text-xs font-arabic font-bold text-[#bfa15f]">اقتراحات من آخر 3 طلبيات تمت:</span>
-                <div className="flex flex-col gap-2 divide-y divide-outline-variant/20">
-                  {recentOrders.map((o) => (
-                    <div key={o.id} className="pt-2 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-arabic">
-                      <div className="min-w-0">
-                        <span className="font-bold text-on-surface">طلب {o.order_number}</span>
-                        <span className="text-secondary mx-1.5">•</span>
-                        <span className="text-on-surface-variant font-medium">{o.customer_full_name}</span>
-                        <span className="text-secondary mx-1.5">•</span>
-                        <span className="text-secondary/70 text-[10px]">{new Date(o.created_at).toLocaleDateString('ar-SY', { timeZone: 'Asia/Damascus' })}</span>
+                <span className="text-xs font-arabic font-bold text-[#bfa15f]">آخر المنتجات المستخدمة:</span>
+                <div className="flex flex-col gap-1">
+                  {recentProducts.map((rp) => (
+                    <button
+                      key={rp.product_id}
+                      // Keep the input focused so the list doesn't close before the click lands
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => addRecentProduct(rp.product_id, rp.name)}
+                      disabled={addingRecentId !== null}
+                      className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-surface-container-low/60 transition text-right disabled:opacity-60"
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-surface-container overflow-hidden shrink-0 relative">
+                        {rp.image && <NextImage src={rp.image} alt={rp.name} fill className="object-cover" sizes="40px" />}
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0 self-end">
-                        <button
-                          onClick={() => importCustomer(o)}
-                          disabled={importingRecentOrder !== null}
-                          className="px-2 py-1 rounded bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all font-bold text-[10px]"
-                        >
-                          استيراد العميل
-                        </button>
-                        <button
-                          onClick={() => importProducts(o)}
-                          disabled={importingRecentOrder !== null}
-                          className="px-2 py-1 rounded bg-[#bfa15f]/15 text-[#785600] hover:bg-[#bfa15f]/25 transition-all font-bold text-[10px] flex items-center gap-1"
-                        >
-                          {importingRecentOrder === o.id ? <Loader2 size={10} className="animate-spin" /> : null}
-                          استيراد المنتجات
-                        </button>
-                        <button
-                          onClick={() => importEntireOrder(o)}
-                          disabled={importingRecentOrder !== null}
-                          className="px-2 py-1 rounded bg-primary text-white hover:bg-primary/95 transition-all font-bold text-[10px]"
-                        >
-                          استيراد بالكامل
-                        </button>
-                      </div>
-                    </div>
+                      <span className="flex-1 min-w-0 text-sm font-arabic font-semibold text-on-surface truncate">{rp.name}</span>
+                      <span className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                        {addingRecentId === rp.product_id ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>

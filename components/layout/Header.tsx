@@ -20,6 +20,7 @@ const FIXED_LINKS_START = [
 ]
 
 const FIXED_LINKS_END = [
+  { label: 'الأسئلة الشائعة', href: '/faq' },
   { label: 'من نحن', href: '/about' },
 ]
 

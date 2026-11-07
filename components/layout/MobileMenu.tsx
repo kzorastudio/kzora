@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { label: 'جميع المنتجات', href: '/products' },
   { label: 'الأقسام',    href: '/categories' },
   { label: 'تتبع الطلب',  href: '/track-order' },
+  { label: 'الأسئلة الشائعة', href: '/faq' },
   { label: 'من نحن',     href: '/about' },
 ]
 
