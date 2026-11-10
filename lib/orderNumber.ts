@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase'
+import { supabaseAdminLive as supabaseAdmin } from './supabase'
 
 /**
  * Generates a random 6-digit order number (e.g. KZ-582910, KZ-819304)

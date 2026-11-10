@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { RETURN_POLICY_TAG } from '@/lib/returnPolicy'
 

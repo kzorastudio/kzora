@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase'
+import { supabaseAdminLive as supabaseAdmin } from './supabase'
 
 /**
  * At or below this many pieces in total, a product is shown as "كمية محدودة".

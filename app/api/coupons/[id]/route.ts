@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 
 // ─── PUT /api/coupons/[id] ────────────────────────────────────────────────────
 // Admin only. Updates a coupon.

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
 import { syncStockStatus } from '@/lib/stock'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 
 const norm = (s: string | null) => (s || '').trim()

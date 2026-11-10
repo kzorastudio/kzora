@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { REVIEW_STATS_TAG } from '@/lib/reviewStats'
 

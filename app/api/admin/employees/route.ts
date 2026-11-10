@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 
 // ─── GET /api/admin/employees ────────────────────────────────────────────────────
 // Returns the list of admins (for the super_admin "filter by employee" dropdown).

@@ -12,11 +12,12 @@ import { revalidatePath } from 'next/cache'
 
 const norm = (s: string | null) => (s || '').trim()
 
-// Use the client-provided manual price only when it's an explicit positive number,
-// else the product's DB price. An emptied price input serialises to null, and
-// Number(null) is 0 — which used to pass a `>= 0` check and save a zero-price item.
+// Use the client-provided manual price when it's a real number >= 0, else the
+// product's DB price. 0 is a deliberate price (exchange / compensation orders,
+// same as the new-order page); a missing or emptied price arrives as null or
+// undefined (never coerced with Number()), so it can't turn into a 0 by accident.
 const priceOf = (v: unknown, fallback: number): number =>
-  typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback
+  typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback
 
 // Manual discount override. Unlike prices, 0 is a meaningful value here ("remove
 // the discount"), so only a missing/invalid field falls back to the stored one.

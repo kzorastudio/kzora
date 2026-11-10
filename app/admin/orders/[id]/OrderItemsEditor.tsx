@@ -24,6 +24,10 @@ interface EditLine {
   availSizes: number[]
   variants: { color: string; size: number; quantity: number }[]
   max_stock: number | null
+  // What the admin is typing in the price box (for `priceDraftCur`), so the box
+  // can be cleared while typing instead of snapping back to the original price.
+  priceDraft?: string
+  priceDraftCur?: 'SYP' | 'USD'
 }
 
 interface SearchProduct {
@@ -202,9 +206,9 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
     const parsed = parseFloat(raw)
     const orig = isUSD ? l.orig_price_usd : l.orig_price_syp
     const v = raw.trim() === '' || !Number.isFinite(parsed) || parsed < 0 ? orig : parsed
-    return { ...l, ...(isUSD ? { unit_price_usd: v } : { unit_price_syp: v }) }
+    return { ...l, priceDraft: raw, priceDraftCur: currency, ...(isUSD ? { unit_price_usd: v } : { unit_price_syp: v }) }
   }))
-  const resetPrice = (uid: string) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, ...(isUSD ? { unit_price_usd: l.orig_price_usd } : { unit_price_syp: l.orig_price_syp }) } : l)))
+  const resetPrice = (uid: string) => setLines((p) => p.map((l) => (l.uid === uid ? { ...l, priceDraft: undefined, priceDraftCur: undefined, ...(isUSD ? { unit_price_usd: l.orig_price_usd } : { unit_price_syp: l.orig_price_syp }) } : l)))
 
   const subtotal = lines.reduce((s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0)
 
@@ -386,8 +390,9 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
                         <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-outline-variant/20">
                           <span className="text-xs font-arabic text-secondary">سعر القطعة ({cur}):</span>
                           <input
-                            type="number" min={0}
-                            value={price}
+                            type="number" min={0} inputMode="decimal"
+                            value={l.priceDraft !== undefined && l.priceDraftCur === currency ? l.priceDraft : price}
+                            onBlur={() => setLines((p) => p.map((x) => (x.uid === l.uid ? { ...x, priceDraft: undefined, priceDraftCur: undefined } : x)))}
                             onChange={(e) => updatePrice(l.uid, e.target.value)}
                             className={cn('w-24 rounded-lg border px-2 py-1.5 text-sm text-center font-label transition',
                               changed ? 'border-primary/60 bg-primary/5 text-primary font-bold' : 'border-outline-variant/50')}

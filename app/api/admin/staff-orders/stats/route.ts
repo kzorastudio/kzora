@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
-import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import type { StaffOrderStat } from '@/types'
 
 // ─── GET /api/admin/staff-orders/stats ───────────────────────────────────────────

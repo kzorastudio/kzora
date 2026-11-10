@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 
 /** Printing a label means the parcel is on its way, so these statuses advance to
  *  'shipped'. 'delivered' and 'cancelled' are final states and are never touched. */

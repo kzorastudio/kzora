@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
 import { getAuthSession } from '@/lib/getSession'
 import { can } from '@/lib/permissions'
-import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import type { CreateProductPayload, ProductTag } from '@/types'
 
 import { revalidatePath } from 'next/cache'

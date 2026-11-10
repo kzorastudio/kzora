@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin, areCouponsEnabled } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin, areCouponsEnabled } from '@/lib/supabase'
 
 // ─── POST /api/coupons/validate ───────────────────────────────────────────────
 // Public. Validates a coupon code without applying it.

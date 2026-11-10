@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeApi } from '@/lib/adminGuard'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
 import { deleteImages, deleteImage } from '@/lib/cloudinary'
 
 // ─── GET /api/categories/[id] ─────────────────────────────────────────────────
