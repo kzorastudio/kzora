@@ -9,7 +9,7 @@ import AdminHeader from '@/components/admin/AdminHeader'
 import { GOVERNORATES } from '@/lib/constants'
 import { formatCurrency, cn, resolveShippingName, ORDER_STATUS_LABELS, formatDate, toArabicNumerals } from '@/lib/utils'
 import type { Currency, HomepageSettings } from '@/types'
-import { PICKUP_SLUG, pickupLocation } from '@/lib/pickup'
+import { PICKUP_SLUG, isPickupEnabled, pickupLocation } from '@/lib/pickup'
 
 interface PickerProduct {
   id: string
@@ -346,6 +346,7 @@ export default function NewStaffOrderPage() {
   // ── Totals ────────────────────────────────────────────────────────────────
   const isUSD = currency === 'USD'
   const pickupPlace = pickupLocation(settings)
+  const pickupOn = isPickupEnabled(settings)
   const subtotal = cart.reduce(
     (s, l) => s + (isUSD ? l.unit_price_usd : l.unit_price_syp) * l.quantity, 0
   )
@@ -889,7 +890,9 @@ export default function NewStaffOrderPage() {
             >
               <option value="shipping">شحن للمحافظات</option>
               <option value="delivery">توصيل عادي (حلب)</option>
-              <option value="pickup">استلام من المكتب (حلب)</option>
+              {(pickupOn || deliveryType === 'pickup') && (
+                <option value="pickup" disabled={!pickupOn}>استلام من المكتب (حلب){pickupOn ? '' : ' — متوقف'}</option>
+              )}
             </select>
 
             {deliveryType === 'pickup' ? (

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { PICKUP_SLUG } from '@/lib/pickup'
+import { PICKUP_SLUG, isPickupEnabled } from '@/lib/pickup'
 import { authorizeApi, authorizeAnyAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly } from '@/lib/permissions'
 import { supabaseAdminLive as supabaseAdmin } from '@/lib/supabase'
@@ -111,6 +111,17 @@ export async function POST(request: NextRequest) {
     }
     if (delivery_type === 'shipping' && !shipping_company) {
       return NextResponse.json({ error: 'يرجى اختيار شركة الشحن' }, { status: 400 })
+    }
+    // Office pickup can only be ordered while it's switched on in the admin settings
+    if (delivery_type === 'delivery' && shipping_company === PICKUP_SLUG) {
+      const { data: pickupSettings } = await supabaseAdmin
+        .from('homepage_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle()
+      if (!isPickupEnabled(pickupSettings as any)) {
+        return NextResponse.json({ error: 'خيار الاستلام من المكتب متوقف حالياً' }, { status: 400 })
+      }
     }
 
     // ── Fetch DB products ───────────────────────────────────────────────────────
