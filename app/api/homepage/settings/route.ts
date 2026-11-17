@@ -202,8 +202,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'No settings returned' }, { status: 500 })
     }
 
-    // Cleanup Cloudinary if promo banner changed
-    if (oldPublicId && oldPublicId !== body.promo_banner_public_id) {
+    // Cleanup Cloudinary only when this request actually replaced the image. Partial saves
+    // (e.g. the coupons toggle sends only coupons_enabled) leave the key undefined and must
+    // not delete an image the row still points to.
+    if (oldPublicId && body.promo_banner_public_id !== undefined && oldPublicId !== body.promo_banner_public_id) {
        try {
          await deleteImage(oldPublicId)
        } catch (err) {
@@ -213,7 +215,7 @@ export async function PUT(request: NextRequest) {
 
     // Cleanup Cloudinary if sham cash image changed
     const oldShamPublicId = existing?.sham_cash_public_id
-    if (oldShamPublicId && oldShamPublicId !== body.sham_cash_public_id) {
+    if (oldShamPublicId && body.sham_cash_public_id !== undefined && oldShamPublicId !== body.sham_cash_public_id) {
        try {
          await deleteImage(oldShamPublicId)
        } catch (err) {
