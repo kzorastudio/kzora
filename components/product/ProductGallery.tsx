@@ -285,26 +285,15 @@ function Lightbox({
 // Plays muted and looped; tap toggles pause. Respects the browser's data-saver.
 function VideoSlide({ video, priority }: { video: ProductGalleryVideo; priority: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
+  // The <video> is only mounted after the visitor taps play. Autoplaying on page
+  // load made every product-page visit download the whole clip from Cloudinary,
+  // which blew through the plan's monthly bandwidth. Until the tap, only the
+  // poster image (served and cached by next/image) is shown.
   const [mounted, setMounted] = useState(false)
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(true)
   const [muted, setMuted] = useState(true)
   const [progress, setProgress] = useState(0)
   const poster = productVideoPosterUrl(video.url)
-
-  useEffect(() => {
-    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
-    if (saveData) {
-      setPaused(true) // wait for a tap
-      return
-    }
-    if (document.readyState === 'complete') {
-      setMounted(true)
-      return
-    }
-    const onLoad = () => setMounted(true)
-    window.addEventListener('load', onLoad, { once: true })
-    return () => window.removeEventListener('load', onLoad)
-  }, [])
 
   useEffect(() => {
     const el = ref.current

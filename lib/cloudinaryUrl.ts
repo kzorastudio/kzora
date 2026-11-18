@@ -23,9 +23,10 @@ export function optimizeCloudinaryUrl(url: string | null | undefined): string {
 // ─── Product videos ──────────────────────────────────────────────────────────
 // Videos are uploaded untouched and delivered through these transformations,
 // which are also pre-generated at upload time (PRODUCT_VIDEO_EAGER) so the first
-// visitor never waits. 720px H.264 MP4 capped at 15s keeps each view ~1–1.5MB.
+// visitor never waits. 480px H.264 MP4 with a capped bitrate, cut at 15s, keeps
+// each view around 1–1.5MB (the earlier 720px/q_auto version was ~4.3MB).
 export const PRODUCT_VIDEO_MAX_SECONDS = 15
-const VIDEO_TRANSFORM  = `vc_h264,q_auto,w_720,c_limit,du_${PRODUCT_VIDEO_MAX_SECONDS}`
+const VIDEO_TRANSFORM  = `vc_h264,q_auto:eco,br_600k,w_480,c_limit,du_${PRODUCT_VIDEO_MAX_SECONDS}`
 const POSTER_TRANSFORM = 'so_0,w_720,c_limit,q_auto'
 export const PRODUCT_VIDEO_EAGER = `${VIDEO_TRANSFORM}/mp4|${POSTER_TRANSFORM}/jpg`
 
