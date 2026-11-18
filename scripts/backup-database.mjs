@@ -37,6 +37,8 @@ const tables = Object.keys(spec.definitions).sort()
 const db = {}
 const dbDir = path.join(target, 'database', day)
 fs.mkdirSync(dbDir, { recursive: true })
+// Column names/types of every table, as a schema reference for a rebuild
+fs.writeFileSync(path.join(dbDir, '_schema.openapi.json'), JSON.stringify(spec.definitions, null, 1))
 for (const t of tables) {
   const rows = []
   const order = 'id' in spec.definitions[t].properties ? '&order=id' : ''

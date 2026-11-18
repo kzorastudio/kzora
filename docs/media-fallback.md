@@ -37,6 +37,33 @@ Supabase Storage (bucket اسمه `media`، عام). إذا أوقفت Cloudinar
 - حدود Supabase المجانية: 1GB تخزين (النسخة الحالية ~60MB)، و5GB تحميل شهرياً. الصور
   تمر عبر Vercel وتُحفظ مؤقتاً فلا تستهلك كثيراً؛ الفيديو ~1.3MB لكل تشغيل.
 
+## النسخ الاحتياطي الكامل والاسترجاع
+
+المجلد `Desktop\Kzora-media-backup` على جهاز المطوّر فيه كل شيء:
+
+| | |
+|---|---|
+| `image/` `video/` | كل الملفات بجودتها الأصلية |
+| `database/<التاريخ>/` | كل جداول المتجر (منتجات، ألوان، صور كل لون وترتيبها، مقاسات، مخزون، تصنيفات، سلايدر، إعدادات، طلبات، نقاط…) + `_schema.openapi.json` |
+| `media-map.csv` | يفتح في Excel: كل صورة/فيديو ← المنتج، التصنيف، اللون، الترتيب، هل هي الرئيسية، وهل نسختها موجودة |
+
+**تحديث النسخة** (أسبوعياً أو بعد تغييرات كبيرة):
+```
+node scripts/download-media-originals.mjs
+node scripts/backup-database.mjs
+node scripts/backup-media-to-supabase.mjs
+```
+
+**الاسترجاع** — افحص أولاً (لا يكتب شيئاً)، ثم استرجع ما يلزم فقط:
+```
+node scripts/restore-database.mjs "<المجلد>/database/<التاريخ>"
+node scripts/restore-database.mjs "<المجلد>/database/<التاريخ>" --apply missing --tables=products,product_images
+```
+`missing` يعيد الصفوف المحذوفة فقط ولا يلمس الموجود؛ `all` يعيد أيضاً الصفوف المعدّلة إلى نسختها
+المحفوظة. لا يحذف أبداً ما أُضيف بعد النسخة.
+
+⚠ المجلد يحتوي بيانات الزبائن (أسماء، أرقام، عناوين) — احفظه في مكان خاص فقط.
+
 ## كيف يعمل تقنياً
 
 - `lib/cloudinaryUrl.ts`: عند `NEXT_PUBLIC_MEDIA_FALLBACK=supabase` تحوّل
