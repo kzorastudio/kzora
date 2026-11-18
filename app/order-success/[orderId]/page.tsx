@@ -12,6 +12,7 @@ import { formatPrice, normalizePhone, resolveShippingName } from '@/lib/utils'
 import type { OrderFull, OrderItem, HomepageSettings } from '@/types'
 import { CreditCard } from 'lucide-react'
 import TrackPurchase from '@/components/analytics/TrackPurchase'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 export const metadata: Metadata = {
   title: 'تم استلام طلبك — كزورا',
@@ -311,7 +312,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                         <div className="relative w-14 h-14 rounded-lg bg-surface-container overflow-hidden shrink-0">
                           {item.product_image ? (
                             <Image
-                              src={item.product_image}
+                              src={mediaUrl(item.product_image)}
                               alt={item.product_name}
                               fill
                               sizes="56px"
@@ -438,7 +439,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                        {settings?.sham_cash_image_url && (
                           <div className="bg-white p-3 rounded-2xl shadow-sm border border-outline-variant/10 inline-block mx-auto">
                              <img 
-                                src={settings.sham_cash_image_url} 
+                                src={mediaUrl(settings.sham_cash_image_url)} 
                                 alt="Sham Cash QR" 
                                 className="w-[180px] h-auto rounded-lg"
                              />

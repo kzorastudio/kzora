@@ -3,6 +3,39 @@
  * Safe to import from client components — does not pull in the cloudinary Node SDK.
  */
 
+// ─── Emergency media fallback ────────────────────────────────────────────────
+// Every Cloudinary asset is mirrored into the public Supabase Storage bucket
+// "media" by scripts/backup-media-to-supabase.mjs. Setting the env var
+// NEXT_PUBLIC_MEDIA_FALLBACK=supabase (and redeploying) makes the whole site read
+// media from that mirror instead of Cloudinary. See docs/media-fallback.md.
+export const MEDIA_FALLBACK = process.env.NEXT_PUBLIC_MEDIA_FALLBACK === 'supabase'
+const MIRROR_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media`
+
+/** `<public_id>.<ext>` of a Cloudinary delivery URL (transformations and version stripped). */
+function cloudinaryAssetPath(url: string): string | null {
+  const m = url.match(/res\.cloudinary\.com\/[^/]+\/(?:image|video)\/upload\/(.+)$/)
+  if (!m) return null
+  const parts = m[1].split(/[?#]/)[0].split('/')
+  const v = parts.findIndex(p => /^v\d+$/.test(p))
+  if (v !== -1) return parts.slice(v + 1).join('/')
+  // No version segment: drop leading transformation segments like "f_auto,q_auto"
+  while (parts.length > 1 && /^[a-z]{1,3}_[^/]*$/.test(parts[0])) parts.shift()
+  return parts.join('/')
+}
+
+/** Cloudinary image URL → its copy in the Supabase mirror (other URLs unchanged). */
+export function mirrorImageUrl(url: string): string {
+  if (!url.includes('res.cloudinary.com/') || !url.includes('/image/upload/')) return url
+  const path = cloudinaryAssetPath(url)
+  return path ? `${MIRROR_BASE}/image/${path}` : url
+}
+
+/** Use for any stored media URL rendered outside next/image (plain <img>, etc.). */
+export function mediaUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  return MEDIA_FALLBACK ? mirrorImageUrl(url) : url
+}
+
 /**
  * Inject `f_auto,q_auto` into an already-uploaded Cloudinary delivery URL.
  * Safe to call on any string: non-Cloudinary URLs are returned unchanged,
@@ -11,6 +44,7 @@
 export function optimizeCloudinaryUrl(url: string | null | undefined): string {
   if (!url) return ''
   if (!url.includes('res.cloudinary.com')) return url
+  if (MEDIA_FALLBACK) return mirrorImageUrl(url)
   const uploadMarker = '/upload/'
   const idx = url.indexOf(uploadMarker)
   if (idx === -1) return url
@@ -34,6 +68,11 @@ function withVideoTransform(url: string, transform: string, ext: string): string
   const uploadMarker = '/video/upload/'
   const idx = url.indexOf(uploadMarker)
   if (!url.includes('res.cloudinary.com') || idx === -1) return url
+  if (MEDIA_FALLBACK) {
+    // The mirror holds the delivery versions: media/video/<public_id>.mp4 / .jpg
+    const path = cloudinaryAssetPath(url)
+    if (path) return `${MIRROR_BASE}/video/${path.replace(/\.[a-z0-9]+$/i, '')}.${ext}`
+  }
   const after = url.slice(idx + uploadMarker.length).replace(/\.[a-z0-9]+$/i, '')
   return url.slice(0, idx + uploadMarker.length) + transform + '/' + after + '.' + ext
 }

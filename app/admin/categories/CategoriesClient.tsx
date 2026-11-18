@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import CategoryForm from '@/components/admin/CategoryForm'
 import { cn } from '@/lib/utils'
 import type { Category } from '@/types'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 type CategoryWithCount = Category & { products_count: number }
 
@@ -107,7 +108,7 @@ export default function CategoriesClient({ categories: initialCategories }: Cate
               <div className="relative h-36 bg-surface-container">
                 {cat.image_url ? (
                   <Image
-                    src={cat.image_url}
+                    src={mediaUrl(cat.image_url)}
                     alt={cat.name_ar}
                     fill
                     className="object-cover"

@@ -5,6 +5,7 @@ import { Category } from '@/types'
 import { Reorder, AnimatePresence } from 'framer-motion'
 import { GripVertical, Plus, Trash2, Save, FolderOpen } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 function CategoryImage({ src, alt, className }: { src: string | null | undefined; alt: string; className?: string }) {
   const [error, setError] = useState(false)
@@ -17,7 +18,7 @@ function CategoryImage({ src, alt, className }: { src: string | null | undefined
   }
   return (
     <img
-      src={src}
+      src={mediaUrl(src)}
       alt={alt}
       className={`object-cover w-full h-full ${className ?? ''}`}
       onError={() => setError(true)}

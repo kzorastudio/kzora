@@ -9,6 +9,7 @@ import { ProductGrid } from '@/components/product/ProductGrid'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { expandProductsBySize } from '@/lib/expandProductsBySize'
 import type { Category, ProductFull, ProductTag } from '@/types'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 const SORT_OPTIONS = [
   { value: 'newest',      label: 'الأحدث'         },
@@ -420,7 +421,7 @@ export default function ProductsClientPage({ initialCategories, initialParams, i
                 >
                   {cat.image_url && (
                     <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-white/20">
-                      <Image src={cat.image_url} alt={cat.name_ar} width={20} height={20} className="object-cover w-full h-full" />
+                      <Image src={mediaUrl(cat.image_url)} alt={cat.name_ar} width={20} height={20} className="object-cover w-full h-full" />
                     </div>
                   )}
                   {cat.name_ar}

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { Edit2, X, Check, Loader2, Search, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { OrderFull, Currency } from '@/types'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface EditLine {
   uid: string
@@ -340,7 +341,7 @@ export default function OrderItemsEditor({ order }: { order: OrderFull }) {
                       <button key={p.id} onClick={() => addProduct(p)} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-low/50 text-right transition">
                         <div className="h-9 w-9 rounded-lg bg-surface-container overflow-hidden shrink-0 relative">
                           {(p.images.find((i) => i.is_main)?.url || p.images[0]?.url) && (
-                            <NextImage src={p.images.find((i) => i.is_main)?.url || p.images[0].url} alt={p.name} fill className="object-cover" sizes="36px" />
+                            <NextImage src={mediaUrl(p.images.find((i) => i.is_main)?.url || p.images[0].url)} alt={p.name} fill className="object-cover" sizes="36px" />
                           )}
                         </div>
                         <span className="flex-1 text-xs font-arabic text-on-surface truncate">{p.name}</span>

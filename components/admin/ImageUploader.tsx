@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, X, ImageIcon, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 export interface UploadedImage {
   id: string
@@ -90,7 +91,7 @@ export default function ImageUploader({
                 img.is_main ? "border-[#785600] ring-2 ring-[#785600]/20" : "border-outline-variant/30"
               )}>
                 <img
-                  src={img.url}
+                  src={mediaUrl(img.url)}
                   alt=""
                   className="w-full h-full object-cover"
                 />

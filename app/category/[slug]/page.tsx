@@ -14,6 +14,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer'
 import { ScrollHint } from '@/components/ui/ScrollHint'
 import CategoryProductsClient from './CategoryProductsClient'
 import type { Category, ProductFull } from '@/types'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -172,7 +173,7 @@ export default async function CategoryPage({ params }: PageProps) {
         >
           {category.image_url && mobileHero ? (
             <ArtDirectedImage
-              src={category.image_url}
+              src={mediaUrl(category.image_url)}
               mobileSrc={mobileHero}
               media="(max-width: 639px)"
               alt={category.name_ar}
@@ -182,7 +183,7 @@ export default async function CategoryPage({ params }: PageProps) {
             />
           ) : category.image_url ? (
             <Image
-              src={category.image_url}
+              src={mediaUrl(category.image_url)}
               alt={category.name_ar}
               fill
               priority

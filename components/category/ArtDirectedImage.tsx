@@ -1,4 +1,5 @@
 import { getImageProps } from 'next/image'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface Props {
   /** Wide image, used above the breakpoint. */
@@ -16,8 +17,8 @@ interface Props {
 /** A `fill` image that swaps to a different picture on narrow screens. */
 export function ArtDirectedImage({ src, mobileSrc, media, alt, sizes, priority, className }: Props) {
   const common = { alt, fill: true, sizes, priority }
-  const { props: { srcSet: mobileSrcSet } } = getImageProps({ ...common, src: mobileSrc })
-  const { props: imgProps } = getImageProps({ ...common, src })
+  const { props: { srcSet: mobileSrcSet } } = getImageProps({ ...common, src: mediaUrl(mobileSrc) })
+  const { props: imgProps } = getImageProps({ ...common, src: mediaUrl(src) })
 
   return (
     <picture>

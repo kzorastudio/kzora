@@ -22,6 +22,7 @@ import {
 import type { OrderFull, OrderStatus } from '@/types'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { resolveShippingName, useShippingNames } from '@/lib/shippingNames'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 // ─── Status visual config ─────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
@@ -237,7 +238,7 @@ function OrderCard({ order }: { order: OrderFull }) {
                   <div className="h-12 w-12 rounded-lg overflow-hidden bg-[#F0EBE3] shrink-0">
                     {item.product_image ? (
                       <Image
-                        src={item.product_image}
+                        src={mediaUrl(item.product_image)}
                         alt={item.product_name}
                         width={48}
                         height={48}

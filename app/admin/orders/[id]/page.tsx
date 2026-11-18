@@ -20,6 +20,7 @@ import ConfirmReservationButton from './ConfirmReservationButton'
 import PaymentMethodEditor from './PaymentMethodEditor'
 import { requireAdmin } from '@/lib/adminGuard'
 import { isOwnOrdersOnly, normalizeRole, ROLE_SHORT_LABELS } from '@/lib/permissions'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface OrderDetailPageProps {
   params: { id: string }
@@ -205,7 +206,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     <div className="h-16 w-16 rounded-xl overflow-hidden bg-surface-container shrink-0">
                       {item.product_image ? (
                         <Image
-                          src={item.product_image}
+                          src={mediaUrl(item.product_image)}
                           alt={item.product_name}
                           width={64}
                           height={64}

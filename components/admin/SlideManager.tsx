@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/Modal'
 import ImageUploader, { type UploadedImage } from '@/components/admin/ImageUploader'
 import toast from 'react-hot-toast'
 import type { HeroSlide } from '@/types'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 // ----- Schema -----
 const slideSchema = z.object({
@@ -436,7 +437,7 @@ export default function SlideManager({ initialSlides = [] }: SlideManagerProps) 
                 <div className="relative w-20 h-[60px] rounded-lg overflow-hidden bg-[#EDE5D8] shrink-0">
                   {slide.desktop_image_url ? (
                     <Image
-                      src={slide.desktop_image_url}
+                      src={mediaUrl(slide.desktop_image_url)}
                       alt={slide.heading}
                       fill
                       sizes="80px"

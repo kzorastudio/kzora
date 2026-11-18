@@ -3,6 +3,13 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
+        // Supabase Storage mirror of all Cloudinary media — used when the emergency
+        // switch NEXT_PUBLIC_MEDIA_FALLBACK=supabase is on (see docs/media-fallback.md).
+        protocol: 'https',
+        hostname: 'nchzkmhpxprhbcylisfm.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
         pathname: '/**',

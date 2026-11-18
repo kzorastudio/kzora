@@ -9,6 +9,7 @@ import type { Category } from '@/types'
 import ProductsClient from './ProductsClient'
 import DeleteProductButton from './DeleteProductButton'
 import { requireCapability } from '@/lib/adminGuard'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -181,7 +182,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="h-14 w-14 rounded-xl overflow-hidden bg-surface-container shrink-0">
                         {thumbnail?.url ? (
-                          <Image src={thumbnail.url} alt={product.name} width={56} height={56} className="h-full w-full object-cover" />
+                          <Image src={mediaUrl(thumbnail.url)} alt={product.name} width={56} height={56} className="h-full w-full object-cover" />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center"><span className="text-secondary/40 text-lg">—</span></div>
                         )}
@@ -260,7 +261,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 rounded-xl overflow-hidden bg-surface-container shrink-0">
-                              {thumbnail?.url ? <Image src={thumbnail.url} alt={product.name} width={50} height={50} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center"><span className="text-xs font-arabic text-secondary/40">—</span></div>}
+                              {thumbnail?.url ? <Image src={mediaUrl(thumbnail.url)} alt={product.name} width={50} height={50} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center"><span className="text-xs font-arabic text-secondary/40">—</span></div>}
                             </div>
                             <div className="flex flex-col min-w-0">
                               <span className="text-sm font-arabic font-medium text-on-surface leading-tight truncate max-w-[200px]">{product.name}</span>

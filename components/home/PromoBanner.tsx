@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface Props {
   imageUrl: string
@@ -17,7 +18,7 @@ export default function PromoBanner({ imageUrl, link, heading, subtext }: Props)
     >
       {/* Background image */}
       <Image
-        src={imageUrl}
+        src={mediaUrl(imageUrl)}
         alt={heading}
         fill
         sizes="100vw"

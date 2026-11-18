@@ -10,6 +10,7 @@ import { GOVERNORATES } from '@/lib/constants'
 import { formatCurrency, cn, resolveShippingName, ORDER_STATUS_LABELS, formatDate, toArabicNumerals } from '@/lib/utils'
 import type { Currency, HomepageSettings } from '@/types'
 import { PICKUP_SLUG, isPickupEnabled, pickupLocation } from '@/lib/pickup'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface PickerProduct {
   id: string
@@ -652,7 +653,7 @@ export default function NewStaffOrderPage() {
                       className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-surface-container-low/60 transition text-right disabled:opacity-60"
                     >
                       <div className="h-10 w-10 rounded-lg bg-surface-container overflow-hidden shrink-0 relative">
-                        {rp.image && <NextImage src={rp.image} alt={rp.name} fill className="object-cover" sizes="40px" />}
+                        {rp.image && <NextImage src={mediaUrl(rp.image)} alt={rp.name} fill className="object-cover" sizes="40px" />}
                       </div>
                       <span className="flex-1 min-w-0 text-sm font-arabic font-semibold text-on-surface truncate">{rp.name}</span>
                       <span className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
@@ -673,7 +674,7 @@ export default function NewStaffOrderPage() {
                 <div key={p.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-container-low/40 transition">
                   <div className="h-12 w-12 rounded-lg bg-surface-container overflow-hidden shrink-0 relative">
                     {(p.images.find((i) => i.is_main)?.url || p.images[0]?.url) && (
-                      <NextImage src={p.images.find((i) => i.is_main)?.url || p.images[0].url} alt={p.name} fill className="object-cover" sizes="48px" />
+                      <NextImage src={mediaUrl(p.images.find((i) => i.is_main)?.url || p.images[0].url)} alt={p.name} fill className="object-cover" sizes="48px" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">

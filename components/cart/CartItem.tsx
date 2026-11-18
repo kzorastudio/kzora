@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useCurrencyStore } from '@/store/currencyStore'
 import type { CartItem as CartItemType } from '@/types'
 import toast from 'react-hot-toast'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface CartItemProps {
   item: CartItemType
@@ -52,7 +53,7 @@ export function CartItem({ item, className }: CartItemProps) {
       <div className="relative shrink-0 w-[60px] h-[70px] rounded-lg overflow-hidden bg-surface-container-low">
         {item.image ? (
           <Image
-            src={item.image}
+            src={mediaUrl(item.image)}
             alt={item.name}
             fill
             sizes="60px"

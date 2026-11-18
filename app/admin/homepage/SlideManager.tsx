@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import type { HeroSlide, Category, Product } from '@/types'
 import { supabase } from '@/lib/supabase'
 import ImageUploader, { type UploadedImage } from '@/components/admin/ImageUploader'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface SlideFormState {
   desktop_image: UploadedImage | null
@@ -272,7 +273,7 @@ export default function SlideManager() {
                 {/* Thumbnail */}
                 <div className="h-16 w-28 rounded-lg overflow-hidden bg-surface-container shrink-0">
                   <Image
-                    src={slide.desktop_image_url}
+                    src={mediaUrl(slide.desktop_image_url)}
                     alt={slide.heading || 'شريحة'}
                     width={112}
                     height={64}

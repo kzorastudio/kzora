@@ -7,6 +7,7 @@ import { Trash2, Plus, Minus } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import type { CartItem, Currency } from '@/types'
 import toast from 'react-hot-toast'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 interface Props {
   items: CartItem[]
@@ -83,7 +84,7 @@ export default function OrderSummaryPanel({
                 >
                   {item.image ? (
                     <Image
-                      src={item.image}
+                      src={mediaUrl(item.image)}
                       alt={item.name}
                       fill
                       sizes="50px"

@@ -10,6 +10,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import type { Category } from '@/types'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 export const metadata: Metadata = {
   title: 'أقسام الأحذية — تصفح حسب الفئة | كزورا Kzora سوريا',
@@ -79,7 +80,7 @@ export default async function CategoriesPage() {
                 >
                   {cat.image_url && (
                     <Image
-                      src={cat.image_url}
+                      src={mediaUrl(cat.image_url)}
                       alt={cat.name_ar}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

@@ -18,6 +18,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ScrollHint } from '@/components/ui/ScrollHint'
+import { mediaUrl } from '@/lib/cloudinaryUrl'
 
 // ─── Fetch helpers ─────────────────────────────────────────────────────────────
 async function fetchProductsByTag(tag: string, limit = 8): Promise<ProductFull[]> {
@@ -65,7 +66,7 @@ function PromoBanner({ settings }: PromoBannerProps) {
       <ScrollReveal direction="none" duration={0.8} delay={0.1}>
         <div className="max-w-screen-xl mx-auto relative min-h-[420px] md:min-h-[450px] rounded-3xl overflow-hidden bg-[#785600] shadow-2xl group flex flex-col items-center justify-center py-12 md:py-20">
           <Image
-            src={settings.promo_banner_url}
+            src={mediaUrl(settings.promo_banner_url)}
             alt="خصومات الموسم"
             fill
             sizes="100vw"
