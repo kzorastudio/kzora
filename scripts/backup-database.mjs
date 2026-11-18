@@ -121,4 +121,8 @@ fs.writeFileSync(path.join(target, 'media-map.csv'), '﻿' + csv) // BOM so Exce
 const bad = map.filter(r => !r.local_ok || !r.mirror_ok)
 console.log(`\nmedia map: ${map.length} placements; ${map.length - bad.length} fully backed up (local + mirror)`)
 for (const b of bad) console.log(`  MISSING ${b.section} | ${b.product} | ${b.color ?? ''} | local=${b.local_ok} mirror=${b.mirror_ok} | ${b.cloudinary_url}`)
+// Keep the newest 30 daily database snapshots
+const days = fs.readdirSync(path.join(target, 'database')).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort()
+for (const old of days.slice(0, -30)) fs.rmSync(path.join(target, 'database', old), { recursive: true, force: true })
+
 console.log(`\n${target}`)
