@@ -135,9 +135,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ar" dir="rtl" className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
       <head>
-        {/* Preconnect to Cloudinary for faster image loads (Core Web Vitals) */}
-        <link rel="preconnect" href="https://res.cloudinary.com" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        {/* Preconnect to the media host (Supabase Storage) for faster image loads */}
+        <link rel="preconnect" href="https://nchzkmhpxprhbcylisfm.supabase.co" />
+        <link rel="dns-prefetch" href="https://nchzkmhpxprhbcylisfm.supabase.co" />
       </head>
       <body className={`${tajawal.variable} ${notoSansArabic.variable} ${inter.variable}`}>
         {/* Noscript fallback for search engine bots that don't run JS */}

@@ -12,15 +12,18 @@ import {
 } from '@/lib/cloudinaryUrl'
 
 export interface ProductVideoDraft {
-  url: string            // Cloudinary URL, or a blob: URL while the file is still local
+  url: string            // Stored video URL, or a blob: URL while the file is still local
   public_id: string
   duration: number | null
   file?: File
   isLocal?: boolean
 }
 
-// Cloudinary's free plan rejects videos over 100MB
-const MAX_FILE_MB = 100
+// The browser compresses every video before upload (compressVideo below), so the picked
+// file can be big. If this browser can't compress, the original is uploaded as-is and must
+// then stay under RAW_MAX_MB, because every play downloads the whole file.
+const MAX_FILE_MB = 200
+const RAW_MAX_MB = 20
 // Clips longer than this are almost certainly the wrong file
 const MAX_PICK_SECONDS = 60
 
@@ -49,45 +52,118 @@ function readDuration(file: File): Promise<number> {
   })
 }
 
+/** First frame of a local video as a JPG (≤720px wide), used as thumbnail and poster. */
+function makePoster(file: Blob): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('video')
+    const src = URL.createObjectURL(file)
+    const fail = () => { URL.revokeObjectURL(src); reject(new Error('unplayable')) }
+    el.muted = true
+    el.playsInline = true
+    el.preload = 'auto'
+    el.onerror = fail
+    el.onloadeddata = () => { el.currentTime = Math.min(0.1, (el.duration || 1) / 2) }
+    el.onseeked = () => {
+      const scale = Math.min(1, 720 / (el.videoWidth || 720))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round((el.videoWidth || 720) * scale)
+      canvas.height = Math.round((el.videoHeight || 900) * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx || !el.videoWidth) return fail()
+      ctx.drawImage(el, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(b => { URL.revokeObjectURL(src); b ? resolve(b) : reject(new Error('poster')) }, 'image/jpeg', 0.8)
+    }
+    el.src = src
+  })
+}
+
+function putFile(url: string, body: Blob, contentType: string, onProgress?: (p: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', url)
+    xhr.setRequestHeader('Content-Type', contentType)
+    xhr.setRequestHeader('x-upsert', 'true')
+    xhr.setRequestHeader('cache-control', 'max-age=31536000')
+    if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)) }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve()
+      const msg = (() => { try { return JSON.parse(xhr.responseText).message } catch { return '' } })()
+      reject(new Error(msg ? `فشل رفع الفيديو: ${msg}` : 'فشل رفع الفيديو'))
+    }
+    xhr.onerror = () => reject(new Error('فشل رفع الفيديو — تأكد من الاتصال بالإنترنت'))
+    xhr.send(body)
+  })
+}
+
 /**
- * Uploads straight from the browser to Cloudinary with a server-made signature,
- * reporting progress (0–100). Videos never pass through our API.
+ * Re-encodes the video in the browser with the same settings Cloudinary used to apply:
+ * H.264 MP4, at most 480px wide, ~600kbps, cut at PRODUCT_VIDEO_MAX_SECONDS — about 1–1.5MB
+ * for a 15s clip. Uses the device's hardware encoder through WebCodecs (mediabunny).
+ * Returns null when this browser can't do it (no WebCodecs/H.264 encoder, or a format it
+ * can't decode such as HEVC on some PCs); the caller then falls back to the original.
+ */
+async function compressVideo(file: File, onProgress: (p: number) => void): Promise<Blob | null> {
+  try {
+    if (typeof VideoEncoder === 'undefined') return null
+    const mb = await import('mediabunny')
+    if (!(await mb.canEncodeVideo('avc', { width: 480, height: 854, bitrate: VIDEO_BITRATE }))) return null
+    const aac = await mb.canEncodeAudio('aac').catch(() => false)
+    const input = new mb.Input({ source: new mb.BlobSource(file), formats: mb.ALL_FORMATS })
+    const target = new mb.BufferTarget()
+    const output = new mb.Output({ format: new mb.Mp4OutputFormat({ fastStart: 'in-memory' }), target })
+    const conversion = await mb.Conversion.init({
+      input,
+      output,
+      tracks: 'primary',
+      trim: { start: 0, end: PRODUCT_VIDEO_MAX_SECONDS },
+      video: track => {
+        const w = Math.min(480, track.displayWidth)
+        return { codec: 'avc', width: w - (w % 2), bitrate: VIDEO_BITRATE, forceTranscode: true }
+      },
+      audio: aac ? { codec: 'aac', bitrate: 64_000 } : { discard: true },
+      showWarnings: false,
+    })
+    if (!conversion.isValid || !conversion.utilizedTracks.some(t => t.isVideoTrack())) return null
+    conversion.onProgress = p => onProgress(Math.round(p * 100))
+    await conversion.execute()
+    return target.buffer ? new Blob([target.buffer], { type: 'video/mp4' }) : null
+  } catch (e) {
+    console.error('Video compression failed, uploading the original instead:', e)
+    return null
+  }
+}
+
+const VIDEO_BITRATE = 600_000
+
+/**
+ * Uploads straight from the browser to Supabase Storage through signed URLs made by
+ * the server, reporting progress (0–100). Videos never pass through our API.
  */
 export async function uploadProductVideo(
   file: File,
   onProgress: (percent: number) => void
 ): Promise<{ url: string; public_id: string; duration: number | null }> {
+  // Progress: compression 0–60%, upload 60–100%
+  const compressed = await compressVideo(file, p => onProgress(Math.round(p * 0.6)))
+  if (!compressed && file.size > RAW_MAX_MB * 1024 * 1024) {
+    throw new Error(`تعذّر ضغط الفيديو في هذا المتصفح والملف أكبر من ${RAW_MAX_MB} ميغابايت. جرّب من Chrome أو Safari حديث، أو صغّر الفيديو أولاً`)
+  }
+  const body: Blob = compressed ?? file
+  let poster: Blob
+  try {
+    poster = await makePoster(body)
+  } catch {
+    throw new Error('لا يمكن تشغيل هذا الفيديو في المتصفح. صدّره بصيغة MP4 (H.264) ثم أعد المحاولة')
+  }
   const signRes = await fetch('/api/videos/sign', { method: 'POST' })
   if (!signRes.ok) {
     const err = await signRes.json().catch(() => ({}))
     throw new Error(err.error || 'فشل تجهيز رفع الفيديو')
   }
-  const { upload_url, signature, api_key, timestamp, folder, eager, eager_async } = await signRes.json()
-
-  const form = new FormData()
-  form.append('file', file)
-  form.append('api_key', api_key)
-  form.append('timestamp', String(timestamp))
-  form.append('signature', signature)
-  form.append('folder', folder)
-  form.append('eager', eager)
-  form.append('eager_async', eager_async)
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', upload_url)
-    xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)) }
-    xhr.onload = () => {
-      const data = (() => { try { return JSON.parse(xhr.responseText) } catch { return {} } })()
-      if (xhr.status >= 200 && xhr.status < 300 && data.secure_url) {
-        resolve({ url: data.secure_url, public_id: data.public_id, duration: data.duration ?? null })
-      } else {
-        reject(new Error(data.error?.message ? `فشل رفع الفيديو: ${data.error.message}` : 'فشل رفع الفيديو'))
-      }
-    }
-    xhr.onerror = () => reject(new Error('فشل رفع الفيديو — تأكد من الاتصال بالإنترنت'))
-    xhr.send(form)
-  })
+  const { video_upload_url, poster_upload_url, url, public_id } = await signRes.json()
+  await putFile(poster_upload_url, poster, 'image/jpeg')
+  await putFile(video_upload_url, body, 'video/mp4', p => onProgress(60 + Math.round(p * 0.4)))
+  return { url, public_id, duration: null }
 }
 
 export default function VideoUploader({
@@ -114,7 +190,7 @@ export default function VideoUploader({
     try {
       duration = await readDuration(file)
     } catch {
-      // Some formats (e.g. certain .mov files) can't be read in every browser — Cloudinary still accepts them
+      // Unreadable here — uploadProductVideo will reject it if the browser can't play it at all
     }
     if (duration && duration > MAX_PICK_SECONDS) {
       toast.error(`الفيديو طويل (${Math.round(duration)} ثانية). اختر مقطعاً قصيراً`)
@@ -148,7 +224,7 @@ export default function VideoUploader({
           <Video size={28} />
           <span className="text-sm font-arabic font-medium">انقر لاختيار فيديو قصير للمنتج</span>
           <span className="text-xs font-arabic text-secondary/70">
-            MP4 أو MOV حتى {MAX_FILE_MB} ميغابايت · يُعرض أول {PRODUCT_VIDEO_MAX_SECONDS} ثانية · يُرفع عند حفظ المنتج
+            MP4 أو MOV حتى {MAX_FILE_MB} ميغابايت · يُضغط تلقائياً ويُعرض أول {PRODUCT_VIDEO_MAX_SECONDS} ثانية · يُرفع عند حفظ المنتج
           </span>
         </button>
       </div>
@@ -180,7 +256,7 @@ export default function VideoUploader({
         )}
         {uploadProgress !== null && (
           <div className="absolute inset-0 bg-black/55 flex flex-col items-center justify-center gap-2 text-white">
-            <span className="text-sm font-arabic font-bold">جارٍ الرفع {uploadProgress}%</span>
+            <span className="text-sm font-arabic font-bold">{uploadProgress < 60 ? 'جارٍ ضغط الفيديو' : 'جارٍ الرفع'} {uploadProgress}%</span>
             <div className="w-3/4 h-1.5 rounded-full bg-white/30 overflow-hidden">
               <div className="h-full bg-white transition-all" style={{ width: `${uploadProgress}%` }} />
             </div>

@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${category.name_ar} — كزورا Kzora`,
       description: category.description || `تصفح أحدث موديلات ${category.name_ar} في متجر كزورا Kzora للأحذية.`,
-      images: category.image_url ? [{ url: category.image_url, width: 1200, height: 630, alt: category.name_ar }] : [],
+      images: category.image_url ? [{ url: mediaUrl(category.image_url), width: 1200, height: 630, alt: category.name_ar }] : [],
     },
   }
 }

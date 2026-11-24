@@ -65,6 +65,8 @@ const POSTER_TRANSFORM = 'so_0,w_720,c_limit,q_auto'
 export const PRODUCT_VIDEO_EAGER = `${VIDEO_TRANSFORM}/mp4|${POSTER_TRANSFORM}/jpg`
 
 function withVideoTransform(url: string, transform: string, ext: string): string {
+  // Uploaded to Supabase Storage (since Nov 2026): already a small MP4, poster beside it as .jpg
+  if (url.startsWith(`${MIRROR_BASE}/video/`)) return url.replace(/\.[a-z0-9]+$/i, `.${ext}`)
   const uploadMarker = '/video/upload/'
   const idx = url.indexOf(uploadMarker)
   if (!url.includes('res.cloudinary.com') || idx === -1) return url
