@@ -1,8 +1,10 @@
 # خطة الطوارئ: إذا توقفت Cloudinary
 
-> **نوفمبر 2026:** حساب Cloudinary تجاوز الحد المجاني، فصار كل رفع جديد يذهب إلى Supabase
-> (`lib/mediaStorage.ts`)، والموقع يعمل بالمتغيّر `NEXT_PUBLIC_MEDIA_FALLBACK=supabase` بشكل دائم.
-> الروابط القديمة في قاعدة البيانات ما زالت روابط Cloudinary وتُحوَّل وقت العرض — **لا تحذف المتغيّر**.
+> **نوفمبر 2026:** حساب Cloudinary تجاوز الحد المجاني، فانتقل المتجر بالكامل إلى Supabase:
+> كل رفع جديد يذهب إلى Supabase (`lib/mediaStorage.ts`)، وكل الروابط في قاعدة البيانات حُوّلت إلى
+> روابط Supabase مباشرة (نسخة قاعدة البيانات قبل التحويل: `Kzora-media-backup/database/2026-11-24`).
+> المتغيّر `NEXT_PUBLIC_MEDIA_FALLBACK=supabase` بقي كشبكة أمان لروابط Cloudinary القديمة المحفوظة
+> في سلال الزبائن — اتركه في Vercel. ما بقي من روابط Cloudinary في الطلبات القديمة هو لصور كانت محذوفة أصلاً.
 
 كل صور وفيديوهات المتجر محفوظة على Cloudinary، **ومعها نسخة احتياطية كاملة** في
 Supabase Storage (bucket اسمه `media`، عام). إذا أوقفت Cloudinary الحساب أو تعطّلت،
