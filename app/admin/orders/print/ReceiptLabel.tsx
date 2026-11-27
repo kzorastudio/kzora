@@ -6,6 +6,7 @@ import type { OrderFull } from '@/types'
 import BarcodeSVG from '@/components/admin/BarcodeSVG'
 import QRCodeSVG from '@/components/admin/QRCodeSVG'
 import { resolveShippingName, useShippingNames } from '@/lib/shippingNames'
+import { PICKUP_SLUG } from '@/lib/pickup'
 
 const SHIPPING_DISPLAY: Record<string, string> = {
   karam: 'كرم للشحن',
@@ -91,6 +92,15 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
   const isElectro = isElectroOrder(o)
   const shippingNames = useShippingNames()
   const { cur, sub, ship, discount, isAleppo, orderTotal, isPrepaid, amountToCollect } = computeTotals(o)
+  // "الشحن مجاني" only for orders whose products cost nothing (e.g. an exchange)
+  // AND whose shipping fee was set to 0. Normal orders print exactly as before.
+  // A 0 fee that is "تتحدد مع البائع", or office pickup, is not free shipping.
+  const freeShipping =
+    Math.max(0, sub - discount) === 0 &&
+    ship === 0 &&
+    !o.shipping_fee_determined &&
+    o.shipping_company !== PICKUP_SLUG
+  const totalPieces = (o.items || []).reduce((n, it) => n + (it.quantity || 0), 0)
 
   // Base sizes for the thermal label. The auto-fit scaler adjusts from here.
   const s = compact
@@ -187,9 +197,15 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
 
       {/* Items */}
       <div className="my-[4px]">
-        <p className={`font-black border-b border-black pb-[1px] mb-[2px] text-black ${s.rowLabel}`}>
-          محتويات الطلبية:
-        </p>
+        <div className={`flex items-center justify-between border-b border-black pb-[1px] mb-[2px] font-black text-black ${s.rowLabel}`}>
+          <span>محتويات الطلبية:</span>
+          {/* Total piece count, boxed, so a multi-piece parcel is never packed short */}
+          {totalPieces > 1 && (
+            <span className="border-2 border-black px-[4px] leading-tight">
+              عدد القطع الكلي: {totalPieces}
+            </span>
+          )}
+        </div>
         <table className={`w-full text-right border-collapse ${s.table}`}>
           <thead>
             <tr className="border-b border-black font-black text-black">
@@ -202,17 +218,38 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
           <tbody>
             {(o.items || []).map((it) => {
               const unit = o.currency_used === 'USD' ? it.unit_price_usd : it.unit_price_syp
+              const multi = it.quantity > 1
               return (
                 <tr key={it.id} className="border-b border-gray-300 font-bold text-black align-top">
-                  <td className="py-[2px] text-center font-black text-black">{it.quantity}</td>
+                  <td className="py-[2px] text-center font-black text-black">
+                    {multi ? (
+                      <span className="inline-block border-2 border-black rounded px-[3px] leading-tight">{it.quantity}</span>
+                    ) : it.quantity}
+                  </td>
                   <td className="py-[2px] text-center text-gray-800 leading-snug">
                     {isElectro
                       ? (it.color || '—')
                       : ([it.color, it.size].filter(Boolean).join(' / ') || '—')}
                   </td>
-                  <td className="py-[2px] font-bold text-black leading-snug">{it.product_name}</td>
+                  <td className="py-[2px] font-bold text-black leading-snug">
+                    {it.product_name}
+                    {/* More than one of the same product: a loud "× N" right after the name */}
+                    {multi && (
+                      <span
+                        dir="ltr"
+                        className="inline-block mr-[4px] border-2 border-black rounded px-[3px] font-black leading-tight whitespace-nowrap"
+                      >
+                        × {it.quantity}
+                      </span>
+                    )}
+                  </td>
                   <td className="py-[2px] text-left font-black text-black whitespace-nowrap">
                     {(unit * it.quantity).toLocaleString()} {cur}
+                    {multi && (
+                      <span className={`block font-bold text-gray-700 ${s.foot}`} dir="ltr">
+                        {it.quantity} × {unit.toLocaleString()}
+                      </span>
+                    )}
                   </td>
                 </tr>
               )
@@ -260,12 +297,27 @@ export function ReceiptBody({ o, compact }: { o: OrderFull; compact: boolean }) 
             {isPrepaid
               ? 'المبلغ المطلوب قبضه من العميل — مدفوع مسبقاً'
               : orderTotal === 0
-              ? 'المبلغ المطلوب قبضه من العميل — طلب تبديل / مجاني'
+              ? (freeShipping
+                  ? 'المبلغ المطلوب قبضه من العميل — طلب تبديل / مجاني'
+                  // shipping still has a fee, so nothing about this order is "free"
+                  : 'المبلغ المطلوب قبضه من العميل — طلب تبديل')
               : 'المبلغ المطلوب قبضه من العميل'}
           </p>
           <p className={`font-black tracking-tight text-black leading-none mt-[2px] ${s.totalValue}`}>
             {amountToCollect.toLocaleString()} {cur}
           </p>
+          {/* Product value 0 and shipping 0: say "free shipping" in the same box as
+              the amount, right under it, where staff always look. */}
+          {freeShipping && (
+            <div className="mt-[3px] pt-[3px] border-t-2 border-dashed border-black text-black">
+              <p className={`font-black leading-tight ${s.title}`}>
+                {isAleppo ? 'التوصيل مجاني' : 'الشحن مجاني'}
+              </p>
+              <p className={`font-black leading-tight mt-[1px] ${s.totalLabel}`}>
+                لا تُؤخذ أجور {isAleppo ? 'توصيل' : 'شحن'} من الزبون
+              </p>
+            </div>
+          )}
           {isPrepaid && o.payment_transaction_id && (
             <p className={`font-mono font-bold text-black mt-[2px] ${s.foot}`}>
               رقم العملية: {o.payment_transaction_id}

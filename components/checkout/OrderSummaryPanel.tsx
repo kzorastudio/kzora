@@ -263,8 +263,10 @@ export default function OrderSummaryPanel({
         <button
           type="submit"
           form="checkout-form"
-          disabled={isSubmitting || !deliveryType}
+          disabled={isSubmitting}
           className={cn(
+            // stays clickable without a delivery type: the form then spotlights that section
+            !deliveryType && 'opacity-60 shadow-none',
             'w-full py-3.5 rounded-xl font-arabic font-bold text-sm text-white',
             'bg-gradient-to-l from-[#785600] to-[#986D00]',
             'hover:from-[#986D00] hover:to-[#B8860B]',

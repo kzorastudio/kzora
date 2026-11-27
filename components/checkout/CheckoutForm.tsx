@@ -11,6 +11,7 @@ import { Truck, MapPin, CreditCard, CheckCircle2, AlertTriangle, ChevronDown, Pa
 import type { HomepageSettings } from '@/types'
 import { PICKUP_SLUG, isPickupEnabled, pickupLocation } from '@/lib/pickup'
 import { mediaUrl } from '@/lib/cloudinaryUrl'
+import { spotlightFirstInvalid } from '@/lib/spotlight'
 
 interface Props {
   onSubmit: (data: CheckoutFormData) => Promise<void>
@@ -196,6 +197,9 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       address: finalAddress,
       center_name: selectedCenter?.name,
     })
+  }, (formErrors) => {
+    // take the customer straight to the first required field they missed
+    spotlightFirstInvalid(Object.keys(formErrors))
   })
 
   return (
@@ -207,7 +211,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
       className="space-y-0"
     >
       {/* ═══ Section 1: Delivery Type ══════════════════════════════════════════════ */}
-      <div className="bg-white rounded-3xl p-8 shadow-[0_4px_30px_rgba(120,86,0,0.08)] border-2 border-[#785600]/10 ring-4 ring-[#785600]/5">
+      <div data-spotlight="delivery_type" className="bg-white rounded-3xl p-8 shadow-[0_4px_30px_rgba(120,86,0,0.08)] border-2 border-[#785600]/10 ring-4 ring-[#785600]/5">
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#785600] to-[#B8860B] flex items-center justify-center mb-4 shadow-lg shadow-[#785600]/20">
             <Truck size={28} className="text-white" />
@@ -349,7 +353,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Full Name */}
-            <div>
+            <div data-spotlight="full_name">
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="full_name" className={cn(labelBase, 'mb-0')}>
                   الاسم الثلاثي الكامل <span className="text-[#BA1A1A]">*</span>
@@ -384,7 +388,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             </div>
 
             {/* Phone */}
-            <div>
+            <div data-spotlight="phone">
               <label htmlFor="phone" className={labelBase}>
                 رقم الهاتف <span className="text-[#BA1A1A]">*</span>
               </label>
@@ -458,7 +462,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             </p>
           </div>
 
-          <div>
+          <div data-spotlight="address">
             <label htmlFor="address" className={labelBase}>
               العنوان بالتفصيل <span className="text-[#BA1A1A]">*</span>
             </label>
@@ -479,7 +483,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
 
           <div className="space-y-5">
             {/* Governorate */}
-            <div>
+            <div data-spotlight="governorate">
               <label htmlFor="governorate-select" className={labelBase}>
                 المحافظة <span className="text-[#BA1A1A]">*</span>
               </label>
@@ -503,7 +507,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             </div>
 
             {/* Center */}
-            <div>
+            <div data-spotlight="center">
               <label htmlFor="center" className={labelBase}>
                 المركز / المنطقة <span className="text-[#BA1A1A]">*</span>
               </label>
@@ -538,7 +542,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
 
             {/* Shipping Company */}
             {centerId && (
-              <div>
+              <div data-spotlight="shipping_company">
                 {availableCompanies.length === 0 ? (
                   <div className="p-4 bg-[#FAF8F5] border border-[#E8E3DB] rounded-xl text-sm font-arabic text-[#9E9890]">
                     لا توجد شركات شحن متاحة لهذا المركز حالياً.
@@ -677,7 +681,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting, settings, shippin
             )}
 
             {/* Transaction ID */}
-            <div className="mt-4">
+            <div className="mt-4" data-spotlight="payment_transaction_id">
               <label htmlFor="payment_transaction_id" className={labelBase}>
                 رقم/رمز عملية التحويل <span className="text-[#BA1A1A]">*</span>
               </label>
