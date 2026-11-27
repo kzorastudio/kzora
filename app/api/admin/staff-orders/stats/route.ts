@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         .select('created_by_admin_id, status, total_syp, total_usd, created_at')
         .not('created_by_admin_id', 'is', null)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: true }) // tie-breaker so pages never overlap or skip
         .range(from, to)
 
       if (range) q = q.gte('created_at', range.from).lt('created_at', range.to)
@@ -88,6 +89,7 @@ export async function GET(request: NextRequest) {
           .select('status, total_syp, total_usd, created_at')
           .is('created_by_admin_id', null)
           .order('created_at', { ascending: false })
+          .order('id', { ascending: true }) // tie-breaker so pages never overlap or skip
           .range(from, to)
         if (range) q = q.gte('created_at', range.from).lt('created_at', range.to)
         return q

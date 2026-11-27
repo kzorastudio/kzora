@@ -1,5 +1,5 @@
 import { requireCapability } from '@/lib/adminGuard'
-import { supabaseAdmin, fetchAllRows } from '@/lib/supabase'
+import { supabaseAdminLive as supabaseAdmin, fetchAllRows } from '@/lib/supabase'
 import StatsDashboard from '@/components/admin/StatsDashboard'
 
 export const dynamic = 'force-dynamic'
@@ -18,8 +18,8 @@ export default async function AdminStatsPage() {
   const [
     orders,
     orderItems,
-    { data: variantsData },
-    { data: productsData },
+    variants,
+    products,
     visits
   ] = await Promise.all([
     fetchAllRows((from, to) =>
@@ -27,33 +27,42 @@ export default async function AdminStatsPage() {
         .from('orders')
         .select('id, total_syp, total_usd, currency_used, status, customer_governorate, created_at')
         .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
         .range(from, to)
     ),
     fetchAllRows((from, to) =>
       supabaseAdmin
         .from('order_items')
         .select('order_id, quantity, product_name, product_id, unit_price_syp, unit_price_usd')
-        .order('order_id', { ascending: true })
+        // order by the unique id — ordering by order_id alone lets pages overlap or skip rows
+        .order('id', { ascending: true })
         .range(from, to)
     ),
-    supabaseAdmin
-      .from('product_variants')
-      .select('product_id, color, size, quantity'),
-    supabaseAdmin
-      .from('products')
-      .select('id, name, price_syp, price_usd, stock_status'),
+    // product_variants has more than 1000 rows — unpaginated, the stock total was cut off
+    fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('product_variants')
+        .select('product_id, color, size, quantity')
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('products')
+        .select('id, name, price_syp, price_usd, stock_status')
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
     fetchAllRows((from, to) =>
       supabaseAdmin
         .from('site_visits')
         .select('session_id, page_path, user_agent, visited_at')
         .gte('visited_at', ninetyDaysAgo)
         .order('visited_at', { ascending: true })
+        .order('id', { ascending: true })
         .range(from, to)
     )
   ])
-
-  const variants = variantsData || []
-  const products = productsData || []
 
   return (
     <div className="flex flex-col min-h-screen bg-surface w-full max-w-full overflow-x-hidden" dir="rtl">
