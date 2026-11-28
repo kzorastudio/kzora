@@ -1,7 +1,6 @@
-import { Users, Heart, ShieldCheck, RotateCcw } from 'lucide-react'
+import { Users, BadgeCheck, Undo2, Repeat } from 'lucide-react'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { CountUp } from '@/components/ui/CountUp'
-import { cn } from '@/lib/utils'
 
 interface StatsSectionProps {
   settings: {
@@ -19,77 +18,58 @@ interface StatsSectionProps {
   ordersCount?: number
 }
 
-export default function StatsSection({ settings, ordersCount }: StatsSectionProps) {
-  const customersLabel =
-    typeof ordersCount === 'number' && ordersCount > 0
-      ? `+${ordersCount.toLocaleString('en-US')} زبون`
-      : settings.stat_customers_count || '+1000 زبون'
+// Strip any words typed in the admin field ("27 عملية إرجاع" → "27") — the label
+// under each number already says what it is.
+const numberOnly = (v: string | null, fallback: string) => {
+  const m = (v || '').match(/[+]?\d[\d,]*\.?\d*\s*%?\+?/)
+  return m ? m[0].replace(/\s+/g, '') : fallback
+}
 
-  const stats = [
-    {
-      label: customersLabel,
-      sub: 'عملاء نعتز بهم',
-      icon: Users,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-    },
-    {
-      label: settings.stat_satisfaction_rate || '99% رضا العملاء',
-      sub: 'جودة نضمنها لك',
-      icon: Heart,
-      iconBg: 'bg-rose-50',
-      iconColor: 'text-rose-600',
-    },
-    {
-      label: settings.stat_returns_count || '27 عملية إرجاع',
-      sub: 'سياسة إرجاع مرنة',
-      icon: ShieldCheck,
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-    },
-    {
-      label: settings.stat_exchanges_count || '68 عملية تبديل',
-      sub: 'تبديل سهل وسريع',
-      icon: RotateCcw,
-      iconBg: 'bg-amber-50',
-      iconColor: 'text-amber-600',
-    },
+export default function StatsSection({ settings, ordersCount }: StatsSectionProps) {
+  const customers =
+    typeof ordersCount === 'number' && ordersCount > 0
+      ? `+${ordersCount.toLocaleString('en-US')}`
+      : numberOnly(settings.stat_customers_count, '+1000')
+
+  const secondary = [
+    { value: numberOnly(settings.stat_satisfaction_rate, '99%'), label: 'جودة نضمنها', icon: BadgeCheck },
+    { value: numberOnly(settings.stat_returns_count, '+27'),     label: 'إرجاع مرن',   icon: Undo2 },
+    { value: numberOnly(settings.stat_exchanges_count, '+68'),   label: 'تبديل سهل',   icon: Repeat },
   ]
 
   return (
-    <section className="bg-[#FAF8F5] py-16 md:py-24 relative overflow-hidden" dir="rtl">
-      {/* Decorative Glows */}
-      <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#785600]/5 rounded-full blur-[100px] -translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute top-1/2 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 relative z-10">
+    <section className="bg-[#FAF8F5] py-14 md:py-20" dir="rtl">
+      <div className="max-w-screen-lg mx-auto px-5 sm:px-6">
         <ScrollReveal direction="up" duration={0.8}>
-          <div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-[0_8px_40px_-12px_rgba(120,86,0,0.1)] border border-[#E8E3DB]/80 overflow-hidden">
-            <div className="grid grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 lg:divide-x lg:divide-x-reverse divide-[#E8E3DB]/80">
-              {stats.map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className={cn(
-                    "group flex flex-col items-center text-center p-6 sm:p-8 md:p-10 transition-colors duration-300",
-                    "hover:bg-[#FAF8F5]/60",
-                    /* Handle borders for 2x2 grid on mobile/tablet */
-                    idx % 2 !== 0 && "border-r border-[#E8E3DB]/80 lg:border-r-0",
-                    idx >= 2 && "border-t border-[#E8E3DB]/80 lg:border-t-0"
-                  )}
+          <div className="flex flex-col items-center lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-0">
+            {/* Main figure — customers */}
+            <div className="flex flex-col items-center text-center lg:w-[42%]">
+              <div className="flex items-center gap-3 md:gap-4" dir="ltr">
+                <span className="font-label text-[3.25rem] sm:text-6xl md:text-7xl font-light tracking-tighter leading-none text-[#1A1A1A] tabular-nums">
+                  <CountUp value={customers} duration={2200} />
+                </span>
+                <Users className="w-7 h-7 md:w-9 md:h-9 text-[#1A1A1A]" strokeWidth={1.25} aria-hidden />
+              </div>
+              <p className="mt-3 font-arabic text-sm md:text-base text-[#6B6560]">زبون وثقوا بكزورا</p>
+            </div>
+
+            {/* Divider: horizontal on phone, vertical on desktop */}
+            <div className="w-full h-px bg-[#E3DCCF] lg:w-px lg:h-24" />
+
+            {/* Three smaller figures */}
+            <div className="grid grid-cols-3 w-full lg:w-[52%]">
+              {secondary.map((s, i) => (
+                <div
+                  key={s.label}
+                  className={`flex flex-col items-center text-center px-1 ${i < 2 ? 'border-l border-[#E3DCCF]' : ''}`}
                 >
-                  <div className={cn(
-                    "w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 shadow-sm",
-                    item.iconBg
-                  )}>
-                    <item.icon className={cn("w-6 h-6 md:w-8 md:h-8", item.iconColor)} strokeWidth={1.5} />
+                  <div className="flex items-center gap-1.5 md:gap-2" dir="ltr">
+                    <span className="font-label text-xl sm:text-2xl md:text-3xl font-medium text-[#1A1A1A] tabular-nums">
+                      <CountUp value={s.value} />
+                    </span>
+                    <s.icon className="w-4 h-4 md:w-5 md:h-5 text-[#1A1A1A]" strokeWidth={1.5} aria-hidden />
                   </div>
-                  
-                  <h3 className="text-lg sm:text-2xl md:text-3xl font-arabic font-black text-[#1A1A1A] tracking-tight mb-1.5 md:mb-2">
-                    <CountUp value={item.label} />
-                  </h3>
-                  <p className="text-xs sm:text-sm md:text-base font-arabic text-[#6B6560] font-medium leading-relaxed">
-                     {item.sub}
-                  </p>
+                  <p className="mt-1.5 font-arabic text-xs md:text-sm text-[#6B6560]">{s.label}</p>
                 </div>
               ))}
             </div>
